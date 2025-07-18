@@ -1,4 +1,4 @@
-﻿@page "/assets/create"
+@page "/assets/create"
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Services
 @using projectaardvarkx2.Helpers
@@ -42,7 +42,7 @@
             <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Upload Files</MudText>
             <MudContainer Class="ma-4">
 
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="AddAttachment" InputAttributes="@(new Dictionary<string, object> { { "capture", "environment" } })">
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="AddAttachment" accept="image/*,application/pdf">
                     <ActivatorContent>
                         <MudButton Variant="Variant.Filled"
                         Color="Color.Primary"
