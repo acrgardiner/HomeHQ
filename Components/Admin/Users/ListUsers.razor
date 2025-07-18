@@ -1,0 +1,181 @@
+﻿@page "/users"
+@using Microsoft.AspNetCore.Authorization
+@using projectaardvarkx2.Identity
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IUserService UserService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Users</MudText>
+    <MudPaper Class="p-4">
+        <MudDataGrid T="ApplicationUser" Items="@_users" Loading="@_loading" QuickFilter="@_quickFilter"
+            Hideable="true" Hover="true" Dense="true"
+            Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
+            <ToolBarContent>
+                <MudTextField @bind-Value="SearchString" Placeholder="Search..." Adornment="Adornment.Start"
+                                Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mx-2" />
+                <MudButton Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
+                            Size="Size.Medium" OnClick="ReloadData" Class="mx-1" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                            Size="Size.Medium" OnClick="OpenCreateDialog" Class="mx-1">
+                    New User
+                </MudButton>
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Id" />
+                <PropertyColumn Property="x => x.UserName" />
+                <PropertyColumn Property="x => x.Email" />
+                <TemplateColumn Title="Actions" TextAlignment="TextAlignment.Right">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="0" Class="pa-2">
+                            <div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                Size="Size.Small" Class="mx-1"
+                                OnClick="@(() => OpenEditDialog(context.Item))" />
+                            </div>
+                            <div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                Size="Size.Small" Class="mx-1"
+                                OnClick="@(() => OpenDeleteDialog(context.Item.Id))" />
+                            </div>
+                        </MudStack>
+                    </CellTemplate>
+
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="ApplicationUser" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Inject] private ILogger<ListUsers> _logger { get; set; }
+
+    private List<ApplicationUser> _users = new();
+    private bool _loading = true;
+    private string _searchString = string.Empty;
+    private string SearchString
+    {
+        get => _searchString;
+        set
+        {
+            if (_searchString != value)
+            {
+                _searchString = value;
+                StateHasChanged();
+            }
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task ReloadData()
+    {
+        await LoadUsers();
+    }
+
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            _loading = true;
+            _users = await UserService.GetUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            //_logger.LogError(ex, "Failed to load users");
+            Snackbar.Add("Failed to load users", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private Func<ApplicationUser, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (
+            x.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || x.Email.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+        )
+            return true;
+
+        return false;
+    };
+
+    @*  Create Dialog *@
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<CreateUser>("Add New User");
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadUsers();
+            Snackbar.Add("User created successfully", Severity.Success);
+        }
+    }
+
+    @*  Edit Dialog *@
+    private async Task OpenEditDialog(ApplicationUser user)
+    {
+        var parameters = new DialogParameters
+        {
+            ["User"] = user,
+            ["Title"] = $"Edit User: {user.UserName}"
+        };
+
+        var dialog = await DialogService.ShowAsync<EditUser>("Edit User", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadUsers();
+            Snackbar.Add("User updated successfully", Severity.Success);
+        }
+    }
+
+    @* Delete Dialog  *@
+    private async Task OpenDeleteDialog(string userId)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Id"] = userId,
+            ["Message"] = "Are you sure you want to delete this user? This action cannot be undone."
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                //await UserService.DeleteAsync(userId);
+                await LoadUsers();
+                Snackbar.Add("User deleted successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete user");
+                Snackbar.Add("Failed to delete user", Severity.Error);
+            }
+        }
+    }
+}

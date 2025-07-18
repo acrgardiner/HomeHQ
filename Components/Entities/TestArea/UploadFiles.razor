@@ -1,0 +1,198 @@
+﻿@page "/upload-files"
+@using Microsoft.AspNetCore.Components.Forms
+@using projectaardvarkx2.Services
+@using projectaardvarkx2.Entities
+
+@inject ISnackbar Snackbar
+@inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<AttachmentType> AttachmentTypeService
+@inject ILogger<UploadFiles> _logger
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Upload Files</MudText>
+    <MudContainer Class="ma-4">
+
+        <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="AddAttachment">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Filled"
+                Color="Color.Primary"
+                StartIcon="@Icons.Material.Filled.AttachFile">
+                    Attach
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+
+        @if (_attachments.Any())
+        {
+            <MudDataGrid T="Attachment_wfile" Items="@_attachments" Loading="@_uploading"
+            Hideable="true" Hover="true" Dense="true"
+            Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
+                <Columns>
+                    <PropertyColumn Property="@(x => x.attachment.OriginFileName)" Title="File" />
+                    <PropertyColumn Property="@(x => x.attachment.ContentType)" Title="Content Type" Hidden="true"/>
+                    <PropertyColumn Property="@(x => x.attachment.Extension)" Title="Extension" Hidden="true" />
+                    <TemplateColumn T="Attachment_wfile" Title="File Size">
+                        <CellTemplate>
+                            @FormatFileSize(context.Item.attachment.FileSize)
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn T="Attachment_wfile" Title="Attachment Type">
+                        <CellTemplate>
+                            <MudSelect T="Guid?"
+                            @bind-Value="context.Item.attachment.AttachmentTypeId"
+                            Dense="true"
+                            Disabled="_uploading">
+                                @foreach (var type in AttachmentTypes)
+                                {
+                                    <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn T="Attachment_wfile" TextAlignment="TextAlignment.Right">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="0" Class="pa-2">
+                                <div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                    Size="Size.Small" Class="mx-1"
+                                    OnClick="@(() => Remove(context.Item))" />
+                                </div>
+                            </MudStack>
+                        </CellTemplate>
+
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+            OnClick="Save" Disabled="_uploading" Class="ma-4">
+                Save Attachments
+            </MudButton>
+        }
+    </MudContainer>
+</MudContainer>
+
+@code {
+    private List<Attachment_wfile> _attachments = new();
+    private long maxFileSize = 1024 * 1024 * 15;
+    private int maxAllowedFiles = 3;
+    private bool _uploading = false;
+
+    private List<AttachmentType> AttachmentTypes = new();
+    private Guid DefaultAttachmentTypeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AttachmentTypes = (await AttachmentTypeService.GetAllAsync()).ToList();
+
+        if (AttachmentTypes.Count == 0)
+        {
+            Snackbar.Add("No attachment types found. Please create at least one attachment type.", Severity.Error);
+            return;
+        }
+
+        DefaultAttachmentTypeId = AttachmentTypes.First().Id;
+    }
+
+    private void AddAttachment(IReadOnlyList<IBrowserFile> files)
+    {
+        _uploading = true;
+
+        try
+        {
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var fileExtension = Path.GetExtension(file.Name);
+                    var localFileName = Guid.NewGuid().ToString() + fileExtension;
+
+                    // Save Attachment entity
+                    var attachment = new Attachment
+                        {
+                            Name = "",
+                            OriginFileName = file.Name,
+                            LocalFileName = localFileName,
+                            Extension = fileExtension,
+                            ContentType = file.ContentType,
+                            FileSize = file.Size,
+                            AttachmentTypeId = DefaultAttachmentTypeId
+                        };
+
+                    Attachment_wfile attachmentWithFile = new Attachment_wfile
+                        {
+                            attachment = attachment,
+                            file = file
+                        };
+
+                    _attachments.Add(attachmentWithFile);
+                    Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+        finally
+        {
+            _uploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            foreach (var item in _attachments)
+            {
+                // Save file to disk or database as needed
+                var filePath = Path.Combine("appdata", "uploads", item.attachment.LocalFileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await item.file.OpenReadStream(maxFileSize).CopyToAsync(stream);
+                }
+
+                var uploadedAttachment = await AttachmentService.AddAsync(item.attachment);
+            }
+            _attachments.Clear(); 
+            Snackbar.Add($"Attachments Saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save attachments");
+            Snackbar.Add($"Failed to save attachments: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Remove(Attachment_wfile item)
+    {
+        _attachments.Remove(item);
+    }
+
+    struct Attachment_wfile
+    {
+        public Attachment attachment;
+        public IBrowserFile file;
+    }
+
+    private string FormatFileSize(float bytes)
+    {
+        if (bytes >= 1024 * 1024)
+            return $"{bytes / (1024 * 1024):0.##} MB";
+        if (bytes >= 1024)
+            return $"{bytes / 1024:0.##} KB";
+        return $"{bytes:0} B";
+    }
+}

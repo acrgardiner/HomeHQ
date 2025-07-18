@@ -1,0 +1,65 @@
+﻿@using projectaardvarkx2.Identity
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit User</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model">
+            <MudTextField T="string" @bind-Value="model.UserName" Label="Username" Required="true"
+            RequiredError="Name is required!" />
+
+            <MudTextField T="string" Label="Email" @bind-Value="model.Email" Required="true"
+            RequiredError="Active flag is required!">
+                <MudSelectItem Value=@(true)>True</MudSelectItem>
+                <MudSelectItem Value="@(false)">False</MudSelectItem>
+            </MudTextField>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Update</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject] private ILogger<EditUser> _logger { get; set; }
+    [CascadingParameter] IMudDialogInstance Dialog { get; set; }
+
+    [Parameter] public ApplicationUser User { get; set; }
+    [Parameter] public string Title { get; set; }
+
+
+    private MudForm form;
+    private ApplicationUser model = new();
+
+    protected override void OnInitialized()
+    {
+        model.Id = User.Id;
+        model.UserName = User.UserName;
+        model.Email = User.Email;
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            try
+            {
+                //await UserService.UpdateAsync(model);
+                Snackbar.Add("User updated successfully", Severity.Success);
+                Dialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user");
+                Snackbar.Add("Error updating user", Severity.Error);
+            }
+        }
+    }
+}

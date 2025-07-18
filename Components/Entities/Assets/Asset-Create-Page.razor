@@ -1,0 +1,258 @@
+﻿@page "/assets/create"
+@using projectaardvarkx2.Entities
+@using projectaardvarkx2.Services
+@using projectaardvarkx2.Helpers
+@using projectaardvarkx2.FileStorage
+
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<Category> CategoryService
+@inject IEntityService<WarrantyType> WarrantyTypeService
+@inject IEntityService<AttachmentType> AttachmentTypeService
+@inject IEntityService<Attachment> AttachmentService
+@inject IFileStorageService FileStorageService
+
+@inject ISnackbar Snackbar
+@inject ILogger<Asset_Create_Page> Logger
+@inject NavigationManager Navigation
+
+<MudPaper Class="pa-6 mx-auto" MaxWidth="MaxWidth.Large">
+    <MudText Typo="Typo.h5" Class="mb-4">Create Asset</MudText>
+    <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="asset.Name" Label="Name" Required="true" />
+            <MudSelect @bind-Value="asset.CategoryId" T="Guid?" Label="Category" Required="true">
+                <MudSelectItem Value="@(null as Guid?)">-- Select --</MudSelectItem>
+                @foreach (var cat in categories)
+                {
+                    <MudSelectItem Value="@(cat.Id as Guid?)">@(cat.Title)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudDatePicker @bind-Date="asset.PurchaseDate" Label="Purchase Date" Required="true" />
+            <MudNumericField @bind-Value="asset.PurchaseAmount" Label="Purchase Amount" Format="N2" AdornmentText="$" />
+            <MudSelect @bind-Value="asset.WarrantyTypeId" Label="Warranty Type" @bind-Value:after="OnChangeWarrantyType">
+                <MudSelectItem Value="@(null as Guid?)">-- Select --</MudSelectItem>
+                @foreach (var wt in warrantyTypes)
+                {
+                    <MudSelectItem Value="@(wt.Id as Guid?)">@wt.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudDatePicker @bind-Date="asset.WarrantyExpiration" Label="Warranty Expiration" />
+
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Upload Files</MudText>
+            <MudContainer Class="ma-4">
+
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="AddAttachment" InputAttributes="@(new Dictionary<string, object> { { "capture", "environment" } })">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        StartIcon="@Icons.Material.Filled.AttachFile">
+                            Attach
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+
+                @if (_attachments.Any())
+                {
+                    <MudDataGrid T="Attachment_wfile" Items="@_attachments" Loading="@_uploading"
+                    Hideable="true" Hover="true" Dense="true"
+                    Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
+                        <Columns>
+                            <PropertyColumn Property="@(x => x.attachment.OriginFileName)" Title="File" />
+                            <PropertyColumn Property="@(x => x.attachment.ContentType)" Title="Content Type" Hidden="true"/>
+                            <PropertyColumn Property="@(x => x.attachment.Extension)" Title="Extension" Hidden="true" />
+                            <TemplateColumn T="Attachment_wfile" Title="File Size" Context="itemContext">
+                                <CellTemplate>
+                                    @Formatter.FormatFileSize(itemContext.Item.attachment.FileSize)
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn T="Attachment_wfile" Title="File Size" Context="itemContext">
+                                <CellTemplate>
+                                    <MudSelect T="Guid?"
+                                    @bind-Value="itemContext.Item.attachment.AttachmentTypeId"
+                                    Dense="true"
+                                    Disabled="_uploading">
+                                        @foreach (var type in attachmentTypes)
+                                        {
+                                            <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn T="Attachment_wfile" Title="File Size" Context="itemContext">
+                                <CellTemplate>
+                                    <MudStack Row="true" Spacing="0" Class="pa-2">
+                                        <div>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                            Size="Size.Small" Class="mx-1"
+                                            OnClick="@(() => Remove(itemContext.Item))" />
+                                        </div>
+                                    </MudStack>
+                                </CellTemplate>
+
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                }
+            </MudContainer>
+
+
+            <MudStack Row="true" Spacing="2" Class="mt-4">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" ButtonType="ButtonType.Submit">Create</MudButton>
+                <MudButton Color="Color.Default" Variant="Variant.Outlined" OnClick="GoBack">Cancel</MudButton>
+            </MudStack>
+        </MudStack>
+        <ValidationSummary />
+    </EditForm>
+</MudPaper>
+
+@code {
+    private Asset asset = new() { PurchaseDate = DateTime.Today, WarrantyExpiration = DateTime.Today };
+    private List<Category> categories = new();
+    private List<WarrantyType> warrantyTypes = new();
+    private static readonly Guid? nullGuid = null;
+
+    private List<Attachment_wfile> _attachments = new();
+    //private long maxFileSize = 1024 * 1024 * 15;
+    private int maxAllowedFiles = 3;
+    private bool _uploading = false;
+
+    private List<AttachmentType> attachmentTypes = new();
+    private Guid defaultAttachmentTypeId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            categories = (await CategoryService.GetAllAsync()).ToList();
+            warrantyTypes = ((await WarrantyTypeService.GetAllAsync()).OrderBy(x => x.SortOrder)).ToList();
+            attachmentTypes = (await AttachmentTypeService.GetAllAsync()).ToList();
+
+            if (attachmentTypes.Count == 0)
+            {
+                Snackbar.Add("No attachment types found. Please create at least one attachment type.", Severity.Error);
+                return;
+            }
+
+            defaultAttachmentTypeId = attachmentTypes.First().Id;
+
+            if (asset.PurchaseDate == default)
+                asset.PurchaseDate = DateTime.Today;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
+            Logger.LogError(ex, "Error initializing CreateAsset components");
+        }
+    }
+
+    private void AddAttachment(IReadOnlyList<IBrowserFile> files)
+    {
+        _uploading = true;
+
+        try
+        {
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var fileExtension = Path.GetExtension(file.Name);
+
+                    // Save Attachment entity
+                    var attachment = new Attachment
+                        {
+                            Name = "",
+                            OriginFileName = file.Name,
+                            Extension = fileExtension,
+                            ContentType = file.ContentType,
+                            FileSize = file.Size,
+                            AttachmentTypeId = defaultAttachmentTypeId
+                        };
+
+                    Attachment_wfile attachmentWithFile = new Attachment_wfile
+                        {
+                            attachment = attachment,
+                            file = file
+                        };
+
+                    _attachments.Add(attachmentWithFile);
+                    Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+        finally
+        {
+            _uploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Remove(Attachment_wfile item)
+    {
+        _attachments.Remove(item);
+    }
+
+    private async Task SaveAttachments(Guid Id)
+    {
+        try
+        {
+            foreach (var item in _attachments)
+            {
+                item.attachment.ParentId = Id;
+
+                item.attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.file);
+
+                var uploadedAttachment = await AttachmentService.AddAsync(item.attachment);
+            }
+            _attachments.Clear();
+            Snackbar.Add($"Attachments Saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save attachments");
+            Snackbar.Add($"Failed to save attachments: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            // Set null for empty Guid selections
+            if (asset.CategoryId == Guid.Empty) asset.CategoryId = null;
+            if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
+
+            var newAsset = await AssetService.AddAsync(asset);
+
+            await SaveAttachments(newAsset.Id);
+
+            Snackbar.Add("Asset created successfully.", Severity.Success);
+            Navigation.NavigateTo("/assets");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/assets");
+    }
+
+    struct Attachment_wfile
+    {
+        public Attachment attachment;
+        public IBrowserFile file;
+    }
+
+    private async void OnChangeWarrantyType()
+    {
+        Snackbar.Add($"Warranty Type changed.", Severity.Info);
+    }
+}
