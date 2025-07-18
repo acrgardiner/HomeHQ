@@ -1,0 +1,82 @@
+﻿@page "/assets/{id}"
+@using projectaardvarkx2.Entities
+@using projectaardvarkx2.Services
+@using projectaardvarkx2.Helpers
+@using projectaardvarkx2.Components.Entities.Common
+
+@inject IEntityService<Asset> AssetService
+
+@inject ISnackbar Snackbar
+@inject ILogger<Asset_Detail_Page> Logger
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudText Typo="Typo.h5">Asset</MudText>
+        </MudItem>
+        <MudItem xs="2">
+            <MudText Color="Color.Primary">ID:</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText>@Id</MudText>
+        </MudItem>
+        <MudFlexBreak />
+        <MudItem xs="2">
+            <MudText Color="Color.Primary" >Name:</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText >@asset?.Name</MudText>
+        </MudItem>
+        <MudItem xs="2">
+            <MudText Color="Color.Primary">Category</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText>@asset?.Category?.Title</MudText>
+        </MudItem>
+        <MudItem xs="2">
+            <MudText Color="Color.Primary">Purchase Date:</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText>@asset?.PurchaseDate</MudText>
+        </MudItem>
+        <MudItem xs="2">
+            <MudText Color="Color.Primary">Purchase Amount:</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText>@asset?.PurchaseAmount</MudText>
+        </MudItem>
+        <MudItem xs="2">
+            <MudText Color="Color.Primary">Warranty Type:</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText>@asset?.WarrantyType?.Name</MudText>
+        </MudItem>
+        <MudItem xs="2">
+            <MudText Color="Color.Primary">Warranty Expiration:</MudText>
+        </MudItem>
+        <MudItem xs="4">
+            <MudText>@asset?.WarrantyExpiration</MudText>
+        </MudItem>
+    </MudGrid>
+    <AttachmentList_view ParentId="@asset?.Id" />
+</MudContainer>
+
+@code{
+    [Parameter]public string Id { get; set; }
+
+    private Asset? asset = new Asset();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var guid = Guid.Parse(Id);
+            asset = await AssetService.GetByIdAsync(guid, new() { x => x.Category, x => x.WarrantyType});
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+    }
+}

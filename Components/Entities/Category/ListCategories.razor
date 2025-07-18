@@ -1,0 +1,26 @@
+﻿@page "/categories"
+@using projectaardvarkx2.Entities
+@using projectaardvarkx2.Services
+@using projectaardvarkx2.Components.Entities.Common
+
+@inject IEntityService<Category> CategoryService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<ListCategories> Logger
+
+<MudContainer MaxWidth="@MaxWidth.Medium" Class="mt-6">
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Categories</MudText>
+    <MudPaper Class="p-4">
+        <EntityList TEntityType="Category" Plural="Categories" Singular="Category" EntityService="CategoryService"
+            CreateDialog="@( () => DialogService.ShowAsync<CreateCategory>("Add New Category") )"
+            EditDialog="@(parameters => DialogService.ShowAsync<EditCategory>("Edit Category", parameters))"
+            Logger="Logger"
+            Columns="@(
+                new List<(Func<Category, object?>, string)>
+                {
+                    (x => x.Icon, "Icon"),
+                    (x => x.Name, "Name")
+                })">
+        </EntityList>
+    </MudPaper>
+</MudContainer>

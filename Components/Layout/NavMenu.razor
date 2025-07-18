@@ -1,0 +1,70 @@
+﻿@using projectaardvarkx2.Identity
+@implements IDisposable
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+<MudNavMenu>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="/assets" Icon="@Icons.Material.Filled.AccountBox">Assets</MudNavLink>
+            @*
+                <MudNavGroup Title="Settings" Icon="@Icons.Material.Filled.Settings" Expanded="true">
+                    <MudNavLink Href="/categories" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Abc">Categories</MudNavLink>
+                    <MudNavLink Href="/warrantytypes" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Newspaper">Warranty Types</MudNavLink>
+                    <MudNavLink Href="/attachmenttypes" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Attachment">Attachment Types</MudNavLink>
+                    <MudNavLink Href="/attachments" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Attachment">Attachments</MudNavLink>
+                </MudNavGroup>
+            *@
+        </Authorized>
+        <NotAuthorized>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Account/Register">
+                    <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Account/Login">
+                    <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
+                </NavLink>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="@Roles.Admin.ToString()">
+        <Authorized>
+            <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true">
+                <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+                <MudNavLink Href="/settings" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+                <MudNavLink Href="/maintenance" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Handyman">Maintenance</MudNavLink>
+                <MudNavLink Href="/users" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Person">Users</MudNavLink>
+            </MudNavGroup>
+        </Authorized>
+    </AuthorizeView>
+</MudNavMenu>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
+

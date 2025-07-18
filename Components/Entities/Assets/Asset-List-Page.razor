@@ -1,0 +1,77 @@
+﻿@page "/assets"
+@using projectaardvarkx2.Entities
+@using projectaardvarkx2.Services
+@using System.Linq.Expressions
+@using projectaardvarkx2.Components.Entities.Common
+@using projectaardvarkx2.Helpers
+
+@inject IEntityService<Asset> AssetService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<Asset_List_Page> Logger
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="@MaxWidth.Medium" Class="mt-6">
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Assets</MudText>
+    <MudPaper Class="p-4">
+        <EntityList TEntityType="Asset" Plural="Assets" Singular="Asset" EntityService="AssetService"
+                    Logger="Logger"
+                    Includes="@(Includes)"
+                    Columns="@(
+                    new List<(Func<Asset, object?>, string)>{
+                        (new Func<Asset, object?>(x => x.Name), "Name"),
+                        (new Func<Asset, object?>(x => x.Category?.Icon + " " + x.Category?.Name), "Category"),
+                        (new Func<Asset, object?>(x => x.PurchaseDate.HasValue ? x.PurchaseDate.Value.ToString("d") : ""), "Purchase Date"),
+                        (new Func<Asset, object?>(x => x.PurchaseAmount.HasValue ? x.PurchaseAmount.Value.ToString("c0") : ""), "Purchase Amount"),
+                        (new Func<Asset, object?>(x => x.WarrantyType?.Name), "Warranty"),
+                        (new Func<Asset, object?>(x => x.WarrantyExpiration.HasValue ? x.WarrantyExpiration.Value.ToString("d") : ""), "Warranty Expiration"),
+                    }
+                )"
+                    ItemActions="AssetActions"
+                    EnableItemDelete="true"
+        >
+            <ToolbarActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate" Class="mx-1"> New Asset </MudButton>
+            </ToolbarActions>
+        </EntityList>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<EntityAction<Asset>> AssetActions => new()
+    {
+        new EntityAction<Asset>
+        {
+            Icon = Icons.Material.Filled.Details,
+            Tooltip = "Details",
+            Action = async (asset) => await OpenEdit(asset)
+        }
+    };
+
+    private Task ShowGalleryAsync(Attachment attachment)
+    {
+        var param = new DialogParameters<ViewImage>()
+        {
+            { x => x.Attachment, attachment }
+        };
+        return DialogService.ShowAsync<ViewImage>("View Attachment", param);
+    }
+
+    List<Expression<Func<Asset, object>>>? Includes => new List<Expression<Func<Asset, object>>>
+    {
+        x => x.Category,
+        x => x.WarrantyType
+    };
+
+    private void OpenCreate()
+    {
+        NavigationManager.NavigateTo("/assets/create");
+    }
+
+    private async Task OpenEdit(Asset asset)
+    {
+        NavigationManager.NavigateTo($"/assets/{asset.Id}");
+    }
+}
+
+

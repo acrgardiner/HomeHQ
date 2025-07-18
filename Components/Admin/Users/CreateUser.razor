@@ -1,0 +1,53 @@
+﻿@using projectaardvarkx2.Identity
+
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model">
+            <MudTextField T="string" @bind-Value="model.UserName" Label="User Name" Required="true"
+            RequiredError="Username is required!" />
+
+            <MudTextField T="string" @bind-Value="model.Email" Label="Email" Required="true"
+            RequiredError="Email is required!" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Inject] private ILogger<CreateUser> _logger { get; set; }
+
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    private MudForm form = default!;
+    private ApplicationUser model = new();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            try
+            {
+                //await UserService.CreateAsync(model);
+                Snackbar.Add("User created successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating user");
+                Snackbar.Add("Error creating user", Severity.Error);
+            }
+        }
+    }
+}

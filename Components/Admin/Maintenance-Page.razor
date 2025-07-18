@@ -1,0 +1,51 @@
+﻿@page "/maintenance"
+
+@using projectaardvarkx2.Services
+
+@inject ISnackbar Snackbar
+@inject IAssetImportService AssetImportService
+
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-4">Maintenance</MudText>
+
+    <MudText Typo="Typo.h6" Class="ma-4">Actions</MudText>
+    <MudGrid>
+        <MudItem xs="12" sm="12" md="12">
+            <MudPaper Class="pa-4">
+                <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                    <div>
+                        <MudText Typo="Typo.subtitle1">Purge</MudText>
+                        <MudText Typo="Typo.body2">Purge database of deleted records more than 30 days old</MudText>
+                    </div>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" OnClick="PurgeDeleted" Class="mx-1">Purge Deleted</MudButton>
+                </MudStack>
+            </MudPaper>
+            <MudDivider />
+            <MudPaper Class="pa-4">
+                <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                    <div>
+                        <MudText Typo="Typo.subtitle1">Manual Load</MudText>
+                        <MudText Typo="Typo.body2">Manually load an Asset with Attachment per file in the input directory</MudText>
+                    </div>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AttachFile" OnClick="ManualLoad" Class="mx-1">Manual Load</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>>
+@code {
+    private async Task PurgeDeleted()
+    {
+        Snackbar.Add("Purging deleted items...", Severity.Info);
+
+    }
+
+    private async Task ManualLoad()
+    {
+        Snackbar.Add("Manually loading...", Severity.Info);
+        var newAssets = await AssetImportService.ImportAssets();
+
+        Snackbar.Add($"Successfully loaded {newAssets} new Assets", Severity.Success);
+    }
+}

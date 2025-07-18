@@ -1,0 +1,292 @@
+﻿@page "/dashboard"
+@using MudBlazor
+@using projectaardvarkx2.Entities
+@using projectaardvarkx2.Services
+@using projectaardvarkx2.Identity
+@using projectaardvarkx2.Helpers
+@using Microsoft.EntityFrameworkCore
+@using System.Linq.Expressions
+@using projectaardvarkx2.Components.Entities.Common
+
+@inject IUserService UserService
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<AttachmentType> AttachmentTypeService
+@inject IEntityService<Category> CategoryService
+@inject IEntityService<WarrantyType> WarrantyTypeService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <MudGrid GutterSize="3">
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="4" Class="pa-4 mud-theme-primary">
+                    <MudText Typo="Typo.h6" Class="text-white">Users</MudText>
+                    <MudText Typo="Typo.h3" Class="text-white">@_usercount</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="4" Class="pa-4 mud-theme-success">
+                    <MudText Typo="Typo.h6" Class="text-white">Attachments</MudText>
+                    <MudText Typo="Typo.h3" Class="text-white">@_attachmentcount</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="4" Class="pa-4 mud-theme-error">
+                    <MudText Typo="Typo.h6" Class="text-white">Files Stored</MudText>
+                    <MudText Typo="Typo.h3" Class="text-white">@(Formatter.FormatFileSize(_totalAttachmentSize))</MudText>
+                </MudPaper>
+            </MudItem>
+
+            @if (_largeAttach.Any())
+            {
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="text-white">Largest Attachments</MudText>
+                    <MudDataGrid T="Attachment" Items="@_largeAttach" Loading="@_loading"
+                    Hideable="true" Hover="true" Dense="true"
+                    Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
+                    >
+                        <ToolBarContent>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                            Size="Size.Medium"  Class="mx-1">
+                                Export CSV
+                            </MudButton>
+                        </ToolBarContent>
+                        <Columns>
+                            <PropertyColumn Property="x => x.Id" Title="Id" />
+                            <TemplateColumn T="Attachment" Title="Parent" Context="attach">
+                                <CellTemplate>
+                                    <MudLink Href="@($"/assets/{attach.Item.ParentId}")">@attach.Item.ParentId</MudLink>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="x => x.Parent.Name" Title="Asset Name" />
+                            <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" Title="File Size" />
+                            <TemplateColumn T="Attachment" Title="Actions" TextAlignment="TextAlignment.Right">
+                                <CellTemplate>
+                                    <MudStack Row="true" Spacing="0" Class="pa-2">
+                                        <div>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Image" Color="Color.Primary" Size="Size.Small" Class="mx-1"
+                                                           OnClick="@(() => ShowGalleryAsync(context.Item))" />
+                                        </div>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudItem>
+            }
+
+            @if (_warrantyExpirigSoon.Any())
+            {
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6" Class="text-white">Warranties Expiring Soon</MudText>
+                    <MudDataGrid T="Asset" Items="@_warrantyExpirigSoon" Loading="@_loading"
+                    Hideable="true" Hover="true" Dense="true"
+                    Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
+                    >
+                        <ToolBarContent>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                            Size="Size.Medium"  Class="mx-1">
+                                Export CSV
+                            </MudButton>
+                        </ToolBarContent>
+                        <Columns>
+                            <TemplateColumn T="Asset" Title="Id" Context="asset">
+                                <CellTemplate>
+                                    <MudLink Href="@($"/assets/{asset.Item.Id}")">@asset.Item.Id</MudLink>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn  Property="x => x.Name" Title="Name" />
+                            <PropertyColumn Property="x => x.Category.Title" Title="Category" />
+                            <PropertyColumn Property="x => Formatter.FormatDate(x.WarrantyExpiration)" Title="WarrantyExpiration" />
+
+                        </Columns>
+                    </MudDataGrid>
+                </MudItem>
+            }
+
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="mb-2">Activity by Month</MudText>
+                <MudChart T="int"
+                ChartType="ChartType.Line"
+                XAxisLabels="@_historyChartLabels"
+                ChartOptions="@_options"
+                ChartSeries="@_historyChartData"
+                Height="300px" AxisChartOptions="_axisChartOptions" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="mb-2">Pending Purge</MudText>
+                <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@_pendingPurgeData" InputLabels="@_pendingPurgeLabels">
+                    <CustomGraphics>
+                        <text class="mud-typography" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="20" style="fill:var(--mud-palette-primary-text)">Total</text>
+                        <text class="mud-typography" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="50" style="fill:var(--mud-palette-primary-text)">@_pendingPurgeData.Sum().ToString()</text>
+                    </CustomGraphics>
+                </MudChart>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private bool _loading;
+
+    private int _usercount;
+    private int _attachmentcount;
+    private List<Attachment> _largeAttach;
+
+    private List<Asset> _warrantyExpirigSoon;
+    private float _totalAttachmentSize;
+
+    private string[] _historyChartLabels = Array.Empty<string>();
+    private List<ChartSeries> _historyChartData = new List<ChartSeries>();
+    public ChartOptions _options = new ChartOptions() { YAxisTicks = 5, LineStrokeWidth = 10};
+    private AxisChartOptions _axisChartOptions = new AxisChartOptions() { XAxisLabelRotation = 15 };
+
+    private double[] _pendingPurgeData = { 0, 0, 0, 0, 0 };
+    private string[] _pendingPurgeLabels = { "Assets", "Attachments", "Attachment Types", "Categories", "Warranty Types" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshDataAsync();
+    }
+
+    private async Task RefreshDataAsync()
+    {
+        _loading = true;
+        try
+        {
+            List<Task> tasks = new List<Task>();
+            tasks.Add(UpdateUserCountAsync());
+            tasks.Add(UpdateAttachmentCountAsync());
+            tasks.Add(GetLargeFules());tasks.Add(GetLargeFules());
+            tasks.Add(GetTotalAttachmentSize());
+            tasks.Add(GetWarrantiesExpiringSoon());
+            tasks.Add(LoadHistoryChartDataAsync());
+            tasks.Add(GetDeletedPendingPurge());
+
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error loading dashboard data", Severity.Error);
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task UpdateUserCountAsync()
+    {
+        _usercount = await UserService.GetUserCountAsync();
+    }
+
+    private async Task UpdateAttachmentCountAsync()
+    {
+        _attachmentcount = await AttachmentService.CountAsync();
+    }
+
+    private async Task GetLargeFules()
+    {
+        _largeAttach = (await AttachmentService.GetAsync(
+            orderby: attach => attach.FileSize,
+            descending: true,
+            take: 10,
+            includes: new() { x => x.Parent }
+        )).ToList();
+    }
+
+    private async Task GetWarrantiesExpiringSoon()
+    {
+        var dateFrom = DateTime.UtcNow;
+        var dateTo = DateTime.UtcNow.AddYears(100);
+        _warrantyExpirigSoon = (await AssetService.GetAsync(filter: x => x.WarrantyExpiration.HasValue && x.WarrantyExpiration > dateFrom && x.WarrantyExpiration < dateTo, 
+                orderby: attach => attach.WarrantyExpiration,
+                descending: true,
+                take: 10,
+                includes: new List<Expression<Func<Asset, object>>> { x => x.Category, x => x.WarrantyType }
+        )).ToList();
+    }
+
+    private async Task GetTotalAttachmentSize()
+    {
+        _totalAttachmentSize = await AttachmentService.SumAsync( selector: asset => asset.FileSize );
+    }
+
+    private async Task LoadHistoryChartDataAsync()
+    {
+        try
+        {
+            // Get all attachments created in the last 12 months
+            var now = DateTime.UtcNow;
+            var firstOfMonth = new DateTime(now.Year, now.Month, 1);
+            var fromDate = firstOfMonth.AddMonths(-11);
+
+            // Prepare labels for the last 12 months
+            var months = Enumerable.Range(0, 12)
+                .Select(i => DateTime.UtcNow.AddMonths(-11 + i))
+                .ToArray();
+
+            _historyChartLabels = months
+                .Select(m => m.ToString("MMM yyyy"))
+                .ToArray();
+
+            //Prepare data for the chart
+            var attachGrouped = await AttachmentService.GetCountByPropertyAsync(a => a.CreatedOn.Year.ToString() + "-" + a.CreatedOn.Month.ToString(), a => a.CreatedOn >= fromDate);
+
+            var attachmentSeriesData = months
+                .Select(m =>
+                {
+                    if (attachGrouped.TryGetValue($"{m.Year}-{m.Month}", out var count))
+                    {
+                        return count;
+                    }
+                    return 0.0;
+                })
+                .ToArray();
+
+            _historyChartData.Add(new ChartSeries() { Name = "Attachment", Data = attachmentSeriesData, ShowDataMarkers = true });
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error loading history chart data", Severity.Error);
+            Console.WriteLine($"Error loading history chart data: {ex.Message}");
+        }
+    }
+
+    private async Task GetDeletedPendingPurge()
+    {
+        try
+        {
+            _pendingPurgeData[0] = await AssetService.CountAsync(a =>  a.DeletedOn != null, true);
+            _pendingPurgeData[1] = await AttachmentService.CountAsync(a => a.DeletedOn != null, true);
+            _pendingPurgeData[2] = await AttachmentTypeService.CountAsync(a => a.DeletedOn != null, true);
+            _pendingPurgeData[3] = await CategoryService.CountAsync(a => a.DeletedOn != null, true);
+            _pendingPurgeData[4] = await WarrantyTypeService.CountAsync(a => a.DeletedOn != null, true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error loading pending purge data", Severity.Error);
+            Console.WriteLine($"Error loading pending purge data: {ex.Message}");
+        }
+    }
+
+    private Task ShowGalleryAsync(Attachment attachment)
+    {
+        var param = new DialogParameters<ViewImage>()
+        {
+            { x => x.Attachment, attachment }
+        };
+        return DialogService.ShowAsync<ViewImage>("View Attachment", param);
+    }
+}
