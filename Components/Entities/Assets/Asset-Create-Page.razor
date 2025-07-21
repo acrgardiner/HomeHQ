@@ -43,46 +43,47 @@
 
             <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
             <MudContainer Class="ma-4">
-
-                @if (IsMobile)
-                {
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                        FilesChanged="AddAttachment"
-                                   accept="image/*;capture=camera">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Camera">
-                                Take Photo
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                        FilesChanged="AddAttachment"
-                                   accept="image/*">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Image">
-                                Gallery
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
-                }
-                else
-                {
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                        FilesChanged="AddAttachment"
-                                   accept="image/*;application/pdf;capture=camera">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.AttachFile">
-                                Add Attachment
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
-                }
+                <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                    @if (IsMobile)
+                    {
+                        <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                            FilesChanged="AddAttachment"
+                                       accept="image/*" InputAttributes="@(new Dictionary<string, object> { { "capture", "environment" } })">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Camera">
+                                    Take Photo
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                        <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                            FilesChanged="AddAttachment"
+                                       accept="image/*">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Image">
+                                    Gallery
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                    }
+                    else
+                    {
+                        <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                            FilesChanged="AddAttachment"
+                                       accept="image/*;application/pdf;capture=camera">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.AttachFile">
+                                    Add Attachment
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                    }
+                </MudStack>
 
                 @if (_attachments.Any())
                 {
