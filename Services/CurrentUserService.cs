@@ -6,6 +6,7 @@ namespace projectaardvarkx2.Services
     {
         string? UserId { get; }
         string? UserName { get; }
+        bool IsMobile { get; }
     }
 
     public class CurrentUserService : ICurrentUserService
@@ -22,5 +23,23 @@ namespace projectaardvarkx2.Services
 
         public string? UserName =>
             _httpContextAccessor.HttpContext?.User?.Identity?.Name;
+
+        public bool IsMobile
+        {
+            get
+            {
+                var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
+                if (string.IsNullOrEmpty(userAgent))
+                    return false;
+
+                // Simple mobile detection
+                string[] mobileKeywords = new[]
+                {
+                    "Android", "iPhone", "iPad", "iPod", "Opera Mini", "IEMobile", "Mobile", "BlackBerry", "webOS"
+                };
+
+                return mobileKeywords.Any(keyword => userAgent.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+            }
+        }
     }
 }
