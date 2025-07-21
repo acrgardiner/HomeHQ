@@ -39,15 +39,18 @@
             </MudSelect>
             <MudDatePicker @bind-Date="asset.WarrantyExpiration" Label="Warranty Expiration" />
 
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Upload Files</MudText>
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
             <MudContainer Class="ma-4">
 
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="AddAttachment" accept="image/*,application/pdf">
+                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                               FilesChanged="AddAttachment"
+                               accept="image/*,application/pdf"
+                               InputAttributes="@(new Dictionary<string, object> { { "capture", "environment" } })">
                     <ActivatorContent>
                         <MudButton Variant="Variant.Filled"
-                        Color="Color.Primary"
-                        StartIcon="@Icons.Material.Filled.AttachFile">
-                            Attach
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.AttachFile">
+                            Add Attachment
                         </MudButton>
                     </ActivatorContent>
                 </MudFileUpload>
