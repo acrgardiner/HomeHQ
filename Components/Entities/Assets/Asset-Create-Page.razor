@@ -48,7 +48,8 @@
                     {
                         <MudFileUpload T="IReadOnlyList<IBrowserFile>"
                             FilesChanged="AddAttachment"
-                                       accept="image/*" InputAttributes="@(new Dictionary<string, object> { { "capture", "environment" } })">
+                            accept="image/*" Capture="environment"
+                        >
                             <ActivatorContent>
                                 <MudButton Variant="Variant.Filled"
                                            Color="Color.Primary"
