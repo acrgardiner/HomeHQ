@@ -11,6 +11,8 @@
 @inject IEntityService<Attachment> AttachmentService
 @inject IFileStorageService FileStorageService
 
+@inject ICurrentUserService CurrentUser
+
 @inject ISnackbar Snackbar
 @inject ILogger<Asset_Create_Page> Logger
 @inject NavigationManager Navigation
@@ -42,18 +44,45 @@
             <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
             <MudContainer Class="ma-4">
 
-                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                               FilesChanged="AddAttachment"
-                               accept="image/*,application/pdf"
-                               InputAttributes="@(new Dictionary<string, object> { { "capture", "environment" } })">
-                    <ActivatorContent>
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.AttachFile">
-                            Add Attachment
-                        </MudButton>
-                    </ActivatorContent>
-                </MudFileUpload>
+                @if (IsMobile)
+                {
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                        FilesChanged="AddAttachment"
+                                   accept="image/*;capture=camera">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Camera">
+                                Take Photo
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                        FilesChanged="AddAttachment"
+                                   accept="image/*">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Image">
+                                Gallery
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                }
+                else
+                {
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                        FilesChanged="AddAttachment"
+                                   accept="image/*;application/pdf;capture=camera">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.AttachFile">
+                                Add Attachment
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                }
 
                 @if (_attachments.Any())
                 {
@@ -123,10 +152,14 @@
     private List<AttachmentType> attachmentTypes = new();
     private Guid defaultAttachmentTypeId;
 
+    private bool IsMobile;
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            IsMobile = CurrentUser.IsMobile;
+
             categories = (await CategoryService.GetAllAsync()).ToList();
             warrantyTypes = ((await WarrantyTypeService.GetAllAsync()).OrderBy(x => x.SortOrder)).ToList();
             attachmentTypes = (await AttachmentTypeService.GetAllAsync()).ToList();
