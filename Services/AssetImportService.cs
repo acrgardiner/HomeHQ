@@ -14,21 +14,26 @@ namespace projectaardvarkx2.Services
         private readonly IFileStorageService _fileStorageService;
         private readonly IEntityService<Asset> _assetService;
         private readonly IEntityService<Attachment> _attachmentService;
+        private readonly IEntityService<AttachmentType> _attachmentTypeService;
 
         public AssetImportService(
             IFileStorageService fileStorageService,
             IEntityService<Asset> assetService,
-            IEntityService<Attachment> attachmentService)
+            IEntityService<Attachment> attachmentService,
+            IEntityService<AttachmentType> attachmentTypeService
+        )
         {
             _fileStorageService = fileStorageService;
             _assetService = assetService;
             _attachmentService = attachmentService;
+            _attachmentTypeService = attachmentTypeService;
         }
 
         public async Task<int> ImportAssets()
         {
             //Get all files from /imports
             const string DefaultContentType = "application/octet-stream";
+            var defaultAttachmentType = (await _attachmentTypeService.GetAllAsync()).Where(x => x.Default).FirstOrDefault();
             var provider = new FileExtensionContentTypeProvider();
 
             var importFiles = Directory.GetFiles(Path.Combine("appdata", "imports"));
@@ -57,7 +62,8 @@ namespace projectaardvarkx2.Services
                     OriginFileName = Path.GetFileName(importFile),
                     ContentType = contentType,
                     Extension = Path.GetExtension(importFile),
-                    FileSize = new FileInfo(importFile).Length
+                    FileSize = new FileInfo(importFile).Length,
+                    AttachmentTypeId = defaultAttachmentType?.Id ?? Guid.Empty
                 };
 
                 await _attachmentService.AddAsync(attachment);

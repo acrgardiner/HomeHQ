@@ -1,16 +1,15 @@
 ﻿using projectaardvarkx2.Contracts;
 
-namespace projectaardvarkx2.Entities
+namespace projectaardvarkx2.Entities;
+
+public class Category : AuditableEntity, IEntity
 {
-    public class Category : AuditableEntity, IAggregateRoot
-    {
-        public string? Icon { get; set; }
+    public string? Icon { get; set; }
 
-        //public ICollection<Asset> Assets { get; set; }  // Navigation property (one-to-many relationship with Asset)
+    //public ICollection<Asset> Assets { get; set; }  // Navigation property (one-to-many relationship with Asset)
 
-        //[NotMapped]
-        //public List<Attachment> Attachments { get; set; } = [];
+    //[NotMapped]
+    //public List<Attachment> Attachments { get; set; } = [];
 
-        public string Title => Icon + " " + Name;
-    }
+    public string Title => Icon + " " + Name;
 }

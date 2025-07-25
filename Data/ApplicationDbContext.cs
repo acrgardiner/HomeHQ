@@ -18,6 +18,7 @@ namespace projectaardvarkx2.Data
         public DbSet<WarrantyType> WarrantyTypes { get; set; }
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<AttachmentType> AttachmentTypes { get; set; }
+        public DbSet<AttributeValue> Attributes { get; set; }
 
         private readonly ICurrentUserService _currentUserService;
 

@@ -250,6 +250,9 @@ namespace projectaardvarkx2.data.migrations
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("Default")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("DeletedBy")
                         .HasColumnType("TEXT");
 
@@ -270,6 +273,52 @@ namespace projectaardvarkx2.data.migrations
                     b.HasKey("Id");
 
                     b.ToTable("AttachmentTypes");
+                });
+
+            modelBuilder.Entity("projectaardvarkx2.Entities.AttributeValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DeletedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastModifiedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.ToTable("Attributes");
                 });
 
             modelBuilder.Entity("projectaardvarkx2.Entities.Category", b =>
@@ -527,6 +576,19 @@ namespace projectaardvarkx2.data.migrations
                     b.Navigation("AttachmentType");
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("projectaardvarkx2.Entities.AttributeValue", b =>
+                {
+                    b.HasOne("projectaardvarkx2.Entities.Asset", null)
+                        .WithMany("Attributes")
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("projectaardvarkx2.Entities.Asset", b =>
+                {
+                    b.Navigation("Attributes");
                 });
 #pragma warning restore 612, 618
         }

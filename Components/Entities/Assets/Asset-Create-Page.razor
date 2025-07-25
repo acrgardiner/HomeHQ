@@ -9,6 +9,7 @@
 @inject IEntityService<WarrantyType> WarrantyTypeService
 @inject IEntityService<AttachmentType> AttachmentTypeService
 @inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<AttributeValue> AttributeService
 @inject IFileStorageService FileStorageService
 
 @inject ICurrentUserService CurrentUser
@@ -41,30 +42,53 @@
             </MudSelect>
             <MudDatePicker @bind-Date="asset.WarrantyExpiration" Label="Warranty Expiration" />
 
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attributes</MudText>
+            <MudContainer Class="ma-4">
+                <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                    <MudButton Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    StartIcon="@Icons.Material.Filled.Add" OnClick="AddAttribute">
+                        Add Attribute
+                    </MudButton>
+                </MudStack>
+                @if (_attributes.Any())
+                {
+                    foreach (var attr in _attributes)
+                    {
+                        <MudStack Row="true" Spacing="2" Class="mb-2">
+                            <MudTextField @bind-Value="attr.Name" Label="Attribute" Required="true" />
+                            <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                           Size="Size.Small" OnClick="@(() => _attributes.Remove(attr))" />
+                        </MudStack>
+                    }
+                }
+            </MudContainer>
+
             <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
             <MudContainer Class="ma-4">
                 <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
                     @if (IsMobile)
                     {
                         <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                            FilesChanged="AddAttachment"
-                            accept="image/*" Capture="environment"
+                        FilesChanged="AddAttachment"
+                        accept="image/*" Capture="environment"
                         >
                             <ActivatorContent>
                                 <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.Camera">
+                                Color="Color.Primary"
+                                StartIcon="@Icons.Material.Filled.Camera">
                                     Take Photo
                                 </MudButton>
                             </ActivatorContent>
                         </MudFileUpload>
                         <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                            FilesChanged="AddAttachment"
-                                       accept="image/*">
+                        FilesChanged="AddAttachment"
+                        accept="image/*">
                             <ActivatorContent>
                                 <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.Image">
+                                Color="Color.Primary"
+                                StartIcon="@Icons.Material.Filled.Image">
                                     Gallery
                                 </MudButton>
                             </ActivatorContent>
@@ -73,12 +97,12 @@
                     else
                     {
                         <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                            FilesChanged="AddAttachment"
-                                       accept="image/*;application/pdf;capture=camera">
+                        FilesChanged="AddAttachment"
+                        accept="image/*;application/pdf;capture=camera">
                             <ActivatorContent>
                                 <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.AttachFile">
+                                Color="Color.Primary"
+                                StartIcon="@Icons.Material.Filled.AttachFile">
                                     Add Attachment
                                 </MudButton>
                             </ActivatorContent>
@@ -147,6 +171,7 @@
     private static readonly Guid? nullGuid = null;
 
     private List<Attachment_wfile> _attachments = new();
+    private List<AttributeValue> _attributes = new();
     //private long maxFileSize = 1024 * 1024 * 15;
     private int maxAllowedFiles = 3;
     private bool _uploading = false;
@@ -172,7 +197,7 @@
                 return;
             }
 
-            defaultAttachmentTypeId = attachmentTypes.First().Id;
+            defaultAttachmentTypeId = attachmentTypes.Where(at => at.Default).First().Id;
 
             if (asset.PurchaseDate == default)
                 asset.PurchaseDate = DateTime.Today;
@@ -182,6 +207,11 @@
             Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
             Logger.LogError(ex, "Error initializing CreateAsset components");
         }
+    }
+
+    private async Task AddAttribute()
+    {
+        _attributes.Add(new AttributeValue());
     }
 
     private void AddAttachment(IReadOnlyList<IBrowserFile> files)
@@ -257,6 +287,24 @@
         }
     }
 
+    private async Task SaveAttributes(Guid Id)
+    {
+        try
+        {
+            foreach (var attr in _attributes)
+            {
+                attr.ParentId = Id;
+
+                await AttributeService.AddAsync(attr);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save attributes");
+            Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task HandleValidSubmit()
     {
         try
@@ -267,6 +315,7 @@
 
             var newAsset = await AssetService.AddAsync(asset);
 
+            await SaveAttributes(newAsset.Id);
             await SaveAttachments(newAsset.Id);
 
             Snackbar.Add("Asset created successfully.", Severity.Success);
@@ -292,5 +341,23 @@
     private async void OnChangeWarrantyType()
     {
         Snackbar.Add($"Warranty Type changed.", Severity.Info);
+
+        if (asset.WarrantyTypeId == nullGuid)
+        {
+            asset.WarrantyExpiration = null;
+        }
+        else
+        {
+            var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
+            if (warrantyType != null)
+            {
+                if (warrantyType.Years is not null)
+                    asset.WarrantyExpiration = DateTime.Today.AddYears(warrantyType.Years.Value);
+                if (warrantyType.Months is not null)
+                    asset.WarrantyExpiration = DateTime.Today.AddMonths(warrantyType.Months.Value);
+                if (warrantyType.Days is not null)
+                    asset.WarrantyExpiration = DateTime.Today.AddDays(warrantyType.Days.Value);
+            }
+        }
     }
 }

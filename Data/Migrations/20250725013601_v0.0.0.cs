@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace projectaardvarkx2.data.migrations
 {
     /// <inheritdoc />
-    public partial class V000 : Migration
+    public partial class v000 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,6 +16,7 @@ namespace projectaardvarkx2.data.migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Default = table.Column<bool>(type: "INTEGER", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -106,37 +107,6 @@ namespace projectaardvarkx2.data.migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WarrantyTypes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Attachments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    AttachmentTypeId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    LocalFileName = table.Column<string>(type: "TEXT", nullable: false),
-                    OriginFileName = table.Column<string>(type: "TEXT", nullable: false),
-                    ContentType = table.Column<string>(type: "TEXT", nullable: false),
-                    Extension = table.Column<string>(type: "TEXT", nullable: false),
-                    FileSize = table.Column<float>(type: "REAL", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
-                    CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
-                    CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
-                    LastModifiedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    DeletedBy = table.Column<string>(type: "TEXT", nullable: true),
-                    DeletedOn = table.Column<DateTime>(type: "TEXT", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Attachments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Attachments_AttachmentTypes_AttachmentTypeId",
-                        column: x => x.AttachmentTypeId,
-                        principalTable: "AttachmentTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -280,6 +250,70 @@ namespace projectaardvarkx2.data.migrations
                         onDelete: ReferentialAction.SetNull);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Attachments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    AttachmentTypeId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    LocalFileName = table.Column<string>(type: "TEXT", nullable: false),
+                    OriginFileName = table.Column<string>(type: "TEXT", nullable: false),
+                    ContentType = table.Column<string>(type: "TEXT", nullable: false),
+                    Extension = table.Column<string>(type: "TEXT", nullable: false),
+                    FileSize = table.Column<float>(type: "REAL", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    LastModifiedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DeletedBy = table.Column<string>(type: "TEXT", nullable: true),
+                    DeletedOn = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attachments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Attachments_Assets_ParentId",
+                        column: x => x.ParentId,
+                        principalTable: "Assets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Attachments_AttachmentTypes_AttachmentTypeId",
+                        column: x => x.AttachmentTypeId,
+                        principalTable: "AttachmentTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Attributes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    Value = table.Column<string>(type: "TEXT", nullable: true),
+                    AssetId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    LastModifiedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DeletedBy = table.Column<string>(type: "TEXT", nullable: true),
+                    DeletedOn = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attributes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Attributes_Assets_AssetId",
+                        column: x => x.AssetId,
+                        principalTable: "Assets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Assets_CategoryId",
                 table: "Assets",
@@ -294,6 +328,16 @@ namespace projectaardvarkx2.data.migrations
                 name: "IX_Attachments_AttachmentTypeId",
                 table: "Attachments",
                 column: "AttachmentTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attachments_ParentId",
+                table: "Attachments",
+                column: "ParentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attributes_AssetId",
+                table: "Attributes",
+                column: "AssetId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoleClaims_RoleId",
@@ -337,10 +381,10 @@ namespace projectaardvarkx2.data.migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Assets");
+                name: "Attachments");
 
             migrationBuilder.DropTable(
-                name: "Attachments");
+                name: "Attributes");
 
             migrationBuilder.DropTable(
                 name: "RoleClaims");
@@ -358,19 +402,22 @@ namespace projectaardvarkx2.data.migrations
                 name: "UserTokens");
 
             migrationBuilder.DropTable(
-                name: "Categories");
-
-            migrationBuilder.DropTable(
-                name: "WarrantyTypes");
-
-            migrationBuilder.DropTable(
                 name: "AttachmentTypes");
+
+            migrationBuilder.DropTable(
+                name: "Assets");
 
             migrationBuilder.DropTable(
                 name: "Roles");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
+
+            migrationBuilder.DropTable(
+                name: "WarrantyTypes");
         }
     }
 }

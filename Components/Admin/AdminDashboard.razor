@@ -209,8 +209,8 @@
     private async Task GetWarrantiesExpiringSoon()
     {
         var dateFrom = DateTime.UtcNow;
-        var dateTo = DateTime.UtcNow.AddYears(100);
-        _warrantyExpirigSoon = (await AssetService.GetAsync(filter: x => x.WarrantyExpiration.HasValue && x.WarrantyExpiration > dateFrom && x.WarrantyExpiration < dateTo, 
+        var dateTo = DateTime.UtcNow.AddYears(1);
+        _warrantyExpirigSoon = (await AssetService.GetAsync(filter: x => x.WarrantyExpiration.HasValue && x.WarrantyExpiration > dateFrom && x.WarrantyExpiration < dateTo,
                 orderby: attach => attach.WarrantyExpiration,
                 descending: true,
                 take: 10,
