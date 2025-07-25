@@ -74,7 +74,7 @@ public class ContextSeed
             return;
 
         await context.AttachmentTypes.AddRangeAsync(
-            new AttachmentType { Id = new Guid(), Name = "Receipt" }
+            new AttachmentType { Id = new Guid(), Name = "Receipt", Default = true }
             , new AttachmentType { Id = new Guid(), Name = "Manual" }
         );
 

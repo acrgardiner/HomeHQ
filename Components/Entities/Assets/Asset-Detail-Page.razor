@@ -8,19 +8,17 @@
 
 @inject ISnackbar Snackbar
 @inject ILogger<Asset_Detail_Page> Logger
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudToolBar Gutters="false">
+        <MudText Typo="Typo.h5">Asset</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Edit" Color="Color.Info" OnClick="OpenEdit"/>
+        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Error" OnClick="OpenDeleteDialog" />
+    </MudToolBar>
     <MudGrid>
-        <MudItem xs="12">
-            <MudText Typo="Typo.h5">Asset</MudText>
-        </MudItem>
-        <MudItem xs="2">
-            <MudText Color="Color.Primary">ID:</MudText>
-        </MudItem>
-        <MudItem xs="4">
-            <MudText>@Id</MudText>
-        </MudItem>
         <MudFlexBreak />
         <MudItem xs="2">
             <MudText Color="Color.Primary" >Name:</MudText>
@@ -38,7 +36,7 @@
             <MudText Color="Color.Primary">Purchase Date:</MudText>
         </MudItem>
         <MudItem xs="4">
-            <MudText>@asset?.PurchaseDate</MudText>
+            <MudText>@(Formatter.FormatDate(asset?.PurchaseDate))</MudText>
         </MudItem>
         <MudItem xs="2">
             <MudText Color="Color.Primary">Purchase Amount:</MudText>
@@ -56,9 +54,12 @@
             <MudText Color="Color.Primary">Warranty Expiration:</MudText>
         </MudItem>
         <MudItem xs="4">
-            <MudText>@asset?.WarrantyExpiration</MudText>
+            <MudText> @(Formatter.FormatDate(asset?.WarrantyExpiration))</MudText>
         </MudItem>
     </MudGrid>
+
+    <AttributeList_view ParentId="@asset?.Id"/>
+
     <AttachmentList_view ParentId="@asset?.Id" />
 </MudContainer>
 
@@ -78,5 +79,38 @@
         {
             Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
         }
+    }
+
+    @* Delete Dialog  *@
+    public async Task OpenDeleteDialog()
+    {
+        var parameters = new DialogParameters
+            {
+                ["Id"] = asset.Id,
+                ["Message"] = $"Are you sure you want to delete this Asset? This action cannot be undone."
+            };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                await AssetService.DeleteAsync(asset.Id);
+                Snackbar.Add($"Asset deleted successfully", Severity.Success);
+                Navigation.NavigateTo("/assets");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete asset");
+                Snackbar.Add($"Failed to delete Asset", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEdit()
+    {
+        Navigation.NavigateTo($"/assets/edit/{asset.Id.ToString()}");
     }
 }

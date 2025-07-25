@@ -9,8 +9,8 @@
 @inject IEntityService<Attachment> AttachmentService
 @inject IDialogService DialogService
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
-    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6" Gutters="false">
+    <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4">Attachments</MudText>
     <MudPaper Class="p-4">
         <MudDataGrid T="Attachment" Items="@_attachments"
         Hideable="true" Hover="true" Dense="true"
