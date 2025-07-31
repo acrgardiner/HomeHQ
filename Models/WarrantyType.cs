@@ -3,8 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace projectaardvarkx2.Entities;
 
-public class WarrantyType : AuditableEntity, IEntity
+public class WarrantyType : AuditableEntity, IEntity, IEntityNamed
 {
+    public string Name { get; set; }
     public int? Days { get; set; }
     public int? Months { get; set; }
     public int? Years { get; set; }

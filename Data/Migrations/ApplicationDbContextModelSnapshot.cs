@@ -217,10 +217,6 @@ namespace projectaardvarkx2.data.migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("OriginFileName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -284,6 +280,9 @@ namespace projectaardvarkx2.data.migrations
                     b.Property<Guid?>("AssetId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Attribute")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -302,10 +301,6 @@ namespace projectaardvarkx2.data.migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("LastModifiedOn")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ParentId")

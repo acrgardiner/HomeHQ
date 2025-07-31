@@ -42,31 +42,28 @@
             </MudSelect>
             <MudDatePicker @bind-Date="asset.WarrantyExpiration" Label="Warranty Expiration" />
 
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attributes</MudText>
-            <MudContainer Class="ma-4">
-                <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
-                    <MudButton Variant="Variant.Filled"
-                    Color="Color.Primary"
-                    StartIcon="@Icons.Material.Filled.Add" OnClick="AddAttribute">
-                        Add Attribute
-                    </MudButton>
-                </MudStack>
-                @if (_attributes.Any())
-                {
-                    foreach (var attr in _attributes)
-                    {
-                        <MudStack Row="true" Spacing="2" Class="mb-2">
-                            <MudTextField @bind-Value="attr.Name" Label="Attribute" Required="true" />
-                            <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                           Size="Size.Small" OnClick="@(() => _attributes.Remove(attr))" />
-                        </MudStack>
-                    }
-                }
-            </MudContainer>
+            <MudText Typo="Typo.subtitle1" Color="Color.Primary">Attributes</MudText>
 
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
-            <MudContainer Class="ma-4">
+            @if (_attributes.Any())
+            {
+                foreach (var attr in _attributes)
+                {
+                    <MudStack Row="true" Spacing="2" Class="mb-2" Gutters="false">
+                        <MudTextField @bind-Value="attr.Attribute" Label="Attribute" Required="true" />
+                        <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                        Size="Size.Small" OnClick="@(() => _attributes.Remove(attr))" />
+                    </MudStack>
+                }
+            }
+            <MudStack AlignItems="AlignItems.Start" Row>
+                <MudIconButton Variant="Variant.Filled"
+                                Color="Color.Primary"
+                                Icon="@Icons.Material.Filled.Add" OnClick="AddAttribute" />
+            </MudStack>
+
+            <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">Attachments</MudText>
+            <MudContainer Class="ma-4" Gutters="false">
                 <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
                     @if (IsMobile)
                     {
@@ -230,7 +227,6 @@
                     // Save Attachment entity
                     var attachment = new Attachment
                         {
-                            Name = "",
                             OriginFileName = file.Name,
                             Extension = fileExtension,
                             ContentType = file.ContentType,

@@ -11,7 +11,7 @@ using projectaardvarkx2.Data;
 namespace projectaardvarkx2.data.migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250725013601_v0.0.0")]
+    [Migration("20250729040711_v0.0.0")]
     partial class v000
     {
         /// <inheritdoc />
@@ -220,10 +220,6 @@ namespace projectaardvarkx2.data.migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("OriginFileName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -308,10 +304,6 @@ namespace projectaardvarkx2.data.migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("LastModifiedOn")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ParentId")

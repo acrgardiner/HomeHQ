@@ -56,7 +56,6 @@ namespace projectaardvarkx2.Services
 
                 var attachment = new Attachment
                 {
-                    Name = "",
                     ParentId = savedAsset.Id,
                     LocalFileName = safeFileName,
                     OriginFileName = Path.GetFileName(importFile),

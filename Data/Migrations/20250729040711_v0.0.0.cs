@@ -16,8 +16,8 @@ namespace projectaardvarkx2.data.migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Default = table.Column<bool>(type: "INTEGER", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Default = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -35,8 +35,8 @@ namespace projectaardvarkx2.data.migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Icon = table.Column<string>(type: "TEXT", nullable: true),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Icon = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -93,10 +93,10 @@ namespace projectaardvarkx2.data.migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     Days = table.Column<int>(type: "INTEGER", nullable: true),
                     Months = table.Column<int>(type: "INTEGER", nullable: true),
                     Years = table.Column<int>(type: "INTEGER", nullable: true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -220,12 +220,12 @@ namespace projectaardvarkx2.data.migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     CategoryId = table.Column<Guid>(type: "TEXT", nullable: true),
                     PurchaseDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     PurchaseAmount = table.Column<decimal>(type: "TEXT", nullable: true),
                     WarrantyTypeId = table.Column<Guid>(type: "TEXT", nullable: true),
                     WarrantyExpiration = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -262,7 +262,6 @@ namespace projectaardvarkx2.data.migrations
                     ContentType = table.Column<string>(type: "TEXT", nullable: false),
                     Extension = table.Column<string>(type: "TEXT", nullable: false),
                     FileSize = table.Column<float>(type: "REAL", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -293,9 +292,9 @@ namespace projectaardvarkx2.data.migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    Attribute = table.Column<string>(type: "TEXT", nullable: true),
                     Value = table.Column<string>(type: "TEXT", nullable: true),
                     AssetId = table.Column<Guid>(type: "TEXT", nullable: true),
-                    Name = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
