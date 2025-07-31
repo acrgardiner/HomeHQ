@@ -9,6 +9,9 @@ public interface IEntity
 public interface IEntity<TId> : IEntity
 {
     TId Id { get; }
-    string Name { get; }
-    //string Description { get; }
+}
+
+public interface IEntityNamed
+{
+    string Name { get; set; }
 }

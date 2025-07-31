@@ -10,6 +10,7 @@
 @inject IEntityService<WarrantyType> WarrantyTypeService
 @inject IEntityService<AttachmentType> AttachmentTypeService
 @inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<AttributeValue> AttributeService
 @inject IFileStorageService FileStorageService
 
 @inject ICurrentUserService CurrentUser
@@ -27,6 +28,7 @@
     private List<AttachmentType> attachmentTypes = new();
     private Guid defaultAttachmentTypeId;
     private List<Attachment_wfile> _attachments = new();
+    private List<AttributeValue> _attributes = new();
     private bool _uploading = false;
     private bool IsMobile;
 
@@ -63,10 +65,12 @@
                 filter: x => x.ParentId == Id,
                 orderby: x => x.CreatedOn,
                 descending: true,
-                take: 10,
                 includes: new List<Expression<Func<Attachment, object>>> { x => x.AttachmentType }
             )).ToList();
             _attachments = existingAttachments.Select(a => new Attachment_wfile { attachment = a, file = null }).ToList();
+            _attributes = (await AttributeService.GetAsync(
+                filter: x => x.ParentId == Id
+            )).ToList();
         }
         catch (Exception ex)
         {
@@ -87,7 +91,6 @@
                     var fileExtension = Path.GetExtension(file.Name);
                     var attachment = new Attachment
                         {
-                            Name = "",
                             OriginFileName = file.Name,
                             Extension = fileExtension,
                             ContentType = file.ContentType,
@@ -125,6 +128,16 @@
         }
     }
 
+    private async Task Remove(AttributeValue item)
+    {
+        _attributes.Remove(item);
+        // Optionally, delete from server if item.attachment.Id != Guid.Empty
+        if (item.Id != Guid.Empty)
+        {
+            await AttributeService.DeleteAsync(item.Id);
+        }
+    }
+
     private async Task SaveAttachments(Guid Id)
     {
         try
@@ -152,6 +165,7 @@
             if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
 
             await AssetService.UpdateAsync(asset);
+            await SaveAttributes(asset.Id);
             await SaveAttachments(asset.Id);
 
             Snackbar.Add("Asset updated successfully.", Severity.Success);
@@ -196,6 +210,29 @@
             }
         }
     }
+
+    private async Task AddAttribute()
+    {
+        _attributes.Add(new AttributeValue());
+    }
+
+    private async Task SaveAttributes(Guid Id)
+    {
+        try
+        {
+            foreach (var attr in _attributes.Where(w => w.Id == Guid.Empty))
+            {
+                attr.ParentId = Id;
+
+                await AttributeService.AddAsync(attr);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save attributes");
+            Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
+        }
+    }
 }
 
 <MudPaper Class="pa-6 mx-auto" MaxWidth="MaxWidth.Large">
@@ -222,8 +259,29 @@
             </MudSelect>
             <MudDatePicker @bind-Date="asset.WarrantyExpiration" Label="Warranty Expiration" />
 
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
-            <MudContainer Class="ma-4">
+            <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">Attributes</MudText>
+            <MudContainer Class="ma-4" Gutters="false">
+                @if (_attributes.Any())
+                {
+                    foreach (var attr in _attributes)
+                    {
+                        <MudStack Row="true" Spacing="2" Class="mb-2">
+                            <MudTextField @bind-Value="attr.Attribute" Label="Attribute" Required="true" />
+                            <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                           Size="Size.Small" OnClick="@(() => Remove(attr))" />
+                        </MudStack>
+                    }
+                }
+                <MudStack AlignItems="AlignItems.Start" Row>
+                    <MudIconButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Icon="@Icons.Material.Filled.Add" OnClick="AddAttribute" />
+                </MudStack>
+            </MudContainer>
+
+            <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">Attachments</MudText>
+            <MudContainer Class="ma-4" Gutters="false">
                 <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
                     @if (IsMobile)
                     {

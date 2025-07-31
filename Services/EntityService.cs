@@ -20,7 +20,14 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
         return await _repository.GetAllAsync();
     }
 
-    public async Task<IEnumerable<T>> GetAsync<TKey>(Expression<Func<T, bool>>? filter = null, Expression<Func<T, TKey>>? orderby = null, bool descending = false, int? skip = null, int? take = null, List<Expression<Func<T, object>>>? includes = null)
+    public async Task<IEnumerable<T>> GetAsync(
+        Expression<Func<T, bool>>? filter = null,
+        Expression<Func<T, object>>? orderby = null,
+        bool descending = false,
+        int? skip = null,
+        int? take = null,
+        List<Expression<Func<T, object>>>? includes = null
+    )
     {
         return await _repository.GetAsync(filter, orderby, descending, skip, take, includes);
     }

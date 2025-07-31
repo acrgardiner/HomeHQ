@@ -3,8 +3,9 @@ using projectaardvarkx2.Entities;
 
 namespace projectaardvarkx2.Entities;
 
-public class Asset : AuditableEntity, IEntity
+public class Asset : AuditableEntity, IEntity, IEntityNamed
 {
+    public string Name { get; set; }
     public Guid? CategoryId { get; set; }
     public Category? Category { get; set; }
     public DateTime? PurchaseDate { get; set; }

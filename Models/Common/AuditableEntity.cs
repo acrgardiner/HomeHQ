@@ -14,10 +14,4 @@ public abstract class AuditableEntity<T> : BaseEntity<T>, IAuditableEntity, ISof
     public DateTime? DeletedOn { get; set; }
 
     internal bool IsDeleted;
-
-    //protected AuditableEntity()
-    //{
-    //    CreatedOn = DateTime.UtcNow;
-    //    LastModifiedOn = DateTime.UtcNow;
-    //}
 }

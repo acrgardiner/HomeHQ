@@ -8,7 +8,7 @@ public interface IEntityService<T> where T : AuditableEntity, IEntity
 {
     Task<IEnumerable<T>> GetAllAsync();
     Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null);
-    Task<IEnumerable<T>> GetAsync<TKey>(Expression<Func<T, bool>>? filter = null, Expression<Func<T, TKey>>? orderby = null, bool descending = false, int? skip = null, int? take = null, List<Expression<Func<T, object>>>? includes = null);
+    Task<IEnumerable<T>> GetAsync(Expression<Func<T, bool>>? filter = null, Expression<Func<T, object>>? orderby = null, bool descending = false, int? skip = null, int? take = null, List<Expression<Func<T, object>>>? includes = null);
     Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null);
     Task<T> AddAsync(T entity);
     Task<T> UpdateAsync(T entity);
