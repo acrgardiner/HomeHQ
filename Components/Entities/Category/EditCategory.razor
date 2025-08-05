@@ -1,6 +1,10 @@
 ﻿@using projectaardvarkx2.Identity
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Services
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
 @inject IEntityService<Category> CategoryService
 @inject ISnackbar Snackbar
 

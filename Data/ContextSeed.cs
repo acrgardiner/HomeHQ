@@ -89,7 +89,7 @@ public class ContextSeed
 
         await context.WarrantyTypes.AddRangeAsync(
             new WarrantyType { Id = new Guid(), Name = "6 Month", Days = null, Months = 6, Years = null },
-            new WarrantyType { Id = new Guid(), Name = "12 Month", Days = null, Months = 12, Years = null },
+            new WarrantyType { Id = new Guid(), Name = "12 Month", Days = null, Months = 12, Years = null, Default = true },
             new WarrantyType { Id = new Guid(), Name = "2 Year", Days = null, Months = null, Years = 2 },
             new WarrantyType { Id = new Guid(), Name = "5 Year", Days = null, Months = null, Years = 5 },
             new WarrantyType { Id = new Guid(), Name = "10 Year", Days = null, Months = null, Years = 10 },

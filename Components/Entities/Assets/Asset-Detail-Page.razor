@@ -3,6 +3,9 @@
 @using projectaardvarkx2.Services
 @using projectaardvarkx2.Helpers
 @using projectaardvarkx2.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
 
 @inject IEntityService<Asset> AssetService
 
@@ -40,9 +43,6 @@
         </MudItem>
         <MudItem xs="2">
             <MudText Color="Color.Primary">Purchase Amount:</MudText>
-        </MudItem>
-        <MudItem xs="4">
-            <MudText>@asset?.PurchaseAmount</MudText>
         </MudItem>
         <MudItem xs="2">
             <MudText Color="Color.Primary">Warranty Type:</MudText>

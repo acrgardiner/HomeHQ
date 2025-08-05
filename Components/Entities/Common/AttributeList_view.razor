@@ -5,6 +5,8 @@
 @using projectaardvarkx2.Helpers
 @using System.Linq.Expressions
 
+@attribute [Authorize()]
+
 @inject ISnackbar Snackbar
 @inject IEntityService<AttributeValue> AttributeService
 @inject IDialogService DialogService

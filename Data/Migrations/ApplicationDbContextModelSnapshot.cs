@@ -152,9 +152,6 @@ namespace projectaardvarkx2.data.migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal?>("PurchaseAmount")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime?>("PurchaseDate")
                         .HasColumnType("TEXT");
 
@@ -368,6 +365,9 @@ namespace projectaardvarkx2.data.migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("Days")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Default")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DeletedBy")

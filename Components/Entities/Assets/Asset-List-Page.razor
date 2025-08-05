@@ -4,6 +4,9 @@
 @using System.Linq.Expressions
 @using projectaardvarkx2.Components.Entities.Common
 @using projectaardvarkx2.Helpers
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
 
 @inject IEntityService<Asset> AssetService
 @inject IDialogService DialogService
@@ -11,30 +14,99 @@
 @inject ILogger<Asset_List_Page> Logger
 @inject NavigationManager NavigationManager
 
-<MudContainer MaxWidth="@MaxWidth.Medium" Class="mt-6">
-    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Assets</MudText>
-    <MudPaper Class="p-4">
-        <EntityList TEntityType="Asset" Plural="Assets" Singular="Asset" EntityService="AssetService"
+<PageTitle>Assets - Project Aardvark x2</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <!-- Header and actions -->
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBox" Class="mr-3" Size="Size.Large" />
+                Assets Management
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Manage your assets, track warranties, and organize documentation
+            </MudText>
+        </div>
+        
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            @* <MudButton Variant="Variant.Outlined" 
+                      Color="Color.Default" 
+                      StartIcon="@Icons.Material.Filled.Upload"
+                      OnClick="@(() => { /* TODO: Import functionality */ })"
+                      Class="entity-action-btn">
+                Import
+            </MudButton> *@
+            
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Add" 
+                      OnClick="OpenCreate"
+                      Class="entity-action-btn">
+                New Asset
+            </MudButton>
+        </MudStack>
+    </div>
+
+    <!-- Statistics Cards -->
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="6" sm="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">Total Assets</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary">@_totalAssets</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Primary" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBox" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="6" sm="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Warranties Expiring</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Warning">@_warrantiesExpiring</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Warning" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Main Content Card -->
+    <MudCard Elevation="2" Class="assets-list-card">
+        <EntityList TEntityType="Asset" 
+                    Plural="Assets" 
+                    Singular="Asset" 
+                    EntityService="AssetService"
                     Logger="Logger"
                     Includes="@(Includes)"
                     Columns="@(
-                    new List<(Func<Asset, object?>, string)>{
-                        (new Func<Asset, object?>(x => x.Name), "Name"),
-                        (new Func<Asset, object?>(x => x.Category?.Icon + " " + x.Category?.Name), "Category"),
-                        (new Func<Asset, object?>(x => x.PurchaseDate.HasValue ? x.PurchaseDate.Value.ToString("d") : ""), "Purchase Date"),
-                        (new Func<Asset, object?>(x => x.PurchaseAmount.HasValue ? x.PurchaseAmount.Value.ToString("c0") : ""), "Purchase Amount"),
-                        (new Func<Asset, object?>(x => x.WarrantyType?.Name), "Warranty"),
-                        (new Func<Asset, object?>(x => x.WarrantyExpiration.HasValue ? x.WarrantyExpiration.Value.ToString("d") : ""), "Warranty Expiration"),
-                    }
-                )"
+                        new List<(Func<Asset, object?>, string)>{
+                            (new Func<Asset, object?>(x => x.Name), "Asset"),
+                            (new Func<Asset, object?>(x => x.Category?.Title ?? "Uncategorized"), "Category"),
+                            (new Func<Asset, object?>(x => x.PurchaseDate.HasValue ? x.PurchaseDate.Value.ToString("MMM dd, yyyy") : ""), "Purchase Date"),
+                            (new Func<Asset, object?>(x => Formatter.RenderWarrantyInfo(x)), "Warranty"),
+                        }
+                    )"
                     ItemActions="AssetActions"
                     EnableItemDelete="true"
-        >
+                    EnableExport="true">
             <ToolbarActions>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreate" Class="mx-1"> New Asset </MudButton>
+                <!-- Additional toolbar actions can go here -->
             </ToolbarActions>
         </EntityList>
-    </MudPaper>
+    </MudCard>
 </MudContainer>
 
 @code {
@@ -42,11 +114,64 @@
     {
         new EntityAction<Asset>
         {
-            Icon = Icons.Material.Filled.Details,
-            Tooltip = "Details",
+            Icon = Icons.Material.Filled.Visibility,
+            Tooltip = "View Details",
+            Action = async (asset) => await OpenDetails(asset)
+        },
+        new EntityAction<Asset>
+        {
+            Icon = Icons.Material.Filled.Edit,
+            Tooltip = "Edit Asset",
             Action = async (asset) => await OpenEdit(asset)
         }
     };
+
+    private List<BreadcrumbItem> _breadcrumbItems = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem("Dashboard", href: "/", icon: Icons.Material.Filled.Home),
+        new BreadcrumbItem("Assets", href: null, disabled: true, icon: Icons.Material.Filled.AccountBox),
+    };
+
+    // Stats
+    private int _totalAssets = 0;
+    private int _warrantiesExpiring = 0;
+    private int _categoriesCount = 0;
+
+    List<Expression<Func<Asset, object>>>? Includes => new List<Expression<Func<Asset, object>>>
+    {
+        x => x.Category,
+        x => x.WarrantyType
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatistics();
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            var assets = await AssetService.GetAllAsync(Includes);
+            
+            _totalAssets = assets.Count();
+            
+            // Count warranties expiring in next 30 days
+            var thirtyDaysFromNow = DateTime.Today.AddDays(30);
+            _warrantiesExpiring = assets.Where(a => a.WarrantyExpiration.HasValue && 
+                                                   a.WarrantyExpiration.Value <= thirtyDaysFromNow &&
+                                                   a.WarrantyExpiration.Value >= DateTime.Today).Count();
+            
+            // Get unique categories count
+            _categoriesCount = assets.Where(a => a.Category != null).Select(a => a.CategoryId).Distinct().Count();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load asset statistics");
+        }
+    }
 
     private Task ShowGalleryAsync(Attachment attachment)
     {
@@ -57,20 +182,19 @@
         return DialogService.ShowAsync<ViewImage>("View Attachment", param);
     }
 
-    List<Expression<Func<Asset, object>>>? Includes => new List<Expression<Func<Asset, object>>>
-    {
-        x => x.Category,
-        x => x.WarrantyType
-    };
-
     private void OpenCreate()
     {
         NavigationManager.NavigateTo("/assets/create");
     }
 
-    private async Task OpenEdit(Asset asset)
+    private async Task OpenDetails(Asset asset)
     {
         NavigationManager.NavigateTo($"/assets/{asset.Id}");
+    }
+
+    private async Task OpenEdit(Asset asset)
+    {
+        NavigationManager.NavigateTo($"/assets/edit/{asset.Id}");
     }
 }
 

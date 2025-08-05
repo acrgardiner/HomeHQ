@@ -9,6 +9,7 @@ public class WarrantyType : AuditableEntity, IEntity, IEntityNamed
     public int? Days { get; set; }
     public int? Months { get; set; }
     public int? Years { get; set; }
+    public bool Default { get; set; } = false;
 
     //[NotMapped]
     //public List<Attachment> Attachments { get; set; } = [];

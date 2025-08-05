@@ -4,6 +4,9 @@
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Helpers
 @using System.Linq.Expressions
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
 
 @inject ISnackbar Snackbar
 @inject IEntityService<Attachment> AttachmentService

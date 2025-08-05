@@ -1,6 +1,10 @@
 ﻿@using projectaardvarkx2.Identity
+@using Microsoft.AspNetCore.Authorization
+
 @inject IUserService UserService
 @inject ISnackbar Snackbar
+
+@attribute [Authorize(Roles = "Admin")]
 
 <MudDialog>
     <TitleContent>

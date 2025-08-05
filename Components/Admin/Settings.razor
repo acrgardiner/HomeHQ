@@ -8,6 +8,9 @@
 @using projectaardvarkx2.Components.Entities.Category
 @using projectaardvarkx2.Components.Entities.Attachments
 @using projectaardvarkx2.Components.Entities.WarrantyType
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
 
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<Attachment> AttachmentService

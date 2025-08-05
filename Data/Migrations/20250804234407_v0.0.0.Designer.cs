@@ -11,7 +11,7 @@ using projectaardvarkx2.Data;
 namespace projectaardvarkx2.data.migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250729040711_v0.0.0")]
+    [Migration("20250804234407_v0.0.0")]
     partial class v000
     {
         /// <inheritdoc />
@@ -153,9 +153,6 @@ namespace projectaardvarkx2.data.migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("PurchaseAmount")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("PurchaseDate")
@@ -371,6 +368,9 @@ namespace projectaardvarkx2.data.migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("Days")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Default")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DeletedBy")
