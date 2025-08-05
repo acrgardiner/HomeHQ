@@ -22,36 +22,36 @@
 @inject NavigationManager Navigation
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
-    <!-- Header -->
-    <div class="d-flex align-center mb-6">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" 
-                      Size="Size.Medium" 
-                      OnClick="GoBack" 
-                      Class="mr-3" />
-        <div class="flex-grow-1">
-            <MudText Typo="Typo.h4" Color="Color.Primary">New Asset</MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                Add a new asset to your inventory with all relevant details
-            </MudText>
-        </div>
-
-        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       ButtonType="ButtonType.Submit"
-                       StartIcon="@Icons.Material.Filled.Save"
-                       Class="asset-action-btn">
-                Save
-            </MudButton>
-        </MudStack>
-    </div>
-
     <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
         <DataAnnotationsValidator />
-        
+
+        <!-- Header -->
+        <div class="d-flex align-center mb-6">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" 
+                          Size="Size.Medium" 
+                          OnClick="GoBack" 
+                          Class="mr-3" />
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.h4" Color="Color.Primary">New Asset</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Add a new asset to your inventory with all relevant details
+                </MudText>
+            </div>
+
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           ButtonType="ButtonType.Submit"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Class="asset-action-btn">
+                    Save
+                </MudButton>
+            </MudStack>
+        </div>
+
         <MudGrid Spacing="4">
-            <!-- Basic Information Card -->
             <MudItem xs="12" lg="8">
+                <!-- Basic Information Card -->
                 <MudCard Elevation="2" Class="form-card">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -73,7 +73,6 @@
                                     Adornment="Adornment.Start"
                                     AdornmentIcon="@Icons.Material.Filled.Label" />
                             </MudItem>
-                            
                             <MudItem xs="12" md="6">
                                 <MudSelect @bind-Value="asset.CategoryId" 
                                     T="Guid?" 
@@ -99,7 +98,6 @@
                                     }
                                 </MudSelect>
                             </MudItem>
-                            
                             <MudItem xs="12" md="6">
                                 <MudDatePicker @bind-Date="asset.PurchaseDate" 
                                              Label="Purchase Date" 

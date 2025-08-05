@@ -231,9 +231,9 @@ textarea:focus-visible {
     border-radius: 12px !important;
 }
 
-    .form-card:hover {
-        box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
-    }
+.form-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+}
 
 .attachments-card {
     position: sticky;
@@ -300,6 +300,7 @@ textarea:focus-visible {
 
 .entity-field {
     margin-bottom: 16px;
+    display: block;
 }
 
 .stats-card:hover {
