@@ -190,7 +190,7 @@
                     </MudCardHeader>
                     <MudDivider />
                     <MudCardContent>
-                        @if (_attributes.Any())
+                        @* @if (_attributes.Any())
                         {
                             <MudGrid Spacing="3">
                                 @foreach (var attr in _attributes)
@@ -203,6 +203,26 @@
                                     </MudItem>
                                 }
                             </MudGrid>
+                        }*@
+                        @if (_attributes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var attr in _attributes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2" AlignItems="Center">
+                                                <MudItem xs="12" sm="5">
+                                                    <MudText Typo="Typo.body1" Class="entity-value">@attr.Attribute</MudText>
+                                                </MudItem>
+                                                <MudItem xs="10" sm="5">
+                                                    <MudText Typo="Typo.body1" Class="entity-value">@attr.Value</MudText>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
                         }
                         else
                         {
