@@ -279,9 +279,27 @@ textarea:focus-visible {
 }
 
 .entity-list-card {
-    b .stats-card {
     transition: all 0.2s ease;
     border-radius: 12px !important;
+}
+
+.entity-label {
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.entity-value {
+    font-weight: 500;
+    color: var(--mud-palette-text-primary);
+    word-break: break-word;
+}
+
+.entity-field {
+    margin-bottom: 16px;
 }
 
 .stats-card:hover {
