@@ -1,4 +1,4 @@
-﻿@page "/dashboard"
+﻿@page "/admindashboard"
 @using MudBlazor
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Services
@@ -7,6 +7,9 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Linq.Expressions
 @using projectaardvarkx2.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
 
 @inject IUserService UserService
 @inject IEntityService<Asset> AssetService
@@ -17,34 +20,74 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+<PageTitle>Admin Dashboard - Project Aardvark x2</PageTitle>
 
-    @if (_loading)
-    {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
-    }
-    else
-    {
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                Admin Dashboard
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Admin based dashboard reporting
+            </MudText>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Users</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary">@_usercount</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Primary" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Attachments</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Info">@_attachmentcount</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Info" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.AttachFile" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Files Stored</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Secondary">@(Formatter.FormatFileSize(_totalAttachmentSize))</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Secondary" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.Folder" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+
+
         <MudGrid GutterSize="3">
-            <MudItem xs="12" sm="4">
-                <MudPaper Elevation="4" Class="pa-4 mud-theme-primary">
-                    <MudText Typo="Typo.h6" Class="text-white">Users</MudText>
-                    <MudText Typo="Typo.h3" Class="text-white">@_usercount</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="4">
-                <MudPaper Elevation="4" Class="pa-4 mud-theme-success">
-                    <MudText Typo="Typo.h6" Class="text-white">Attachments</MudText>
-                    <MudText Typo="Typo.h3" Class="text-white">@_attachmentcount</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="4">
-                <MudPaper Elevation="4" Class="pa-4 mud-theme-error">
-                    <MudText Typo="Typo.h6" Class="text-white">Files Stored</MudText>
-                    <MudText Typo="Typo.h3" Class="text-white">@(Formatter.FormatFileSize(_totalAttachmentSize))</MudText>
-                </MudPaper>
-            </MudItem>
 
             @if (_largeAttach.Any())
             {
@@ -114,16 +157,6 @@
             }
 
             <MudItem xs="12">
-                <MudText Typo="Typo.h6" Class="mb-2">Activity by Month</MudText>
-                <MudChart T="int"
-                ChartType="ChartType.Line"
-                XAxisLabels="@_historyChartLabels"
-                ChartOptions="@_options"
-                ChartSeries="@_historyChartData"
-                Height="300px" AxisChartOptions="_axisChartOptions" />
-            </MudItem>
-
-            <MudItem xs="12">
                 <MudText Typo="Typo.h6" Class="mb-2">Pending Purge</MudText>
                 <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@_pendingPurgeData" InputLabels="@_pendingPurgeLabels">
                     <CustomGraphics>
@@ -133,7 +166,6 @@
                 </MudChart>
             </MudItem>
         </MudGrid>
-    }
 </MudContainer>
 
 @code {
@@ -145,11 +177,6 @@
 
     private List<Asset> _warrantyExpirigSoon;
     private float _totalAttachmentSize;
-
-    private string[] _historyChartLabels = Array.Empty<string>();
-    private List<ChartSeries> _historyChartData = new List<ChartSeries>();
-    public ChartOptions _options = new ChartOptions() { YAxisTicks = 5, LineStrokeWidth = 10};
-    private AxisChartOptions _axisChartOptions = new AxisChartOptions() { XAxisLabelRotation = 15 };
 
     private double[] _pendingPurgeData = { 0, 0, 0, 0, 0 };
     private string[] _pendingPurgeLabels = { "Assets", "Attachments", "Attachment Types", "Categories", "Warranty Types" };
@@ -164,14 +191,16 @@
         _loading = true;
         try
         {
-            List<Task> tasks = new List<Task>();
-            tasks.Add(UpdateUserCountAsync());
-            tasks.Add(UpdateAttachmentCountAsync());
-            tasks.Add(GetLargeFules());tasks.Add(GetLargeFules());
-            tasks.Add(GetTotalAttachmentSize());
-            tasks.Add(GetWarrantiesExpiringSoon());
-            tasks.Add(LoadHistoryChartDataAsync());
-            tasks.Add(GetDeletedPendingPurge());
+            List<Task> tasks = new List<Task>
+            {
+                UpdateUserCountAsync(),
+                UpdateAttachmentCountAsync(),
+                GetLargeFiles(),
+                GetTotalAttachmentSize(),
+                GetWarrantiesExpiringSoon(),
+                GetDeletedPendingPurge()
+            };
+            
 
             await Task.WhenAll(tasks);
         }
@@ -196,7 +225,7 @@
         _attachmentcount = await AttachmentService.CountAsync();
     }
 
-    private async Task GetLargeFules()
+    private async Task GetLargeFiles()
     {
         _largeAttach = (await AttachmentService.GetAsync(
             orderby: attach => attach.FileSize,
@@ -221,47 +250,6 @@
     private async Task GetTotalAttachmentSize()
     {
         _totalAttachmentSize = await AttachmentService.SumAsync( selector: asset => asset.FileSize );
-    }
-
-    private async Task LoadHistoryChartDataAsync()
-    {
-        try
-        {
-            // Get all attachments created in the last 12 months
-            var now = DateTime.UtcNow;
-            var firstOfMonth = new DateTime(now.Year, now.Month, 1);
-            var fromDate = firstOfMonth.AddMonths(-11);
-
-            // Prepare labels for the last 12 months
-            var months = Enumerable.Range(0, 12)
-                .Select(i => DateTime.UtcNow.AddMonths(-11 + i))
-                .ToArray();
-
-            _historyChartLabels = months
-                .Select(m => m.ToString("MMM yyyy"))
-                .ToArray();
-
-            //Prepare data for the chart
-            var attachGrouped = await AttachmentService.GetCountByPropertyAsync(a => a.CreatedOn.Year.ToString() + "-" + a.CreatedOn.Month.ToString(), a => a.CreatedOn >= fromDate);
-
-            var attachmentSeriesData = months
-                .Select(m =>
-                {
-                    if (attachGrouped.TryGetValue($"{m.Year}-{m.Month}", out var count))
-                    {
-                        return count;
-                    }
-                    return 0.0;
-                })
-                .ToArray();
-
-            _historyChartData.Add(new ChartSeries() { Name = "Attachment", Data = attachmentSeriesData, ShowDataMarkers = true });
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Error loading history chart data", Severity.Error);
-            Console.WriteLine($"Error loading history chart data: {ex.Message}");
-        }
     }
 
     private async Task GetDeletedPendingPurge()

@@ -1,6 +1,9 @@
-﻿@using projectaardvarkx2.FileStorage
+﻿@using Microsoft.AspNetCore.Authorization
+@using projectaardvarkx2.FileStorage
 @using projectaardvarkx2.Services
 @using projectaardvarkx2.Entities
+
+@attribute [Authorize()]
 
 @inject IFileStorageService FileStorageService
 @inject IEntityService<Attachment> AttachmentService

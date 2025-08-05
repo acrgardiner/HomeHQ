@@ -1,7 +1,9 @@
 ﻿@using projectaardvarkx2.Identity
-
 @using projectaardvarkx2.Services;
 @using projectaardvarkx2.Entities;
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
 
 @inject IEntityService<WarrantyType> WarrantyService;
 @inject ISnackbar Snackbar

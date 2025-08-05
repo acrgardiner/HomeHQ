@@ -1,9 +1,13 @@
 ﻿@page "/attachments"
+
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Services
 @using System.Linq.Expressions
 @using projectaardvarkx2.Components.Entities.Common
 @using projectaardvarkx2.Helpers
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
 
 @inject IEntityService<Attachment> AttachmentService
 @inject IDialogService DialogService
