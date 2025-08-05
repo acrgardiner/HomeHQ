@@ -28,12 +28,22 @@
                       Size="Size.Medium" 
                       OnClick="GoBack" 
                       Class="mr-3" />
-        <div>
-            <MudText Typo="Typo.h4" Color="Color.Primary">Create New Asset</MudText>
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.h4" Color="Color.Primary">New Asset</MudText>
             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                 Add a new asset to your inventory with all relevant details
             </MudText>
         </div>
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       ButtonType="ButtonType.Submit"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       Class="asset-action-btn">
+                Save
+            </MudButton>
+        </MudStack>
     </div>
 
     <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
@@ -56,22 +66,22 @@
                         <MudGrid Spacing="3">
                             <MudItem xs="12">
                                 <MudTextField @bind-Value="asset.Name" 
-                                            Label="Asset Name" 
-                                            Required="true"
-                                            Variant="Variant.Outlined"
-                                            HelperText="Enter a descriptive name for your asset"
-                                            Adornment="Adornment.Start"
-                                            AdornmentIcon="@Icons.Material.Filled.Label" />
+                                    Label="Name" 
+                                    Required="true"
+                                    Variant="Variant.Outlined"
+                                    HelperText="Enter a descriptive name for your asset"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Label" />
                             </MudItem>
                             
                             <MudItem xs="12" md="6">
                                 <MudSelect @bind-Value="asset.CategoryId" 
-                                         T="Guid?" 
-                                         Label="Category" 
-                                         Required="true"
-                                         Variant="Variant.Outlined"
-                                         AnchorOrigin="Origin.BottomCenter"
-                                         HelperText="Select the category that best describes this asset">
+                                    T="Guid?" 
+                                    Label="Category" 
+                                    Required="true"
+                                    Variant="Variant.Outlined"
+                                    AnchorOrigin="Origin.BottomCenter"
+                                    HelperText="Select the category that best describes this asset">
                                     <MudSelectItem Value="@(null as Guid?)">
                                         <div class="d-flex align-center">
                                             <MudIcon Icon="@Icons.Material.Filled.Category" Class="mr-2" Size="Size.Small" />
@@ -155,17 +165,17 @@
                     </MudCardContent>
                 </MudCard>
 
-                <!-- Custom Attributes Card -->
+                <!-- Attributes Card -->
                 <MudCard Elevation="2" Class="form-card mt-4">
                     <MudCardHeader>
                         <CardHeaderContent>
                             <div class="d-flex align-center">
                                 <MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2" Color="Color.Info" />
-                                <MudText Typo="Typo.h6">Custom Attributes</MudText>
+                                <MudText Typo="Typo.h6">Attributes</MudText>
                             </div>
                         </CardHeaderContent>
                         <CardHeaderActions>
-                            <MudTooltip Text="Add custom attribute">
+                            <MudTooltip Text="Add attribute">
                                 <MudIconButton Icon="@Icons.Material.Filled.Add" 
                                              Color="Color.Primary" 
                                              Size="Size.Medium"
@@ -214,7 +224,7 @@
                         {
                             <div class="d-flex flex-column align-center justify-center py-6">
                                 <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
-                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No custom attributes added</MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No attributes added</MudText>
                                 <MudButton Color="Color.Primary" 
                                          Variant="Variant.Text" 
                                          StartIcon="@Icons.Material.Filled.Add"
@@ -352,6 +362,7 @@
                     </MudCardContent>
                 </MudCard>
 
+                @*
                 <!-- Action Buttons -->
                 <MudCard Elevation="2" Class="form-card mt-4">
                     <MudCardContent>
@@ -376,7 +387,7 @@
                             </MudButton>
                         </MudStack>
                     </MudCardContent>
-                </MudCard>
+                </MudCard>*@
             </MudItem>
         </MudGrid>
         
