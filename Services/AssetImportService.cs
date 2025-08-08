@@ -59,18 +59,16 @@ namespace projectaardvarkx2.Services
                 {
                     ParentId = savedAsset.Id,
                     ParentType = typeof(Asset).Name,
-                    LocalFileName = safeFileName,
                     OriginFileName = Path.GetFileName(importFile),
                     ContentType = contentType,
                     Extension = Path.GetExtension(importFile),
                     FileSize = new FileInfo(importFile).Length,
-                    AttachmentTypeId = defaultAttachmentType?.Id ?? Guid.Empty
+                    AttachmentTypeId = defaultAttachmentType?.Id ?? Guid.Empty,
+                    LocalFileName = await _fileStorageService.UploadAsync<Asset>(importFile, contentType), //must be last, as it moves file
                 };
 
                 await _attachmentService.AddAsync(attachment);
 
-                //Move file
-                File.Move(importFile, Path.Combine("appdata", "attachments", typeof(Asset).Name, safeFileName));
             }
 
             return importFiles.Length;

@@ -62,6 +62,40 @@ namespace projectaardvarkx2.FileStorage
             }
         }
 
+        public async Task<string> UploadAsync<T>(string localFile, string contentType) where T : class
+        {
+            try
+            {
+                var uniqueFileName = Guid.NewGuid().ToString();
+                var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
+                var thumbsDir = Path.Combine("appdata", "thumbs", typeof(T).Name);
+
+                var fileExtension = Path.GetExtension(localFile);
+                var attachmentFileName = uniqueFileName + fileExtension;
+                var thumbnailFileName = uniqueFileName + "_thumb.jpg";
+
+                // Save file to disk or database as needed
+                var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(fullFilePath)!);
+
+                File.Move(localFile, fullFilePath);
+
+                // Generate Thumbnail if it's an image file
+                if (IsImageFile(contentType))
+                {
+                    await GenerateThumbnailAsync(fullFilePath, Path.Combine(thumbsDir, thumbnailFileName));
+                }
+
+                return attachmentFileName;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading: {FileName}", localFile);
+                throw new InvalidOperationException("Upload failed.", ex);
+            }
+        }
+
         private bool IsImageFile(string contentType)
         {
             if (string.IsNullOrEmpty(contentType))
