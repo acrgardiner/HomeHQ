@@ -14,7 +14,7 @@
 @inject ILogger<Asset_List_Page> Logger
 @inject NavigationManager NavigationManager
 
-<PageTitle>Assets - Project Aardvark x2</PageTitle>
+<PageTitle>Assets - Home Tracker</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->
@@ -93,15 +93,17 @@
                     Includes="@(Includes)"
                     Columns="@(
                         new List<(Func<Asset, object?>, string)>{
-                            (new Func<Asset, object?>(x => x.Name), "Asset"),
+                            (new Func<Asset, object?>(x => x.Name), "Name"),
                             (new Func<Asset, object?>(x => x.Category?.Title ?? "Uncategorized"), "Category"),
+                            (new Func<Asset, object?>(x => x.PurchasedFrom), "From"),
                             (new Func<Asset, object?>(x => x.PurchaseDate.HasValue ? x.PurchaseDate.Value.ToString("MMM dd, yyyy") : ""), "Purchase Date"),
                             (new Func<Asset, object?>(x => Formatter.RenderWarrantyInfo(x)), "Warranty"),
                         }
                     )"
                     ItemActions="AssetActions"
-                    EnableItemDelete="true"
-                    EnableExport="true">
+                    EnableItemDelete="false"
+                    EnableExport="true"
+                    OnRowClicked="@(RowClicked)">
             <ToolbarActions>
                 <!-- Additional toolbar actions can go here -->
             </ToolbarActions>
@@ -110,7 +112,8 @@
 </MudContainer>
 
 @code {
-    private List<EntityAction<Asset>> AssetActions => new()
+    private List<EntityAction<Asset>>? AssetActions = null;
+    /*private List<EntityAction<Asset>> AssetActions => new()
     {
         new EntityAction<Asset>
         {
@@ -124,7 +127,9 @@
             Tooltip = "Edit Asset",
             Action = async (asset) => await OpenEdit(asset)
         }
-    };
+    };*/
+
+    private Func<Asset, Task> RowClicked => async (asset) => await OpenDetails(asset);
 
     private List<BreadcrumbItem> _breadcrumbItems = new List<BreadcrumbItem>
     {

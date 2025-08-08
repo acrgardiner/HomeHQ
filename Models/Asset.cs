@@ -9,6 +9,7 @@ public class Asset : AuditableEntity, IEntity, IEntityNamed
     public Guid? CategoryId { get; set; }
     public Category? Category { get; set; }
     public DateTime? PurchaseDate { get; set; }
+    public string? PurchasedFrom { get; set; }
     public Guid? WarrantyTypeId { get; set; }
     public virtual WarrantyType? WarrantyType { get; set; }
     public DateTime? WarrantyExpiration { get; set; }

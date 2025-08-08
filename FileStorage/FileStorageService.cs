@@ -1,7 +1,11 @@
-﻿using projectaardvarkx2.Repositories;
+﻿using Microsoft.AspNetCore.Components.Forms;
 using projectaardvarkx2.Entities;
-using Microsoft.AspNetCore.Components.Forms;
+using projectaardvarkx2.Repositories;
 using static MudBlazor.CategoryTypes;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using Image = SixLabors.ImageSharp.Image;
 
 namespace projectaardvarkx2.FileStorage
 {
@@ -10,41 +14,100 @@ namespace projectaardvarkx2.FileStorage
         private long maxFileSize = 1024 * 1024 * 15;
 
         private readonly IGenericRepository<Attachment> _attachmentRepository;
+        private readonly ILogger<FileStorageService> _logger;
 
-        public FileStorageService(IGenericRepository<Attachment> attachmentRepository)
+        public FileStorageService(IGenericRepository<Attachment> attachmentRepository, ILogger<FileStorageService> logger)
         {
             _attachmentRepository = attachmentRepository;
-        }
-
-        public async Task<(byte[], string)> GetImageBytesAsync(Guid attachmentId)
-        {
-            var attachment = await _attachmentRepository.GetByIdAsync(attachmentId);
-
-            if (attachment == null)
-            {
-                throw new FileNotFoundException($"Attachment with ID {attachmentId} not found.");
-            }
-
-            var filePath = Path.Combine("appdata", "uploads", attachment.LocalFileName);
-
-            return (File.ReadAllBytes(filePath), attachment.ContentType);
+            _logger = logger;
         }
 
         public async Task<string> UploadAsync<T>(IBrowserFile? file) where T : class
         {
-            var fileExtension = Path.GetExtension(file.Name);
-            var localFileName = Path.Combine(typeof(T).Name, Guid.NewGuid().ToString() + fileExtension);
-
-            // Save file to disk or database as needed
-            var filePath = Path.Combine("appdata", "uploads", localFileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            try
             {
-                await file.OpenReadStream(maxFileSize).CopyToAsync(stream);
-            }
+                var uniqueFileName = Guid.NewGuid().ToString();
+                var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
+                var thumbsDir = Path.Combine("appdata", "thumbs", typeof(T).Name);
 
-            return localFileName;
+                var fileExtension = Path.GetExtension(file.Name);
+                var attachmentFileName = uniqueFileName + fileExtension;
+                var thumbnailFileName = uniqueFileName + "_thumb.jpg";
+
+                // Save file to disk or database as needed
+                var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(fullFilePath)!);
+
+                using (var stream = file.OpenReadStream(maxFileSize))
+                {
+                    using (var fileStream = new FileStream(fullFilePath, FileMode.Create))
+                    {
+                        await stream.CopyToAsync(fileStream);
+                    }
+
+                    // Generate Thumbnail if it's an image file
+                    if (IsImageFile(file.ContentType))
+                    {
+                        await GenerateThumbnailAsync(fullFilePath, Path.Combine(thumbsDir, thumbnailFileName));
+                    }
+                }
+
+                return attachmentFileName;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading: {FileName}", file?.Name);
+                throw new InvalidOperationException("Upload failed.", ex);
+            }
+        }
+
+        private bool IsImageFile(string contentType)
+        {
+            if (string.IsNullOrEmpty(contentType))
+                return false;
+
+            var imageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/webp" };
+            return imageTypes.Contains(contentType.ToLower());
+        }
+
+        private async Task GenerateThumbnailAsync(string sourceFile, string thumbnailFile)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(thumbnailFile)!;
+                Directory.CreateDirectory(dir);
+
+                using (var image = await Image.LoadAsync(sourceFile))
+                {
+                    // Calculate thumbnail dimensions while maintaining aspect ratio
+                    var (thumbWidth, thumbHeight) = CalculateThumbnailDimensions(image.Width, image.Height, 300, 300);
+
+                    // Create thumbnail
+                    image.Mutate(x => x.Resize(thumbWidth, thumbHeight));
+                    
+                    // Save as JPEG with good quality
+                    await image.SaveAsJpegAsync(thumbnailFile, new JpegEncoder { Quality = 85 });
+                }
+
+                _logger.LogInformation("Thumbnail generated: {ThumbnailPath}", thumbnailFile);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to generate thumbnail for: {OriginalPath}", thumbnailFile);
+            }
+        }
+
+        private (int width, int height) CalculateThumbnailDimensions(int originalWidth, int originalHeight, int maxWidth, int maxHeight)
+        {
+            if (originalWidth <= maxWidth && originalHeight <= maxHeight)
+                return (originalWidth, originalHeight);
+
+            var ratioX = (double)maxWidth / originalWidth;
+            var ratioY = (double)maxHeight / originalHeight;
+            var ratio = Math.Min(ratioX, ratioY);
+
+            return ((int)(originalWidth * ratio), (int)(originalHeight * ratio));
         }
     }
 }

@@ -11,7 +11,7 @@
 @inject ILogger<Home> Logger
 @inject ISnackbar Snackbar
 
-<PageTitle>Dashboard - Project Aardvark x2</PageTitle>
+<PageTitle>Dashboard- Home Tracker</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">
@@ -89,7 +89,7 @@
                                 <MudList T="string" Dense="true">
                                     @foreach (var asset in _recentAssets)
                                     {
-                                        <MudListItem T="string" Class="px-2">
+                                        <MudListItem T="string" Class="px-2" OnClick="() => OpenDetails(asset)">
                                             <div class="d-flex justify-space-between align-center">
                                                 <div class="d-flex align-center">
                                                     <MudIcon Icon="@Icons.Material.Filled.AccountBox" Class="mr-3" Color="Color.Primary" Size="Size.Small" />

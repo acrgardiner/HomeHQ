@@ -16,8 +16,9 @@
 @inject ILogger<Asset_Detail_Page> Logger
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<PageTitle>@(asset?.Name ?? "Asset Details") - Project Aardvark x2</PageTitle>
+<PageTitle>@(asset?.Name ?? "Asset Details")- Home Tracker</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header -->
@@ -90,28 +91,28 @@
                     <MudDivider />
                     <MudCardContent>
                         <MudGrid Spacing="3">
-                            <MudItem xs="12">
+                            <MudItem xs="6">
                                 <div class="entity-field">
                                     <MudText Typo="Typo.caption" Class="entity-label">Name</MudText>
                                     <MudText Typo="Typo.body1" Class="entity-value">@asset.Name</MudText>
                                 </div>
                             </MudItem>
-                            
                             <MudItem xs="12" md="6">
                                 <div class="entity-field">
                                     <MudText Typo="Typo.caption" Class="entity-label">Category</MudText>
-                                    <div class="d-flex align-center">
-                                        @if (!string.IsNullOrEmpty(asset.Category?.Icon))
-                                        {
-                                            <MudIcon Icon="@asset.Category.Icon" Class="mr-2" Size="Size.Small" Color="Color.Primary" />
-                                        }
+                                    <div class="d-flex">
                                         <MudText Typo="Typo.body1" Class="entity-value">
                                             @(asset.Category?.Title ?? "Uncategorized")
                                         </MudText>
                                     </div>
                                 </div>
                             </MudItem>
-                            
+                            <MudItem xs="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Purchased From</MudText>
+                                    <MudText Typo="Typo.body1" Class="entity-value">@asset.PurchasedFrom</MudText>
+                                </div>
+                            </MudItem>
                             <MudItem xs="12" md="6">
                                 <div class="entity-field">
                                     <MudText Typo="Typo.caption" Class="entity-label">Purchase Date</MudText>
@@ -190,20 +191,6 @@
                     </MudCardHeader>
                     <MudDivider />
                     <MudCardContent>
-                        @* @if (_attributes.Any())
-                        {
-                            <MudGrid Spacing="3">
-                                @foreach (var attr in _attributes)
-                                {
-                                    <MudItem xs="12" sm="6">
-                                        <div class="entity-field">
-                                            <MudText Typo="Typo.caption" Class="entity-label">@attr.Attribute</MudText>
-                                            <MudText Typo="Typo.body1" Class="entity-value">@attr.Value</MudText>
-                                        </div>
-                                    </MudItem>
-                                }
-                            </MudGrid>
-                        }*@
                         @if (_attributes.Any())
                         {
                             <MudStack Style="gap: 0">
@@ -235,7 +222,6 @@
                 </MudCard>
             </MudItem>
 
-            <!-- Sidebar with System Information -->
             <MudItem xs="12" lg="4">
                 <!-- Attachments Card -->
                 <MudCard Elevation="2" Class="form-card">
@@ -246,39 +232,134 @@
                                 <MudText Typo="Typo.h6">Attachments</MudText>
                             </div>
                         </CardHeaderContent>
+                        <CardHeaderActions>
+                            @if (_attachments.Any())
+                            {
+                                <div class="d-flex align-center">
+                                    <MudText Typo="Typo.caption" Class="mr-3 mud-text-secondary">
+                                        @(_currentAttachmentIndex + 1) of @_attachments.Count
+                                    </MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                                                    Size="Size.Small"
+                                                    Color="Color.Primary"
+                                                    Disabled="@(_currentAttachmentIndex <= 0)"
+                                                    OnClick="PreviousAttachment" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                                                    Size="Size.Small"
+                                                    Color="Color.Primary"
+                                                    Disabled="@(_currentAttachmentIndex >= _attachments.Count - 1)"
+                                                    OnClick="NextAttachment" />
+                                </div>
+                            }
+                        </CardHeaderActions>
                     </MudCardHeader>
                     <MudDivider />
                     <MudCardContent>
                         @if (_attachments.Any())
                         {
-                            <MudText Typo="Typo.subtitle2" Class="mb-3">@_attachments.Count attachment(s)</MudText>
-                            <MudStack Spacing="2">
-                                @foreach (var attachment in _attachments)
-                                {
-                                    <MudCard Elevation="1" Class="attachment-item cursor-pointer" @onclick="@(() => ViewAttachment(attachment))">
-                                        <MudCardContent Class="py-2">
-                                            <div class="d-flex align-center">
-                                                <MudIcon Icon="@GetAttachmentIcon(attachment)" 
-                                                        Size="Size.Small" 
-                                                        Class="mr-3" 
-                                                        Color="Color.Primary" />
-                                                <div class="flex-grow-1">
-                                                    <MudText Typo="Typo.body2" Class="text-truncate">
-                                                        @attachment.OriginFileName
-                                                    </MudText>
-                                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                        @Formatter.FormatFileSize(attachment.FileSize) • @attachment.Extension?.ToUpper()
-                                                    </MudText>
-                                                </div>
-                                                <MudIconButton Icon="@Icons.Material.Filled.Download" 
-                                                             Size="Size.Small" 
-                                                             Color="Color.Primary"
-                                                             OnClick="@((e) => { /*e.StopPropagation();*/ DownloadAttachment(attachment); })" />
-                                            </div>
-                                        </MudCardContent>
-                                    </MudCard>
+                            <div class="attachment-carousel">
+                                @{
+                                    var currentAttachment = _attachments[_currentAttachmentIndex];
                                 }
-                            </MudStack>
+                                <!-- Main Attachment Display -->
+                                <div class="attachment-display mb-4" @onclick="@(() => ViewAttachment(currentAttachment))">
+                                    @if (IsImageAttachment(currentAttachment))
+                                    {
+                                        <div class="attachment-preview image-preview">
+                                            <MudImage Src="@GetAttachmentPreviewUrl(currentAttachment)"
+                                                    Alt="@currentAttachment.OriginFileName"
+                                                    Class="attachment-image"
+                                                    ObjectFit="ObjectFit.Cover" />
+                                            <div class="attachment-overlay">
+                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn"
+                                                             Size="Size.Large"
+                                                             Color="Color.Primary"
+                                                             Variant="Variant.Filled"
+                                                               Class="zoom-button" OnClick="@(() => NavigateToAttachment(currentAttachment))" />
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="attachment-preview file-preview">
+                                            <div class="file-icon-container">
+                                                <MudIcon Icon="@GetAttachmentIcon(currentAttachment)"
+                                                        Size="Size.Large"
+                                                        Color="Color.Primary" />
+                                            </div>
+                                            <div class="attachment-overlay">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                             Size="Size.Large" 
+                                                             Color="Color.Primary"
+                                                             Variant="Variant.Filled"
+                                                             Class="view-button" />
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Attachment Info -->
+                                <div class="attachment-info mb-3">
+                                    <div class="d-flex align-center justify-space-between mb-2">
+                                        <MudText Typo="Typo.subtitle1" Class="attachment-name text-truncate">
+                                            @currentAttachment.OriginFileName
+                                        </MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Download" 
+                                                     Size="Size.Small" 
+                                                     Color="Color.Primary"
+                                                     Variant="Variant.Text"
+                                                     OnClick="@(() => DownloadAttachment(currentAttachment))" />
+                                    </div>
+                                    
+                                    <div class="d-flex align-center justify-space-between">
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                            @Formatter.FormatFileSize(currentAttachment.FileSize) • @currentAttachment.Extension?.ToUpper()
+                                        </MudText>
+                                        @if (currentAttachment.AttachmentType != null)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" 
+                                                   Color="Color.Secondary" 
+                                                   Variant="Variant.Text">
+                                                @currentAttachment.AttachmentType.Name
+                                            </MudChip>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Thumbnail Navigation (if more than one attachment) -->
+                                @if (_attachments.Count > 1)
+                                {
+                                    <div class="attachment-thumbnails">
+                                        <MudStack Row="true" Spacing="1" Justify="Justify.Center">
+                                            @for (int i = 0; i < _attachments.Count; i++)
+                                            {
+                                                var index = i; // Capture for closure
+                                                var attachment = _attachments[i];
+                                                var isActive = i == _currentAttachmentIndex;
+                                                
+                                                <div class="thumbnail-container @(isActive ? "active" : "")" 
+                                                     @onclick="@(() => SetCurrentAttachment(index))">
+                                                    @if (IsImageAttachment(attachment))
+                                                    {
+                                                        <MudImage Src="@GetAttachmentPreviewUrl(attachment)" 
+                                                                Alt="@attachment.OriginFileName"
+                                                                Class="thumbnail-image" 
+                                                                ObjectFit="ObjectFit.Cover" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="thumbnail-file">
+                                                            <MudIcon Icon="@GetAttachmentIcon(attachment)" 
+                                                                   Size="Size.Small" 
+                                                                   Color="Color.Primary" />
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </MudStack>
+                                    </div>
+                                }
+                            </div>
                         }
                         else
                         {
@@ -294,13 +375,14 @@
     }
 </MudContainer>
 
-@code{
+    @code{
     [Parameter] public string Id { get; set; } = string.Empty;
 
     private Asset? asset;
     private List<AttributeValue> _attributes = new();
     private List<Attachment> _attachments = new();
     private bool _loading = true;
+    private int _currentAttachmentIndex = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -313,7 +395,7 @@
         {
             _loading = true;
             var guid = Guid.Parse(Id);
-            
+
             // Load asset with related data
             asset = await AssetService.GetByIdAsync(guid, new List<Expression<Func<Asset, object>>>
             {
@@ -336,9 +418,12 @@
                 );
 
                 await Task.WhenAll(attributesTask, attachmentsTask);
-                
+
                 _attributes = attributesTask.Result.ToList();
                 _attachments = attachmentsTask.Result.ToList();
+
+                // Reset attachment index when loading new data
+                _currentAttachmentIndex = 0;
             }
         }
         catch (Exception ex)
@@ -364,7 +449,7 @@
 
         return (daysRemaining switch
         {
-            < 0 => Color.Error,
+            < 0 => Color.Default,
             <= 30 => Color.Warning,
             _ => Color.Success
         });
@@ -421,6 +506,40 @@
         };
     }
 
+    private bool IsImageAttachment(Attachment attachment)
+    {
+        return !string.IsNullOrEmpty(attachment.ContentType) && attachment.ContentType.StartsWith("image/");
+    }
+
+    private string GetAttachmentPreviewUrl(Attachment attachment)
+    {
+        return $"/api/uploads/{attachment.Id}/preview";
+    }
+
+    private void NextAttachment()
+    {
+        if (_currentAttachmentIndex < _attachments.Count - 1)
+        {
+            _currentAttachmentIndex++;
+        }
+    }
+
+    private void PreviousAttachment()
+    {
+        if (_currentAttachmentIndex > 0)
+        {
+            _currentAttachmentIndex--;
+        }
+    }
+
+    private void SetCurrentAttachment(int index)
+    {
+        if (index >= 0 && index < _attachments.Count)
+        {
+            _currentAttachmentIndex = index;
+        }
+    }
+
     private async Task ViewAttachment(Attachment attachment)
     {
         try
@@ -437,6 +556,11 @@
             Logger.LogError(ex, "Failed to view attachment {AttachmentId}", attachment.Id);
             Snackbar.Add("Failed to view attachment", Severity.Error);
         }
+    }
+
+    private async Task NavigateToAttachment(Attachment attachment)
+    {
+        await JSRuntime.InvokeVoidAsync("open", "/api/uploads/" + attachment.Id.ToString(), "_blank");
     }
 
     private async Task DownloadAttachment(Attachment attachment)

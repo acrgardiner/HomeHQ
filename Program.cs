@@ -62,7 +62,7 @@ try
 
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseSqlite("Data Source=appdata/app.db");
+            options.UseSqlite("Data Source=appdata/db/app.db");
             options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         }
     );
@@ -75,6 +75,7 @@ try
     builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
     Directory.CreateDirectory("appdata");
+    Directory.CreateDirectory("appdata/db");
     Directory.CreateDirectory("logs");
 
     builder.Services.AddControllers();
@@ -128,12 +129,6 @@ try
     app.UseHttpsRedirection();
     app.MapControllers();
     app.UseStaticFiles();
-    //app.UseStaticFiles(new StaticFileOptions
-    //{
-    //    FileProvider = new PhysicalFileProvider(
-    //    Path.Combine(app.Environment.ContentRootPath, "appdata/uploads")), // Replace "MySecuredImages" with your folder name
-    //    RequestPath = "/images" // Specify the URL path to access these images
-    //});
 
     app.UseAntiforgery();
 
