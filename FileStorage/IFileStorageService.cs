@@ -7,6 +7,7 @@ namespace projectaardvarkx2.FileStorage
     {
         //Task<Attachment?> UploadAsync<T>(IFormFile? file, int maxFileSize, string[] allowedExtensions) where T : class;
         Task<string> UploadAsync<T>(IBrowserFile? file) where T : class;
+        Task<string> UploadAsync<T>(string localFile, string contentType) where T : class;
 
         //public void Remove(string? path);
 
