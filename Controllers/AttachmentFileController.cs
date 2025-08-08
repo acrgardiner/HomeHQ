@@ -26,8 +26,28 @@ public class AttachmentFileController : ControllerBase
         if (attachment == null)
             return NotFound();
 
-        var uploadsPath = Path.Combine(_env.ContentRootPath, "appdata","uploads");
+        var uploadsPath = Path.Combine(_env.ContentRootPath, "appdata", "attachments", attachment.ParentType);
         var filePath = Path.Combine(uploadsPath, attachment.LocalFileName);
+
+        if (!System.IO.File.Exists(filePath))
+            return NotFound();
+
+        var contentType = attachment?.ContentType ?? "application/octet-stream";
+        return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
+    }
+
+    [HttpGet("{attachmentId}/preview")]
+    [Authorize]
+    public async Task<IActionResult> GetFilePreview(string attachmentId)
+    {
+        //TODO: update to use pre-generated thumbnails if available
+        var attachment = await _attachmentService.GetByIdAsync(Guid.Parse(attachmentId));
+
+        if (attachment == null)
+            return NotFound();
+
+        var uploadsPath = Path.Combine(_env.ContentRootPath, "appdata", "thumbs", attachment.ParentType);
+        var filePath = Path.Combine(uploadsPath, Path.GetFileNameWithoutExtension(attachment.LocalFileName) + "_thumb.jpg");
 
         if (!System.IO.File.Exists(filePath))
             return NotFound();

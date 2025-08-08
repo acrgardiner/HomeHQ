@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
 using projectaardvarkx2.Entities;
 using projectaardvarkx2.FileStorage;
+using static MudBlazor.CategoryTypes;
 
 namespace projectaardvarkx2.Services
 {
@@ -47,7 +48,7 @@ namespace projectaardvarkx2.Services
 
                 var savedAsset = await _assetService.AddAsync(asset);
 
-                var safeFileName = Path.Combine(typeof(Asset).Name, Guid.NewGuid().ToString() + Path.GetExtension(importFile));
+                var safeFileName = Guid.NewGuid().ToString() + Path.GetExtension(importFile);
 
                 if (!provider.TryGetContentType(importFile, out string contentType))
                 {
@@ -57,6 +58,7 @@ namespace projectaardvarkx2.Services
                 var attachment = new Attachment
                 {
                     ParentId = savedAsset.Id,
+                    ParentType = typeof(Asset).Name,
                     LocalFileName = safeFileName,
                     OriginFileName = Path.GetFileName(importFile),
                     ContentType = contentType,
@@ -68,7 +70,7 @@ namespace projectaardvarkx2.Services
                 await _attachmentService.AddAsync(attachment);
 
                 //Move file
-                File.Move(importFile, Path.Combine("appdata", "uploads", safeFileName));
+                File.Move(importFile, Path.Combine("appdata", "attachments", typeof(Asset).Name, safeFileName));
             }
 
             return importFiles.Length;

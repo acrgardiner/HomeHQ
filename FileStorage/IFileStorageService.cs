@@ -10,6 +10,7 @@ namespace projectaardvarkx2.FileStorage
 
         //public void Remove(string? path);
 
-        Task<(byte[], string)> GetImageBytesAsync(Guid attachmentId);
+        //Task<(byte[], string)> GetImageBytesAsync(Guid attachmentId);
+        //Task<(byte[], string)> GetThumbnailBytesAsync(Guid attachmentId);
     }
 }

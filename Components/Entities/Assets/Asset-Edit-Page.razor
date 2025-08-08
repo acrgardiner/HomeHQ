@@ -22,145 +22,364 @@
 @inject ILogger<Asset_Edit_Page> Logger
 @inject NavigationManager Navigation
 
-<MudPaper Class="pa-6 mx-auto" MaxWidth="MaxWidth.Large">
-    <MudText Typo="Typo.h5" Class="mb-4">Edit Asset</MudText>
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
         <DataAnnotationsValidator />
-        <MudStack Spacing="2">
-            <MudTextField @bind-Value="asset.Name" Label="Name" Required="true" />
-            <MudSelect @bind-Value="asset.CategoryId" T="Guid?" Label="Category" Required="true">
-                <MudSelectItem Value="@(null as Guid?)">-- Select --</MudSelectItem>
-                @foreach (var cat in categories)
-                {
-                    <MudSelectItem Value="@(cat.Id as Guid?)">@(cat.Title)</MudSelectItem>
-                }
-            </MudSelect>
-            <MudDatePicker @bind-Date="asset.PurchaseDate" Label="Purchase Date" Required="true" />
-            <MudSelect @bind-Value="asset.WarrantyTypeId" Label="Warranty Type" @bind-Value:after="OnChangeWarrantyType">
-                <MudSelectItem Value="@(null as Guid?)">-- Select --</MudSelectItem>
-                @foreach (var wt in warrantyTypes)
-                {
-                    <MudSelectItem Value="@(wt.Id as Guid?)">@wt.Name</MudSelectItem>
-                }
-            </MudSelect>
-            <MudDatePicker @bind-Date="asset.WarrantyExpiration" Label="Warranty Expiration" />
 
-            <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">Attributes</MudText>
-            <MudContainer Class="ma-4" Gutters="false">
-                @if (_attributes.Any())
-                {
-                    foreach (var attr in _attributes)
-                    {
-                        <MudStack Row="true" Spacing="2" Class="mb-2">
-                            <MudTextField @bind-Value="attr.Attribute" Label="Attribute" Required="true" />
-                            <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                           Size="Size.Small" OnClick="@(() => Remove(attr))" />
-                        </MudStack>
-                    }
-                }
-                <MudStack AlignItems="AlignItems.Start" Row>
-                    <MudIconButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   Icon="@Icons.Material.Filled.Add" OnClick="AddAttribute" />
-                </MudStack>
-            </MudContainer>
+        <!-- Header -->
+        <div class="d-flex align-center mb-6">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                          Size="Size.Medium"
+                          OnClick="GoBack"
+                          Class="mr-3" />
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.h4" Color="Color.Primary">Edit Asset</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Update asset information and manage attachments
+                </MudText>
+            </div>
 
-            <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mb-4">Attachments</MudText>
-            <MudContainer Class="ma-4" Gutters="false">
-                <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
-                    @if (IsMobile)
-                    {
-                        <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                       FilesChanged="AddAttachment"
-                                       accept="image/*" Capture="environment">
-                            <ActivatorContent>
-                                <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.Camera">
-                                    Take Photo
-                                </MudButton>
-                            </ActivatorContent>
-                        </MudFileUpload>
-                        <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                       FilesChanged="AddAttachment"
-                                       accept="image/*">
-                            <ActivatorContent>
-                                <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.Image">
-                                    Gallery
-                                </MudButton>
-                            </ActivatorContent>
-                        </MudFileUpload>
-                    }
-                    else
-                    {
-                        <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                       FilesChanged="AddAttachment"
-                                       accept="image/*;application/pdf;capture=camera">
-                            <ActivatorContent>
-                                <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           StartIcon="@Icons.Material.Filled.AttachFile">
-                                    Add Attachment
-                                </MudButton>
-                            </ActivatorContent>
-                        </MudFileUpload>
-                    }
-                </MudStack>
-
-                @if (_attachments.Any())
-                {
-                    <MudDataGrid T="Attachment_wfile" Items="@_attachments" Loading="@_uploading"
-                                 Hideable="true" Hover="true" Dense="true"
-                                 Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
-                        <Columns>
-                            <PropertyColumn Property="@(x => x.attachment.OriginFileName)" Title="File" />
-                            <PropertyColumn Property="@(x => x.attachment.ContentType)" Title="Content Type" Hidden="true" />
-                            <PropertyColumn Property="@(x => x.attachment.Extension)" Title="Extension" Hidden="true" />
-                            <TemplateColumn T="Attachment_wfile" Title="File Size" Context="itemContext">
-                                <CellTemplate>
-                                    @Formatter.FormatFileSize(itemContext.Item.attachment.FileSize)
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <TemplateColumn T="Attachment_wfile" Title="File Size" Context="itemContext">
-                                <CellTemplate>
-                                    <MudSelect T="Guid?"
-                                               @bind-Value="itemContext.Item.attachment.AttachmentTypeId"
-                                               Dense="true"
-                                               Disabled="_uploading">
-                                        @foreach (var type in attachmentTypes)
-                                        {
-                                            <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
-                                        }
-                                    </MudSelect>
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <TemplateColumn T="Attachment_wfile" Title="File Size" Context="itemContext">
-                                <CellTemplate>
-                                    <MudStack Row="true" Spacing="0" Class="pa-2">
-                                        <div>
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                                           Size="Size.Small" Class="mx-1"
-                                                           OnClick="@(() => Remove(itemContext.Item))" />
-                                        </div>
-                                    </MudStack>
-                                </CellTemplate>
-                            </TemplateColumn>
-                        </Columns>
-                    </MudDataGrid>
-                }
-            </MudContainer>
-
-            <MudStack Row="true" Spacing="2" Class="mt-4">
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" ButtonType="ButtonType.Submit">Save</MudButton>
-                <MudButton Color="Color.Default" Variant="Variant.Outlined" OnClick="GoBack">Cancel</MudButton>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           ButtonType="ButtonType.Submit"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Class="asset-action-btn">
+                    Save
+                </MudButton>
             </MudStack>
-        </MudStack>
-        <ValidationSummary />
+        </div>
+
+        <MudGrid Spacing="4">
+            <MudItem xs="12" lg="8">
+                <!-- Basic Information Card -->
+                <MudCard Elevation="2" Class="form-card">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">Basic Information</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="6">
+                                <MudTextField @bind-Value="asset.Name"
+                                    Label="Name"
+                                    Required="true"
+                                    Variant="Variant.Outlined"
+                                    HelperText="Enter a descriptive name for your asset"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Label" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="asset.CategoryId"
+                                           T="Guid?"
+                                           Label="Category"
+                                           Required="true"
+                                           Variant="Variant.Outlined"
+                                           AnchorOrigin="Origin.BottomCenter"
+                                           HelperText="Select the category that best describes this asset">
+                                    <MudSelectItem Value="@(null as Guid?)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Category" Class="mr-2" Size="Size.Small" />
+                                            -- Select Category --
+                                        </div>
+                                    </MudSelectItem>
+                                    @foreach (var cat in categories)
+                                    {
+                                        <MudSelectItem Value="@(cat.Id as Guid?)">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@cat.Icon" Class="mr-2" Size="Size.Small" />
+                                                @cat.Title
+                                            </div>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudTextField @bind-Value="asset.PurchasedFrom"
+                                              Label="Purchased From"
+                                              Required="true"
+                                              Variant="Variant.Outlined"
+                                              HelperText="Where did you buy this asset"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Store" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="asset.PurchaseDate" 
+                                             Label="Purchase Date" 
+                                             Required="true"
+                                             Variant="Variant.Outlined"
+                                             HelperText="When was this asset purchased?"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                                             DisableFuture="true" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Warranty Information Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Verified" Class="mr-2" Color="Color.Success" />
+                                <MudText Typo="Typo.h6">Warranty Information</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="asset.WarrantyTypeId"
+                                         Label="Warranty Type"
+                                         @bind-Value:after="OnChangeWarrantyType"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         HelperText="Select warranty type if applicable">
+                                    <MudSelectItem Value="@(null as Guid?)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Block" Class="mr-2" Size="Size.Small" />
+                                            -- No Warranty --
+                                        </div>
+                                    </MudSelectItem>
+                                    @foreach (var wt in warrantyTypes)
+                                    {
+                                        <MudSelectItem Value="@(wt.Id as Guid?)">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@Icons.Material.Filled.Verified" Class="mr-2" Size="Size.Small" />
+                                                @wt.Name
+                                            </div>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="asset.WarrantyExpiration"
+                                             Label="Warranty Expiration"
+                                             Variant="Variant.Outlined"
+                                             HelperText="When does the warranty expire?"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="@Icons.Material.Filled.Event"
+                                             Disabled="asset.WarrantyTypeId == null" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Attributes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2" Color="Color.Info" />
+                                <MudText Typo="Typo.h6">Attributes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudTooltip Text="Add attribute">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                             Color="Color.Primary"
+                                             Size="Size.Medium"
+                                             OnClick="AddAttribute" />
+                            </MudTooltip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent Class="pa-0">
+                        @if (_attributes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var attr in _attributes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2" AlignItems="Center">
+                                                <MudItem xs="12" sm="5">
+                                                    <MudTextField @bind-Value="attr.Attribute"
+                                                                Label="Attribute"
+                                                                Variant="Variant.Outlined"
+                                                                Margin="Margin.Dense" />
+                                                </MudItem>
+                                                <MudItem xs="10" sm="5">
+                                                    <MudTextField @bind-Value="attr.Value"
+                                                        Label="Value"
+                                                        Variant="Variant.Outlined"
+                                                        Margin="Margin.Dense"
+                                                        Required="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
+                                                        Error="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
+                                                        ErrorText="Value is required if Attribute is set." />
+                                                </MudItem>
+                                                <MudItem xs="2" sm="2" Class="d-flex justify-end">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                 Color="Color.Error"
+                                                                 Size="Size.Small"
+                                                                 OnClick="@(() => Remove(attr))" />
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No attributes added</MudText>
+                                <MudButton Color="Color.Primary"
+                                         Variant="Variant.Text"
+                                         StartIcon="@Icons.Material.Filled.Add"
+                                         OnClick="AddAttribute">
+                                    Add First Attribute
+                                </MudButton>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <!-- Attachments Sidebar -->
+            <MudItem xs="12" lg="4">
+                <MudCard Elevation="2" Class="form-card attachments-card">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.AttachFile" Class="mr-2" Color="Color.Warning" />
+                                <MudText Typo="Typo.h6">Attachments</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <!-- Upload Buttons -->
+                        <MudStack Spacing="2" Class="mb-4">
+                            @if (IsMobile)
+                            {
+                                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                             FilesChanged="AddAttachment"
+                                             accept="image/*"
+                                             Capture="environment">
+                                    <ActivatorContent>
+                                        <MudButton Variant="Variant.Filled"
+                                                 Color="Color.Primary"
+                                                 StartIcon="@Icons.Material.Filled.Camera"
+                                                 FullWidth="true"
+                                                 Class="upload-btn">
+                                            Take Photo
+                                        </MudButton>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+
+                                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                             FilesChanged="AddAttachment"
+                                             accept="image/*">
+                                    <ActivatorContent>
+                                        <MudButton Variant="Variant.Outlined"
+                                                 Color="Color.Primary"
+                                                 StartIcon="@Icons.Material.Filled.Image"
+                                                 FullWidth="true"
+                                                 Class="upload-btn">
+                                            From Gallery
+                                        </MudButton>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+                            }
+                            else
+                            {
+                                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                             FilesChanged="AddAttachment"
+                                             accept="image/*,application/pdf">
+                                    <ActivatorContent>
+                                        <MudButton Variant="Variant.Filled"
+                                                 Color="Color.Primary"
+                                                 StartIcon="@Icons.Material.Filled.CloudUpload"
+                                                 FullWidth="true"
+                                                 Class="upload-btn"
+                                                 Disabled="_uploading">
+                                            @if (_uploading)
+                                            {
+                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                                <span>Uploading...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Upload Files</span>
+                                            }
+                                        </MudButton>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+                            }
+                        </MudStack>
+
+                        <!-- Attachments List -->
+                        @if (_attachments.Any())
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mb-3">Attachments (@_attachments.Count)</MudText>
+                            <MudStack Spacing="2" Elevation="0">
+                                @foreach (var item in _attachments)
+                                {
+                                    <MudCard Elevation="0" Class="attachment-item">
+                                        <MudCardContent >
+                                            <div class="d-flex align-center justify-space-between">
+                                                <div class="flex-grow-1 ">
+                                                    <MudText Typo="Typo.body2" Class="text-truncate">
+                                                        @item.attachment.OriginFileName
+                                                    </MudText>
+                                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                        @Formatter.FormatFileSize(item.attachment.FileSize) • @item.attachment.Extension.ToUpper()
+                                                    </MudText>
+                                                </div>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                             Color="Color.Error"
+                                                             Size="Size.Small"
+                                                             OnClick="@(() => Remove(item))" />
+                                            </div>
+                                            
+                                            <MudSelect T="Guid?"
+                                                     @bind-Value="item.attachment.AttachmentTypeId"
+                                                     Label="Type"
+                                                     Dense="true"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Dense"
+                                                     Disabled="_uploading">
+                                                @foreach (var type in attachmentTypes)
+                                                {
+                                                    <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6 text-center">
+                                <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-1">No attachments yet</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Upload receipts, photos, or documents</MudText>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+        
+        <!-- Validation Summary (if needed) -->
+        <MudCollapse Expanded="@(_validationErrors.Any())">
+            <MudAlert Severity="Severity.Error" Class="mt-4">
+                <ValidationSummary />
+            </MudAlert>
+        </MudCollapse>
     </EditForm>
-</MudPaper>
+</MudContainer>
 
 @code {
     [Parameter] public Guid Id { get; set; }
@@ -168,14 +387,19 @@
     private Asset asset = new();
     private List<Category> categories = new();
     private List<WarrantyType> warrantyTypes = new();
-    private List<AttachmentType> attachmentTypes = new();
-    private Guid defaultAttachmentTypeId;
+    private static readonly Guid? nullGuid = null;
+
     private List<Attachment_wfile> _attachments = new();
     private List<AttributeValue> _attributes = new();
+    private int maxAllowedFiles = 3;
     private bool _uploading = false;
-    private bool IsMobile;
+    private List<string> _validationErrors = new();
 
-    private static readonly Guid? nullGuid = null;
+    private List<AttachmentType> attachmentTypes = new();
+    private Guid defaultAttachmentTypeId;
+    private Guid defaultWarrantyTypeId;
+
+    private bool IsMobile;
 
     protected override async Task OnInitializedAsync()
     {
@@ -193,7 +417,8 @@
                 return;
             }
 
-            defaultAttachmentTypeId = attachmentTypes.First().Id;
+            defaultAttachmentTypeId = attachmentTypes.Where(at => at.Default).First().Id;
+            defaultWarrantyTypeId = warrantyTypes.Where(wt => wt.Default).First().Id;
 
             var loadedAsset = await AssetService.GetByIdAsync(Id);
             if (loadedAsset == null)
@@ -225,6 +450,7 @@
     private void AddAttachment(IReadOnlyList<IBrowserFile> files)
     {
         _uploading = true;
+
         try
         {
             foreach (var file in files)
@@ -232,25 +458,30 @@
                 try
                 {
                     var fileExtension = Path.GetExtension(file.Name);
+
+                    // Save Attachment entity
                     var attachment = new Attachment
-                    {
-                        OriginFileName = file.Name,
-                        Extension = fileExtension,
-                        ContentType = file.ContentType,
-                        FileSize = file.Size,
-                        AttachmentTypeId = defaultAttachmentTypeId
-                    };
+                        {
+                            OriginFileName = file.Name,
+                            Extension = fileExtension,
+                            ContentType = file.ContentType,
+                            FileSize = file.Size,
+                            AttachmentTypeId = defaultAttachmentTypeId
+                        };
+
                     Attachment_wfile attachmentWithFile = new Attachment_wfile
-                    {
-                        attachment = attachment,
-                        file = file
-                    };
+                        {
+                            attachment = attachment,
+                            file = file
+                        };
+
                     _attachments.Add(attachmentWithFile);
                     Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
+                    Logger.LogError(ex, $"Failed to prepare file {file.Name} for upload");
+                    Snackbar.Add($"Failed to upload {file.Name}", Severity.Error);
                 }
             }
         }
@@ -281,6 +512,11 @@
         }
     }
 
+    private async Task AddAttribute()
+    {
+        _attributes.Add(new AttributeValue());
+    }
+
     private async Task SaveAttachments(Guid Id)
     {
         try
@@ -288,7 +524,9 @@
             foreach (var item in _attachments.Where(x => x.file != null))
             {
                 item.attachment.ParentId = Id;
+                item.attachment.ParentType = typeof(Asset).Name;
                 item.attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.file);
+
                 var uploadedAttachment = await AttachmentService.AddAsync(item.attachment);
             }
             Snackbar.Add($"Attachments Saved", Severity.Success);
@@ -333,8 +571,6 @@
 
     private async void OnChangeWarrantyType()
     {
-        Snackbar.Add($"Warranty Type changed.", Severity.Info);
-
         if (asset.WarrantyTypeId == nullGuid)
         {
             asset.WarrantyExpiration = null;
@@ -352,22 +588,20 @@
                     asset.WarrantyExpiration = DateTime.Today.AddDays(warrantyType.Days.Value);
             }
         }
-    }
-
-    private async Task AddAttribute()
-    {
-        _attributes.Add(new AttributeValue());
+        StateHasChanged();
     }
 
     private async Task SaveAttributes(Guid Id)
     {
         try
         {
-            foreach (var attr in _attributes.Where(w => w.Id == Guid.Empty))
+            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
             {
-                attr.ParentId = Id;
-
-                await AttributeService.AddAsync(attr);
+                if (attr.Id == Guid.Empty)
+                {
+                    attr.ParentId = Id;
+                    await AttributeService.AddAsync(attr);
+                }
             }
         }
         catch (Exception ex)

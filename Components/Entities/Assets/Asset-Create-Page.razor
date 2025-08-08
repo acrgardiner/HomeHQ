@@ -27,9 +27,9 @@
 
         <!-- Header -->
         <div class="d-flex align-center mb-6">
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" 
-                          Size="Size.Medium" 
-                          OnClick="GoBack" 
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                          Size="Size.Medium"
+                          OnClick="GoBack"
                           Class="mr-3" />
             <div class="flex-grow-1">
                 <MudText Typo="Typo.h4" Color="Color.Primary">New Asset</MudText>
@@ -64,9 +64,9 @@
                     <MudDivider />
                     <MudCardContent>
                         <MudGrid Spacing="3">
-                            <MudItem xs="12">
-                                <MudTextField @bind-Value="asset.Name" 
-                                    Label="Name" 
+                            <MudItem xs="6">
+                                <MudTextField @bind-Value="asset.Name"
+                                    Label="Name"
                                     Required="true"
                                     Variant="Variant.Outlined"
                                     HelperText="Enter a descriptive name for your asset"
@@ -74,13 +74,13 @@
                                     AdornmentIcon="@Icons.Material.Filled.Label" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect @bind-Value="asset.CategoryId" 
-                                    T="Guid?" 
-                                    Label="Category" 
-                                    Required="true"
-                                    Variant="Variant.Outlined"
-                                    AnchorOrigin="Origin.BottomCenter"
-                                    HelperText="Select the category that best describes this asset">
+                                <MudSelect @bind-Value="asset.CategoryId"
+                                           T="Guid?"
+                                           Label="Category"
+                                           Required="true"
+                                           Variant="Variant.Outlined"
+                                           AnchorOrigin="Origin.BottomCenter"
+                                           HelperText="Select the category that best describes this asset">
                                     <MudSelectItem Value="@(null as Guid?)">
                                         <div class="d-flex align-center">
                                             <MudIcon Icon="@Icons.Material.Filled.Category" Class="mr-2" Size="Size.Small" />
@@ -97,6 +97,15 @@
                                         </MudSelectItem>
                                     }
                                 </MudSelect>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudTextField @bind-Value="asset.PurchasedFrom"
+                                              Label="Purchased From"
+                                              Required="true"
+                                              Variant="Variant.Outlined"
+                                              HelperText="Where did you buy this asset"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Store" />
                             </MudItem>
                             <MudItem xs="12" md="6">
                                 <MudDatePicker @bind-Date="asset.PurchaseDate" 
@@ -126,8 +135,8 @@
                     <MudCardContent>
                         <MudGrid Spacing="3">
                             <MudItem xs="12" md="6">
-                                <MudSelect @bind-Value="asset.WarrantyTypeId" 
-                                         Label="Warranty Type" 
+                                <MudSelect @bind-Value="asset.WarrantyTypeId"
+                                         Label="Warranty Type"
                                          @bind-Value:after="OnChangeWarrantyType"
                                          Variant="Variant.Outlined"
                                          AnchorOrigin="Origin.BottomCenter"
@@ -149,10 +158,10 @@
                                     }
                                 </MudSelect>
                             </MudItem>
-                            
+
                             <MudItem xs="12" md="6">
-                                <MudDatePicker @bind-Date="asset.WarrantyExpiration" 
-                                             Label="Warranty Expiration" 
+                                <MudDatePicker @bind-Date="asset.WarrantyExpiration"
+                                             Label="Warranty Expiration"
                                              Variant="Variant.Outlined"
                                              HelperText="When does the warranty expire?"
                                              Adornment="Adornment.Start"
@@ -174,8 +183,8 @@
                         </CardHeaderContent>
                         <CardHeaderActions>
                             <MudTooltip Text="Add attribute">
-                                <MudIconButton Icon="@Icons.Material.Filled.Add" 
-                                             Color="Color.Primary" 
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                             Color="Color.Primary"
                                              Size="Size.Medium"
                                              OnClick="AddAttribute" />
                             </MudTooltip>
@@ -192,14 +201,14 @@
                                         <MudCardContent Class="px-4 pt-1 pb-1">
                                             <MudGrid Spacing="2" AlignItems="Center">
                                                 <MudItem xs="12" sm="5">
-                                                    <MudTextField @bind-Value="attr.Attribute" 
-                                                                Label="Attribute Name" 
+                                                    <MudTextField @bind-Value="attr.Attribute"
+                                                                Label="Attribute"
                                                                 Variant="Variant.Outlined"
                                                                 Margin="Margin.Dense" />
                                                 </MudItem>
                                                 <MudItem xs="10" sm="5">
-                                                    <MudTextField @bind-Value="attr.Value" 
-                                                        Label="Value" 
+                                                    <MudTextField @bind-Value="attr.Value"
+                                                        Label="Value"
                                                         Variant="Variant.Outlined"
                                                         Margin="Margin.Dense"
                                                         Required="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
@@ -207,9 +216,9 @@
                                                         ErrorText="Value is required if Attribute is set." />
                                                 </MudItem>
                                                 <MudItem xs="2" sm="2" Class="d-flex justify-end">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                  Color="Color.Error"
-                                                                 Size="Size.Small" 
+                                                                 Size="Size.Small"
                                                                  OnClick="@(() => _attributes.Remove(attr))" />
                                                 </MudItem>
                                             </MudGrid>
@@ -223,8 +232,8 @@
                             <div class="d-flex flex-column align-center justify-center py-6">
                                 <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
                                 <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No attributes added</MudText>
-                                <MudButton Color="Color.Primary" 
-                                         Variant="Variant.Text" 
+                                <MudButton Color="Color.Primary"
+                                         Variant="Variant.Text"
                                          StartIcon="@Icons.Material.Filled.Add"
                                          OnClick="AddAttribute">
                                     Add First Attribute
@@ -254,7 +263,7 @@
                             {
                                 <MudFileUpload T="IReadOnlyList<IBrowserFile>"
                                              FilesChanged="AddAttachment"
-                                             accept="image/*" 
+                                             accept="image/*"
                                              Capture="environment">
                                     <ActivatorContent>
                                         <MudButton Variant="Variant.Filled"
@@ -266,7 +275,7 @@
                                         </MudButton>
                                     </ActivatorContent>
                                 </MudFileUpload>
-                                
+
                                 <MudFileUpload T="IReadOnlyList<IBrowserFile>"
                                              FilesChanged="AddAttachment"
                                              accept="image/*">
@@ -488,7 +497,8 @@
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
+                    Logger.LogError(ex, $"Failed to prepare file {file.Name} for upload");
+                    Snackbar.Add($"Failed to upload {file.Name}", Severity.Error);
                 }
             }
         }
@@ -511,7 +521,7 @@
             foreach (var item in _attachments)
             {
                 item.attachment.ParentId = Id;
-
+                item.attachment.ParentType = typeof(Asset).Name;
                 item.attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.file);
 
                 var uploadedAttachment = await AttachmentService.AddAsync(item.attachment);

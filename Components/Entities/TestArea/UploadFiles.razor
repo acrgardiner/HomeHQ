@@ -150,7 +150,7 @@
             foreach (var item in _attachments)
             {
                 // Save file to disk or database as needed
-                var filePath = Path.Combine("appdata", "uploads", item.attachment.LocalFileName);
+                var filePath = Path.Combine("appdata", "attachments", item.attachment.LocalFileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
