@@ -11,8 +11,8 @@ using projectaardvarkx2.Data;
 namespace projectaardvarkx2.data.migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250806224038_v0.0.0-PurchasedFrom")]
-    partial class v000PurchasedFrom
+    [Migration("20250808085504_v0.0.0")]
+    partial class v000
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -225,6 +225,10 @@ namespace projectaardvarkx2.data.migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("ParentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParentType")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
