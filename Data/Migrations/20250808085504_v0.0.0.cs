@@ -224,6 +224,7 @@ namespace projectaardvarkx2.data.migrations
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     CategoryId = table.Column<Guid>(type: "TEXT", nullable: true),
                     PurchaseDate = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    PurchasedFrom = table.Column<string>(type: "TEXT", nullable: true),
                     WarrantyTypeId = table.Column<Guid>(type: "TEXT", nullable: true),
                     WarrantyExpiration = table.Column<DateTime>(type: "TEXT", nullable: true),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -256,6 +257,7 @@ namespace projectaardvarkx2.data.migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ParentType = table.Column<string>(type: "TEXT", nullable: false),
                     AttachmentTypeId = table.Column<Guid>(type: "TEXT", nullable: true),
                     LocalFileName = table.Column<string>(type: "TEXT", nullable: false),
                     OriginFileName = table.Column<string>(type: "TEXT", nullable: false),
