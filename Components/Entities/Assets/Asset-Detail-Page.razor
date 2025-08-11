@@ -222,9 +222,9 @@
                 </MudCard>
             </MudItem>
 
+            <!-- Attachments Sidebar -->
             <MudItem xs="12" lg="4">
-                <!-- Attachments Card -->
-                <MudCard Elevation="2" Class="form-card">
+                <MudCard Elevation="2" Class="form-card attachments-card">
                     <MudCardHeader>
                         <CardHeaderContent>
                             <div class="d-flex align-center">
@@ -240,15 +240,15 @@
                                         @(_currentAttachmentIndex + 1) of @_attachments.Count
                                     </MudText>
                                     <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
-                                                    Size="Size.Small"
-                                                    Color="Color.Primary"
-                                                    Disabled="@(_currentAttachmentIndex <= 0)"
-                                                    OnClick="PreviousAttachment" />
+                                                   Size="Size.Small"
+                                                   Color="Color.Primary"
+                                                   Disabled="@(_currentAttachmentIndex <= 0)"
+                                                   OnClick="PreviousAttachment" />
                                     <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                                                    Size="Size.Small"
-                                                    Color="Color.Primary"
-                                                    Disabled="@(_currentAttachmentIndex >= _attachments.Count - 1)"
-                                                    OnClick="NextAttachment" />
+                                                   Size="Size.Small"
+                                                   Color="Color.Primary"
+                                                   Disabled="@(_currentAttachmentIndex >= _attachments.Count - 1)"
+                                                   OnClick="NextAttachment" />
                                 </div>
                             }
                         </CardHeaderActions>
@@ -336,7 +336,7 @@
                                                 var index = i; // Capture for closure
                                                 var attachment = _attachments[i];
                                                 var isActive = i == _currentAttachmentIndex;
-                                                
+
                                                 <div class="thumbnail-container @(isActive ? "active" : "")" 
                                                      @onclick="@(() => SetCurrentAttachment(index))">
                                                     @if (IsImageAttachment(attachment))
@@ -365,7 +365,8 @@
                         {
                             <div class="d-flex flex-column align-center justify-center py-6 text-center">
                                 <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
-                                <MudText Typo="Typo.body2" Class="mud-text-secondary">No attachments</MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-1">No attachments yet</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Upload receipts, photos, or documents</MudText>
                             </div>
                         }
                     </MudCardContent>
