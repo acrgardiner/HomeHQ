@@ -1,0 +1,601 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using projectaardvarkx2.Services
+@using projectaardvarkx2.Entities
+@using projectaardvarkx2.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+@using projectaardvarkx2.Helpers
+@using projectaardvarkx2.FileStorage
+@using System.Linq.Expressions
+
+@attribute [Authorize()]
+
+@inject ISnackbar Snackbar
+@inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<AttachmentType> AttachmentTypeService
+@inject IFileStorageService FileStorageService
+@inject ILogger<Attachment_Sidebar> Logger
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<MudCard Elevation="2" Class="form-card attachments-card">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.AttachFile" Class="mr-2" Color="Color.Warning" />
+                <MudText Typo="Typo.h6">Attachments</MudText>
+            </div>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            @if (_attachments.Any())
+            {
+                <div class="d-flex align-center">
+                    <MudText Typo="Typo.caption" Class="mr-3 mud-text-secondary">
+                        @(_currentAttachmentIndex + 1) of @_attachments.Count
+                    </MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   Disabled="@(_currentAttachmentIndex <= 0)"
+                                   OnClick="PreviousAttachment" />
+                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   Disabled="@(_currentAttachmentIndex >= _attachments.Count - 1)"
+                                   OnClick="NextAttachment" />
+                </div>
+            }
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudDivider />
+    <MudCardContent>
+        <!-- Upload Buttons -->
+        <MudStack Spacing="2" Class="mb-4">
+            @if(!ReadOnly){
+                @if (IsMobile)
+                {
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                   FilesChanged="AddAttachment"
+                                   accept="image/*"
+                                   Capture="environment">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Camera"
+                                       FullWidth="true"
+                                       Class="upload-btn">
+                                Take Photo
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                   FilesChanged="AddAttachment"
+                                   accept="image/*">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Image"
+                                       FullWidth="true"
+                                       Class="upload-btn">
+                                From Gallery
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                }
+                else
+                {
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                   FilesChanged="AddAttachment"
+                                   accept="image/*,application/pdf">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.CloudUpload"
+                                       FullWidth="true"
+                                       Class="upload-btn"
+                                       Disabled="_uploading">
+                                @if (_uploading)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                    <span>Uploading...</span>
+                                }
+                                else
+                                {
+                                    <span>Upload Files</span>
+                                }
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                }
+            }
+        </MudStack>
+
+        <!-- Attachments List -->
+        @if (_attachments.Any())
+        {
+            <div class="attachment-carousel">
+                @{
+                    var currentAttachment = _attachments[_currentAttachmentIndex];
+                }
+                 <!-- Main Attachment Display -->
+                 <div class="attachment-display mb-4" @onclick="@(async () => await ImageDialogOpen()/*ViewAttachment(currentAttachment)*/)" >
+                    @if (IsImageAttachment(currentAttachment.Attachment))
+                    {
+                        <div class="attachment-preview image-preview">
+                            <MudImage Src="@currentAttachment.ImagePreviewUrl"
+                                      Alt="@currentAttachment.Attachment.OriginFileName"
+                                      Class="attachment-image"
+                                      ObjectFit="ObjectFit.Cover" />
+                            <div class="attachment-overlay">
+                                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn"
+                                    Size="Size.Large"
+                                    Color="Color.Primary"
+                                    Variant="Variant.Filled"
+                                    Class="zoom-button" OnClick="@(async () => await ImageDialogOpen()/*NavigateToAttachment(currentAttachment.Attachment)*/)" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="attachment-preview file-preview">
+                            <div class="file-icon-container">
+                                <MudIcon Icon="@GetAttachmentIcon(currentAttachment.Attachment)"
+                                         Size="Size.Large"
+                                         Color="Color.Primary" />
+                            </div>
+                            <div class="attachment-overlay">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                               Size="Size.Large"
+                                               Color="Color.Primary"
+                                               Variant="Variant.Filled"
+                                               Class="view-button" />
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Attachment Info -->
+                <div class="attachment-info mb-3">
+                    @* <div class="d-flex align-center justify-space-between mb-2">
+                        <MudText Typo="Typo.subtitle1" Class="attachment-name text-truncate">
+                            @currentAttachment.Attachment.OriginFileName
+                        </MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                       Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Text" />
+                    </div> *@
+
+                    <div class="d-flex align-center justify-space-between">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            @Formatter.FormatFileSize(currentAttachment.Attachment.FileSize) • @currentAttachment.Attachment.Extension?.ToUpper()
+                        </MudText>
+                    </div>
+                    <div class="d-flex align-center justify-space-between">
+                        @* @if (currentAttachment.Attachment.AttachmentType != null)
+                        {
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="Color.Secondary"
+                                     Variant="Variant.Text">
+                                @currentAttachment.Attachment.AttachmentType.Name
+                            </MudChip>
+                        } *@
+                        <MudSelect T="Guid?"
+                                   @bind-Value="currentAttachment.Attachment.AttachmentTypeId"
+                                   Label="Type"
+                                   Dense="true"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Disabled="_uploading" ReadOnly="@ReadOnly">
+                            @foreach (var type in AttachmentTypes)
+                            {
+                                <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+                </div>
+                <!-- Thumbnail Navigation (if more than one attachment) -->
+                @if (_attachments.Count > 1)
+                {
+                    <div class="attachment-thumbnails">
+                        <MudStack Row="true" Spacing="1" Justify="Justify.Center">
+                            @for (int i = 0; i < _attachments.Count; i++)
+                            {
+                                var index = i; // Capture for closure
+                                var attachment = _attachments[i];
+                                var isActive = i == _currentAttachmentIndex;
+
+                                <div class="thumbnail-container @(isActive ? "active" : "")"
+                                     @onclick="@(() => SetCurrentAttachment(index))">
+                                    @if (IsImageAttachment(attachment.Attachment))
+                                    {
+                                        <MudImage Src="@attachment.ImagePreviewUrl"
+                                                  Alt="@attachment.Attachment.OriginFileName"
+                                                  Class="thumbnail-image"
+                                                  ObjectFit="ObjectFit.Cover" />
+                                    }
+                                    else
+                                    {
+                                        <div class="thumbnail-file">
+                                            <MudIcon Icon="@GetAttachmentIcon(attachment.Attachment)"
+                                                     Size="Size.Small"
+                                                     Color="Color.Primary" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </MudStack>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column align-center justify-center py-6 text-center">
+                <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-1">No attachments yet</MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">Upload receipts, photos, or documents</MudText>
+            </div>
+        }
+    </MudCardContent>
+</MudCard>
+
+<MudDialog style="width: 100%; height: 100%" @bind-Visible="_dialogVisible" Options="_maxWidthOptions">
+    <TitleContent>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachment</MudText>
+            <div class="d-flex align-center gap-2">
+                @*@if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment) )
+                {
+                    <MudButton Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.ZoomOutMap"
+                               OnClick="ResetZoom">
+                        Reset Zoom
+                    </MudButton>
+                }*@
+                <MudButton Color="Color.Primary" OnClick="@(async () => await ImageDialogClose())">Close</MudButton>
+            </div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Fixed="true" style="height: 90%; overflow: hidden;">
+            @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
+            {
+                <div class="wheelzoom-container" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                    <MudImage id="@_zoomImageId"
+                              Src="@_attachments[_currentAttachmentIndex].ImageUrl"
+                              Alt="@_attachments[_currentAttachmentIndex].Attachment.OriginFileName"
+                              Style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                </div>
+                <div class="zoom-instructions mt-2 text-center">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                        Use mouse wheel to zoom, drag to pan
+                    </MudText>
+                </div>
+            }
+            else
+            {
+                <iframe src="@_attachments[_currentAttachmentIndex].ImageUrl"
+                        frameborder="0"
+                        style="width: 100%; height: 100%; display: block;" />
+            }
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter] public Guid? ParentId { get; set; }
+    [Parameter] public bool IsMobile { get; set; } = false;
+    [Parameter] public string ParentType { get; set; }
+    [Parameter] public bool ReadOnly { get; set; } = false;
+
+
+    private List<Attachment_wfile> _attachments = new();
+    private long maxFileSize = 1024 * 1024 * 15;
+    private const long MaxPreviewSize = 5 * 1024 * 1024; // 1MB
+    private int maxAllowedFiles = 3;
+    private bool _uploading = false;
+
+    private List<AttachmentType> AttachmentTypes = new();
+    private Guid DefaultAttachmentTypeId;
+    private AttachmentType DefaultAttachmentType = new();
+
+    private int _currentAttachmentIndex = 0;
+
+    private bool _dialogVisible = false;
+    private readonly DialogOptions _maxWidthOptions = new() { MaxWidth = MaxWidth.Large };
+    private string _zoomImageId = $"zoom-image-{Guid.NewGuid()}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            AttachmentTypes = (await AttachmentTypeService.GetAsync()).ToList();
+
+            if (AttachmentTypes.Count == 0)
+            {
+                Snackbar.Add("No attachment types found. Please create at least one attachment type.", Severity.Error);
+                return;
+            }
+
+            DefaultAttachmentType = AttachmentTypes.Where(a => a.Default).First();
+            DefaultAttachmentTypeId = DefaultAttachmentType.Id;
+
+            if (ParentId != Guid.Empty)
+            {
+                _attachments = (await AttachmentService.GetAsync(
+                    filter: x => x.ParentId == ParentId,
+                    orderby: x => x.CreatedOn,
+                    descending: true,
+                    take: 10
+                )).Select(a => new Attachment_wfile { Attachment = a, File = null!, ImageUrl = GetImageUrl(a), ImagePreviewUrl = GetImagePreviewUrl(a) }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to load", Severity.Error);
+        }
+
+    }
+
+    private void NextAttachment()
+    {
+        if (_currentAttachmentIndex < _attachments.Count - 1)
+        {
+            _currentAttachmentIndex++;
+        }
+    }
+
+    private void PreviousAttachment()
+    {
+        if (_currentAttachmentIndex > 0)
+        {
+            _currentAttachmentIndex--;
+        }
+    }
+
+    private void SetCurrentAttachment(int index)
+    {
+        if (index >= 0 && index < _attachments.Count)
+        {
+            _currentAttachmentIndex = index;
+        }
+    }
+
+    private async Task AddAttachment(IReadOnlyList<IBrowserFile> files)
+    {
+        _uploading = true;
+
+        try
+        {
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var fileExtension = Path.GetExtension(file.Name);
+
+                    // Save Attachment entity
+                    var attachment = new Attachment
+                    {
+                        OriginFileName = file.Name,
+                        Extension = fileExtension,
+                        ContentType = file.ContentType,
+                        FileSize = file.Size,
+                        AttachmentTypeId = DefaultAttachmentTypeId,
+                        AttachmentType = DefaultAttachmentType
+                    };
+
+                    var imageUrl = await GetImagePreviewUrl(file);
+
+                    Attachment_wfile attachmentWithFile = new Attachment_wfile
+                    {
+                        Attachment = attachment,
+                        ImagePreviewUrl = imageUrl,
+                        ImageUrl = imageUrl,
+                        File = file
+                    };
+
+                    _attachments.Add(attachmentWithFile);
+                    Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
+                }
+            }
+        }
+        finally
+        {
+            _uploading = false;
+            StateHasChanged();
+        }
+    }
+
+    public async Task<bool> SaveAttachments(Guid Id)
+    {
+        try
+        {
+            foreach (var item in _attachments)
+            {
+                item.Attachment.ParentId = Id;
+                item.Attachment.ParentType = ParentType;
+                item.Attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.File);
+
+                var uploadedAttachment = await AttachmentService.AddAsync(item.Attachment);
+            }
+            _attachments.Clear();
+            Snackbar.Add($"Attachments Saved", Severity.Success);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save attachments");
+            Snackbar.Add($"Failed to save attachments: {ex.Message}", Severity.Error);
+            return false;
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void Remove(Attachment_wfile item)
+    {
+        _attachments.Remove(item);
+    }
+
+    struct Attachment_wfile
+    {
+        public Attachment Attachment;
+        public IBrowserFile File;
+        public string ImageUrl;
+        public string ImagePreviewUrl;
+    }
+
+    private async Task<string> GetImageUrl(Attachment_wfile item)
+    {
+        if (item.File == null)
+        {
+            //Attachment is on server use URL
+            return GetImageUrl(item.Attachment);
+        }
+        else
+        {
+            return await GetImagePreviewUrl(item.File);
+        }
+    }
+
+    private async Task<string> GetImagePreviewUrl(Attachment_wfile item)
+    {
+        if (item.File == null)
+        {
+            //Attachment is on server use URL
+            return GetImagePreviewUrl(item.Attachment);
+        }
+        else
+        {
+            return await GetImagePreviewUrl(item.File);
+        }
+    }
+
+    private string GetImagePreviewUrl(Attachment attachment)
+    {
+        return $"/api/uploads/{attachment.Id}/preview";
+    }
+
+    private string GetImageUrl(Attachment attachment)
+    {
+        return $"/api/uploads/{attachment.Id}";
+    }
+
+    private async Task<string> GetImagePreviewUrl(IBrowserFile file)
+    {
+        using var stream = file.OpenReadStream(MaxPreviewSize);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+
+        var bytes = ms.ToArray();
+        var base64 = Convert.ToBase64String(bytes);
+        return $"data:{file.ContentType};base64,{base64}";
+    }
+
+    private async Task ViewAttachment(Attachment_wfile attachment)
+    {
+        ImageDialogOpen();
+        /*
+         * try
+        {
+            //This would ideally open the attachment in a dialog or new tab
+            var parameters = new DialogParameters<ViewImage>()
+            {
+                { x => x.Attachment, attachment.Attachment }
+            };
+            await DialogService.ShowAsync<ViewImage>("View Attachment", parameters);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to view attachment {AttachmentId}", attachment.Attachment.Id);
+            Snackbar.Add("Failed to view attachment", Severity.Error);
+        }*/
+    }
+
+
+    private bool IsImageAttachment(Attachment attachment)
+    {
+        return !string.IsNullOrEmpty(attachment.ContentType) && attachment.ContentType.StartsWith("image/");
+    }
+
+    private async Task NavigateToAttachment(Attachment attachment)
+    {
+        await JSRuntime.InvokeVoidAsync("open", "/api/uploads/" + attachment.Id.ToString(), "_blank");
+    }
+
+    private async Task DownloadAttachment(Attachment attachment)
+    {
+        try
+        {
+            //This would ideally trigger a download
+            Snackbar.Add($"Download started for {attachment.OriginFileName}", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to download attachment {AttachmentId}", attachment.Id);
+            Snackbar.Add("Failed to download attachment", Severity.Error);
+        }
+    }
+
+    private string GetAttachmentIcon(Attachment attachment)
+    {
+        if (string.IsNullOrEmpty(attachment.ContentType))
+            return Icons.Material.Filled.AttachFile;
+
+        return attachment.ContentType.StartsWith("image/") switch
+        {
+            true => Icons.Material.Filled.Image,
+            false when attachment.ContentType.Contains("pdf") => Icons.Material.Filled.PictureAsPdf,
+            false when attachment.ContentType.Contains("document") => Icons.Material.Filled.Description,
+            false when attachment.ContentType.Contains("spreadsheet") => Icons.Material.Filled.GridOn,
+            _ => Icons.Material.Filled.AttachFile
+        };
+    }
+
+    private async Task ImageDialogClose()
+    {
+        // Cleanup wheelzoom before closing
+        if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
+        {
+            //TODO: Look at how to do this
+            //await JSRuntime.InvokeVoidAsync("wheelzoomInterop.destroy", _zoomImageId);
+        }
+        _dialogVisible = false;
+    }
+
+    private async Task ImageDialogOpen()
+    {
+        _dialogVisible = true;
+
+        // Wait for the dialog to render, then initialize wheelzoom
+        if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
+        {
+            await Task.Delay(100); // Small delay to ensure DOM is ready
+            await JSRuntime.InvokeVoidAsync("wheelzoomInterop.initialize", _zoomImageId, new
+            {
+                zoom = 0.10,
+                maxZoom = 4,
+                initialZoom = 1,
+                initialX = 0.5,
+                initialY = 0.5
+            });
+        }
+    }
+
+    private async Task ResetZoom()
+    {
+        if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
+        {
+            //TODO: Look at how to do this
+            //await JSRuntime.InvokeVoidAsync("wheelzoomInterop.reset", _zoomImageId);
+        }
+    }
+}

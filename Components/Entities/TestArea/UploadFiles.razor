@@ -2,6 +2,10 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using projectaardvarkx2.Services
 @using projectaardvarkx2.Entities
+@using projectaardvarkx2.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
 
 @inject ISnackbar Snackbar
 @inject IEntityService<Attachment> AttachmentService
@@ -24,47 +28,60 @@
 
         @if (_attachments.Any())
         {
-            <MudDataGrid T="Attachment_wfile" Items="@_attachments" Loading="@_uploading"
-            Hideable="true" Hover="true" Dense="true"
-            Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
-                <Columns>
-                    <PropertyColumn Property="@(x => x.attachment.OriginFileName)" Title="File" />
-                    <PropertyColumn Property="@(x => x.attachment.ContentType)" Title="Content Type" Hidden="true"/>
-                    <PropertyColumn Property="@(x => x.attachment.Extension)" Title="Extension" Hidden="true" />
-                    <TemplateColumn T="Attachment_wfile" Title="File Size">
-                        <CellTemplate>
-                            @FormatFileSize(context.Item.attachment.FileSize)
-                        </CellTemplate>
-                    </TemplateColumn>
-
-                    <TemplateColumn T="Attachment_wfile" Title="Attachment Type">
-                        <CellTemplate>
-                            <MudSelect T="Guid?"
-                            @bind-Value="context.Item.attachment.AttachmentTypeId"
-                            Dense="true"
-                            Disabled="_uploading">
-                                @foreach (var type in AttachmentTypes)
-                                {
-                                    <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
-                                }
-                            </MudSelect>
-                        </CellTemplate>
-                    </TemplateColumn>
-
-                    <TemplateColumn T="Attachment_wfile" TextAlignment="TextAlignment.Right">
-                        <CellTemplate>
-                            <MudStack Row="true" Spacing="0" Class="pa-2">
-                                <div>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                    Size="Size.Small" Class="mx-1"
-                                    OnClick="@(() => Remove(context.Item))" />
-                                </div>
-                            </MudStack>
-                        </CellTemplate>
-
-                    </TemplateColumn>
-                </Columns>
-            </MudDataGrid>
+            <MudPaper Class="pa-4 mt-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-3">Files to Upload</MudText>
+                
+                @foreach (var item in _attachments)
+                {
+                    <MudCard Class="mb-3" Elevation="2">
+                        <MudCardContent>
+                            <MudGrid>
+                                <MudItem xs="12" md="4">
+                                    <FilePreview File="item.file" ShowActions="true" />
+                                </MudItem>
+                                <MudItem xs="12" md="8">
+                                    <MudStack Spacing="3">
+                                        <MudTextField Label="Original File Name" 
+                                                    Value="@item.attachment.OriginFileName" 
+                                                    ReadOnly="true" 
+                                                    Variant="Variant.Outlined" />
+                                        
+                                        <MudSelect T="Guid?"
+                                                 @bind-Value="item.attachment.AttachmentTypeId"
+                                                 Label="Attachment Type"
+                                                 Variant="Variant.Outlined"
+                                                 Disabled="_uploading">
+                                            @foreach (var type in AttachmentTypes)
+                                            {
+                                                <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                        
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <MudStack Row="true" Spacing="2">
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                                                    @item.attachment.Extension?.ToUpper()
+                                                </MudChip>
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Secondary">
+                                                    @FormatFileSize(item.attachment.FileSize)
+                                                </MudChip>
+                                            </MudStack>
+                                            
+                                            <MudButton StartIcon="@Icons.Material.Filled.Delete" 
+                                                     Color="Color.Error" 
+                                                     Variant="Variant.Text"
+                                                     Size="Size.Small"
+                                                     OnClick="@(() => Remove(item))">
+                                                Remove
+                                            </MudButton>
+                                        </MudStack>
+                                    </MudStack>
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudPaper>
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
             OnClick="Save" Disabled="_uploading" Class="ma-4">

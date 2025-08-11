@@ -16,23 +16,11 @@
     <Routes @rendermode="RenderModeForPage" />
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="js/wheelzoom.js"></script>
+    <script src="js/wheelzoom-interop.js"></script>
 
     <script>
         window.downloadFileFromBase64 = (filename, csv) => {
-            //const link = document.createElement('a');
-            //// Decode base64 to binary
-            //const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-            //// Specify UTF-8 encoding in the Blob type
-            //const blob = new Blob([bytes], { type: 'text/csv;charset=utf-8;' });
-            //const url = URL.createObjectURL(blob);
-            //link.href = url;
-            //link.download = filename;
-            //document.body.appendChild(link);
-            //link.click();
-            //document.body.removeChild(link);
-            //URL.revokeObjectURL(url);
-
-            //const csv = '\uFEFFName,Emoji\nRing,💍\n';
             const bytes = new TextEncoder().encode(csv);
             const blob = new Blob([bytes], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
