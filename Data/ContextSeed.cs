@@ -59,9 +59,14 @@ public class ContextSeed
         await context.Categories.AddRangeAsync(
             new Category { Id = new Guid(), Icon = "📺", Name = "Electronics" },
             new Category { Id = new Guid(), Icon = "💍", Name = "Jewelry" },
-            new Category { Id = new Guid(), Icon = "🛠", Name = "Tools" },
-            new Category { Id = new Guid(), Icon = "🛋", Name = "Furniture" },
-            new Category { Id = new Guid(), Icon = "🚗", Name = "Vehicles" }
+            new Category { Id = new Guid(), Icon = "👚", Name = "Apparel" },
+            new Category { Id = new Guid(), Icon = "🛠", Name = "Garage" },
+            new Category { Id = new Guid(), Icon = "🛋", Name = "Lounge" },
+            new Category { Id = new Guid(), Icon = "🧺", Name = "Laundry" },
+            new Category { Id = new Guid(), Icon = "🍳", Name = "Kitchen" },
+            new Category { Id = new Guid(), Icon = "🛏️", Name = "Bedroom" },
+            new Category { Id = new Guid(), Icon = "🚗", Name = "Automotive" },
+            new Category { Id = new Guid(), Icon = "❓", Name = "Misc" }
         );
 
         context.SaveChanges();
@@ -75,7 +80,8 @@ public class ContextSeed
 
         await context.AttachmentTypes.AddRangeAsync(
             new AttachmentType { Id = new Guid(), Name = "Receipt", Default = true }
-            , new AttachmentType { Id = new Guid(), Name = "Manual" }
+            , new AttachmentType { Id = new Guid(), Name = "User Manual" }
+            , new AttachmentType { Id = new Guid(), Name = "Item Photo" }
         );
 
         context.SaveChanges();

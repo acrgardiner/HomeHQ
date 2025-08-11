@@ -12,10 +12,7 @@
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<Category> CategoryService
 @inject IEntityService<WarrantyType> WarrantyTypeService
-@inject IEntityService<AttachmentType> AttachmentTypeService
-@inject IEntityService<Attachment> AttachmentService
 @inject IEntityService<AttributeValue> AttributeService
-@inject IFileStorageService FileStorageService
 
 @inject ICurrentUserService CurrentUser
 
@@ -250,211 +247,7 @@
 
             <!-- Attachments Sidebar -->
             <MudItem xs="12" lg="4">
-                <MudCard Elevation="2" Class="form-card attachments-card">
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <div class="d-flex align-center">
-                                <MudIcon Icon="@Icons.Material.Filled.AttachFile" Class="mr-2" Color="Color.Warning" />
-                                <MudText Typo="Typo.h6">Attachments</MudText>
-                            </div>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            @if (_attachments.Any())
-                            {
-                                <div class="d-flex align-center">
-                                    <MudText Typo="Typo.caption" Class="mr-3 mud-text-secondary">
-                                        @(_currentAttachmentIndex + 1) of @_attachments.Count
-                                    </MudText>
-                                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
-                                                   Size="Size.Small"
-                                                   Color="Color.Primary"
-                                                   Disabled="@(_currentAttachmentIndex <= 0)"
-                                                   OnClick="PreviousAttachment" />
-                                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                                                   Size="Size.Small"
-                                                   Color="Color.Primary"
-                                                   Disabled="@(_currentAttachmentIndex >= _attachments.Count - 1)"
-                                                   OnClick="NextAttachment" />
-                                </div>
-                            }
-                        </CardHeaderActions>
-                    </MudCardHeader>
-                    <MudDivider />
-                    <MudCardContent>
-                        <!-- Upload Buttons -->
-                        <MudStack Spacing="2" Class="mb-4">
-                            @if (IsMobile)
-                            {
-                                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                               FilesChanged="AddAttachment"
-                                               accept="image/*"
-                                               Capture="environment">
-                                    <ActivatorContent>
-                                        <MudButton Variant="Variant.Filled"
-                                                   Color="Color.Primary"
-                                                   StartIcon="@Icons.Material.Filled.Camera"
-                                                   FullWidth="true"
-                                                   Class="upload-btn">
-                                            Take Photo
-                                        </MudButton>
-                                    </ActivatorContent>
-                                </MudFileUpload>
-
-                                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                               FilesChanged="AddAttachment"
-                                               accept="image/*">
-                                    <ActivatorContent>
-                                        <MudButton Variant="Variant.Outlined"
-                                                   Color="Color.Primary"
-                                                   StartIcon="@Icons.Material.Filled.Image"
-                                                   FullWidth="true"
-                                                   Class="upload-btn">
-                                            From Gallery
-                                        </MudButton>
-                                    </ActivatorContent>
-                                </MudFileUpload>
-                            }
-                            else
-                            {
-                                <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                               FilesChanged="AddAttachment"
-                                               accept="image/*,application/pdf">
-                                    <ActivatorContent>
-                                        <MudButton Variant="Variant.Filled"
-                                                   Color="Color.Primary"
-                                                   StartIcon="@Icons.Material.Filled.CloudUpload"
-                                                   FullWidth="true"
-                                                   Class="upload-btn"
-                                                   Disabled="_uploading">
-                                            @if (_uploading)
-                                            {
-                                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                                                <span>Uploading...</span>
-                                            }
-                                            else
-                                            {
-                                                <span>Upload Files</span>
-                                            }
-                                        </MudButton>
-                                    </ActivatorContent>
-                                </MudFileUpload>
-                            }
-                        </MudStack>
-                        @if (_attachments.Any())
-                        {
-                            <div class="attachment-carousel">
-                                @{
-                                    var currentAttachment = _attachments[_currentAttachmentIndex].attachment;
-                                }
-                                <!-- Main Attachment Display -->
-                                <div class="attachment-display mb-4" @onclick="@(() => ViewAttachment(currentAttachment))">
-                                    @if (IsImageAttachment(currentAttachment))
-                                    {
-                                        <div class="attachment-preview image-preview">
-                                            <MudImage Src="@GetAttachmentPreviewUrl(currentAttachment)"
-                                                      Alt="@currentAttachment.OriginFileName"
-                                                      Class="attachment-image"
-                                                      ObjectFit="ObjectFit.Cover" />
-                                            <div class="attachment-overlay">
-                                                <MudIconButton Icon="@Icons.Material.Filled.ZoomIn"
-                                                               Size="Size.Large"
-                                                               Color="Color.Primary"
-                                                               Variant="Variant.Filled"
-                                                               Class="zoom-button" OnClick="@(() => NavigateToAttachment(currentAttachment))" />
-                                            </div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="attachment-preview file-preview">
-                                            <div class="file-icon-container">
-                                                <MudIcon Icon="@GetAttachmentIcon(currentAttachment)"
-                                                         Size="Size.Large"
-                                                         Color="Color.Primary" />
-                                            </div>
-                                            <div class="attachment-overlay">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                                               Size="Size.Large"
-                                                               Color="Color.Primary"
-                                                               Variant="Variant.Filled"
-                                                               Class="view-button" />
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-
-                                <!-- Attachment Info -->
-                                <div class="attachment-info mb-3">
-                                    <div class="d-flex align-center justify-space-between mb-2">
-                                        <MudText Typo="Typo.subtitle1" Class="attachment-name text-truncate">
-                                            @currentAttachment.OriginFileName
-                                        </MudText>
-                                        <MudIconButton Icon="@Icons.Material.Filled.Download"
-                                                       Size="Size.Small"
-                                                       Color="Color.Primary"
-                                                       Variant="Variant.Text"
-                                                       />
-                                    </div>
-
-                                    <div class="d-flex align-center justify-space-between">
-                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                            @Formatter.FormatFileSize(currentAttachment.FileSize) • @currentAttachment.Extension?.ToUpper()
-                                        </MudText>
-                                        @if (currentAttachment.AttachmentType != null)
-                                        {
-                                            <MudChip T="string" Size="Size.Small"
-                                                     Color="Color.Secondary"
-                                                     Variant="Variant.Text">
-                                                @currentAttachment.AttachmentType.Name
-                                            </MudChip>
-                                        }
-                                    </div>
-                                </div>
-                                <!-- Thumbnail Navigation (if more than one attachment) -->
-                                @if (_attachments.Count > 1)
-                                {
-                                    <div class="attachment-thumbnails">
-                                        <MudStack Row="true" Spacing="1" Justify="Justify.Center">
-                                            @for (int i = 0; i < _attachments.Count; i++)
-                                            {
-                                                var index = i; // Capture for closure
-                                                var attachment = _attachments[i];
-                                                var isActive = i == _currentAttachmentIndex;
-
-                                                <div class="thumbnail-container @(isActive ? "active" : "")"
-                                                    @onclick="@(() => SetCurrentAttachment(index))">
-                                                    @if (IsImageAttachment(attachment.attachment))
-                                                    {
-                                                        <MudImage Src="@GetAttachmentPreviewUrl(attachment.attachment)"
-                                                                  Alt="@attachment.attachment.OriginFileName"
-                                                                  Class="thumbnail-image"
-                                                                  ObjectFit="ObjectFit.Cover" />
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="thumbnail-file">
-                                                            <MudIcon Icon="@GetAttachmentIcon(attachment.attachment)"
-                                                                     Size="Size.Small"
-                                                                     Color="Color.Primary" />
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-                                        </MudStack>
-                                    </div>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="d-flex flex-column align-center justify-center py-6 text-center">
-                                <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
-                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-1">No attachments yet</MudText>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Upload receipts, photos, or documents</MudText>
-                            </div>
-                        }
-                    </MudCardContent>
-                </MudCard>
+                <Attachment_Sidebar @ref="attachmentSidebar" ParentId="@asset.Id" IsMobile="@IsMobile" ParentType="@typeof(Asset).Name" Readonly="@false" />
             </MudItem>
         </MudGrid>
         
@@ -475,18 +268,16 @@
     private List<WarrantyType> warrantyTypes = new();
     private static readonly Guid? nullGuid = null;
 
-    private List<Attachment_wfile> _attachments = new();
     private List<AttributeValue> _attributes = new();
     private int maxAllowedFiles = 3;
     private bool _uploading = false;
     private List<string> _validationErrors = new();
 
-    private List<AttachmentType> attachmentTypes = new();
-    private Guid defaultAttachmentTypeId;
     private Guid defaultWarrantyTypeId;
 
     private int _currentAttachmentIndex = 0;
 
+    private Attachment_Sidebar attachmentSidebar;
     private bool IsMobile;
 
     protected override async Task OnInitializedAsync()
@@ -497,15 +288,7 @@
 
             categories = (await CategoryService.GetAllAsync()).ToList();
             warrantyTypes = ((await WarrantyTypeService.GetAllAsync()).OrderBy(x => x.SortOrder)).ToList();
-            attachmentTypes = (await AttachmentTypeService.GetAllAsync()).ToList();
 
-            if (attachmentTypes.Count == 0)
-            {
-                Snackbar.Add("No attachment types found. Please create at least one attachment type.", Severity.Error);
-                return;
-            }
-
-            defaultAttachmentTypeId = attachmentTypes.Where(at => at.Default).First().Id;
             defaultWarrantyTypeId = warrantyTypes.Where(wt => wt.Default).First().Id;
 
             var loadedAsset = await AssetService.GetByIdAsync(Id);
@@ -517,13 +300,6 @@
             }
             asset = loadedAsset;
 
-            var existingAttachments = (await AttachmentService.GetAsync(
-                filter: x => x.ParentId == Id,
-                orderby: x => x.CreatedOn,
-                descending: true,
-                includes: new List<Expression<Func<Attachment, object>>> { x => x.AttachmentType }
-            )).ToList();
-            _attachments = existingAttachments.Select(a => new Attachment_wfile { attachment = a, file = null }).ToList();
             _attributes = (await AttributeService.GetAsync(
                 filter: x => x.ParentId == Id
             )).ToList();
@@ -532,61 +308,6 @@
         {
             Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
             Logger.LogError(ex, "Error initializing EditAsset components");
-        }
-    }
-
-    private void AddAttachment(IReadOnlyList<IBrowserFile> files)
-    {
-        _uploading = true;
-
-        try
-        {
-            foreach (var file in files)
-            {
-                try
-                {
-                    var fileExtension = Path.GetExtension(file.Name);
-
-                    // Save Attachment entity
-                    var attachment = new Attachment
-                        {
-                            OriginFileName = file.Name,
-                            Extension = fileExtension,
-                            ContentType = file.ContentType,
-                            FileSize = file.Size,
-                            AttachmentTypeId = defaultAttachmentTypeId
-                        };
-
-                    Attachment_wfile attachmentWithFile = new Attachment_wfile
-                        {
-                            attachment = attachment,
-                            file = file
-                        };
-
-                    _attachments.Add(attachmentWithFile);
-                    Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, $"Failed to prepare file {file.Name} for upload");
-                    Snackbar.Add($"Failed to upload {file.Name}", Severity.Error);
-                }
-            }
-        }
-        finally
-        {
-            _uploading = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task Remove(Attachment_wfile item)
-    {
-        _attachments.Remove(item);
-        // Optionally, delete from server if item.attachment.Id != Guid.Empty
-        if (item.attachment.Id != Guid.Empty)
-        {
-            await AttachmentService.DeleteAsync(item.attachment.Id);
         }
     }
 
@@ -605,27 +326,6 @@
         _attributes.Add(new AttributeValue());
     }
 
-    private async Task SaveAttachments(Guid Id)
-    {
-        try
-        {
-            foreach (var item in _attachments.Where(x => x.file != null))
-            {
-                item.attachment.ParentId = Id;
-                item.attachment.ParentType = typeof(Asset).Name;
-                item.attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.file);
-
-                var uploadedAttachment = await AttachmentService.AddAsync(item.attachment);
-            }
-            Snackbar.Add($"Attachments Saved", Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save attachments");
-            Snackbar.Add($"Failed to save attachments: {ex.Message}", Severity.Error);
-        }
-    }
-
     private async Task HandleValidSubmit()
     {
         try
@@ -635,7 +335,7 @@
 
             await AssetService.UpdateAsync(asset);
             await SaveAttributes(asset.Id);
-            await SaveAttachments(asset.Id);
+            await attachmentSidebar.SaveAttachments(asset.Id);
 
             Snackbar.Add("Asset updated successfully.", Severity.Success);
             Navigation.NavigateTo("/assets");
@@ -697,92 +397,5 @@
             Logger.LogError(ex, "Failed to save attributes");
             Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
         }
-    }
-
-    private void NextAttachment()
-    {
-        if (_currentAttachmentIndex < _attachments.Count - 1)
-        {
-            _currentAttachmentIndex++;
-        }
-    }
-
-    private void PreviousAttachment()
-    {
-        if (_currentAttachmentIndex > 0)
-        {
-            _currentAttachmentIndex--;
-        }
-    }
-
-    private void SetCurrentAttachment(int index)
-    {
-        if (index >= 0 && index < _attachments.Count)
-        {
-            _currentAttachmentIndex = index;
-        }
-    }
-
-    private async Task ViewAttachment(Attachment attachment)
-    {
-        try
-        {
-            //This would ideally open the attachment in a dialog or new tab
-            var parameters = new DialogParameters<ViewImage>()
-            {
-                { x => x.Attachment, attachment }
-            };
-            await DialogService.ShowAsync<ViewImage>("View Attachment", parameters);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to view attachment {AttachmentId}", attachment.Id);
-            Snackbar.Add("Failed to view attachment", Severity.Error);
-        }
-    }
-
-
-    private bool IsImageAttachment(Attachment attachment)
-    {
-        return !string.IsNullOrEmpty(attachment.ContentType) && attachment.ContentType.StartsWith("image/");
-    }
-
-    private string GetAttachmentPreviewUrl(Attachment attachment)
-    {
-        return $"/api/uploads/{attachment.Id}/preview";
-    }
-
-    private async Task NavigateToAttachment(Attachment attachment)
-    {
-        await JSRuntime.InvokeVoidAsync("open", "/api/uploads/" + attachment.Id.ToString(), "_blank");
-    }
-
-    private async Task DownloadAttachment(Attachment attachment)
-    {
-        try
-        {
-            //This would ideally trigger a download
-            Snackbar.Add($"Download started for {attachment.OriginFileName}", Severity.Info);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to download attachment {AttachmentId}", attachment.Id);
-            Snackbar.Add("Failed to download attachment", Severity.Error);
-        }
-    }
-
-    private string GetAttachmentIcon(Attachment attachment)
-    {
-        if (string.IsNullOrEmpty(attachment.ContentType))
-            return Icons.Material.Filled.AttachFile;
-
-        return attachment.ContentType.StartsWith("image/") switch
-        {
-            true => Icons.Material.Filled.Image,
-            false when attachment.ContentType.Contains("pdf") => Icons.Material.Filled.PictureAsPdf,
-            false when attachment.ContentType.Contains("document") => Icons.Material.Filled.Description,
-            false when attachment.ContentType.Contains("spreadsheet") => Icons.Material.Filled.GridOn,
-            _ => Icons.Material.Filled.AttachFile
-        };
     }
 }

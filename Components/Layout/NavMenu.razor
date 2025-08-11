@@ -17,11 +17,8 @@
 
         <AuthorizeView>
             <Authorized>
-                @*<MudDivider Class="my-2" />*@
-                
                 <!-- Assets Section -->
                 <div class="nav-section">
-                    
                     <MudNavLink Href="/assets" Icon="@Icons.Material.Filled.AccountBox" Class="nav-item">
                         <div class="d-flex align-center justify-space-between">
                             <MudText Typo="Typo.body2">Assets</MudText>
@@ -32,11 +29,8 @@
                     </MudNavLink>
                 </div>
 
-                @*<MudDivider Class="my-2" />*@
-
                 <!-- Configuration Section -->
                 <div class="nav-section">
-                    
                     <MudNavGroup Title="Setup" Icon="@Icons.Material.Filled.Settings" Expanded="false" Class="nav-group">
                         <MudNavLink Href="/categories" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Category" Class="nav-sub-item">
                             <MudText Typo="Typo.body2">Categories</MudText>
@@ -50,16 +44,12 @@
                     </MudNavGroup>
                 </div>
             </Authorized>
-            
+
             <NotAuthorized>
-                @*<MudDivider Class="my-2" />*@
-                
                 <div class="nav-section">
-                    
                     <MudNavLink Href="/account/register" Icon="@Icons.Material.Filled.PersonAdd" Class="nav-item">
                         <MudText Typo="Typo.body2">Register</MudText>
                     </MudNavLink>
-                    
                     <MudNavLink Href="/account/login" Icon="@Icons.Material.Filled.Login" Class="nav-item">
                         <MudText Typo="Typo.body2">Sign In</MudText>
                     </MudNavLink>
@@ -69,11 +59,8 @@
 
         <AuthorizeView Roles="@Roles.Admin.ToString()">
             <Authorized>
-                @*<MudDivider Class="my-2" />*@
-                
                 <!-- Administration Section -->
                 <div class="nav-section">
-                    
                     <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true" Class="nav-group">
                         <MudNavLink Href="/admindashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Analytics" Class="nav-sub-item">
                             <MudText Typo="Typo.body2">Admin Dashboard</MudText>
@@ -88,7 +75,6 @@
                 </div>
             </Authorized>
         </AuthorizeView>
-        
         <!-- Quick Actions at Bottom -->
         @*
         <AuthorizeView>
@@ -98,7 +84,6 @@
                     <MudText Typo="Typo.caption" Class="nav-section-header px-4 py-2 mud-text-secondary">
                         QUICK ACTIONS
                     </MudText>
-                    
                     <MudButton Variant="Variant.Filled" 
                               Color="Color.Primary" 
                               StartIcon="@Icons.Material.Filled.Add" 
@@ -123,7 +108,6 @@
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
-        
         // Load assets count for badge
         _ = LoadAssetCount();
     }
