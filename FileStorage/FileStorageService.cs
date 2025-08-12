@@ -78,14 +78,14 @@ namespace projectaardvarkx2.FileStorage
                 // Save file to disk or database as needed
                 var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
 
-                Directory.CreateDirectory(Path.GetDirectoryName(fullFilePath)!);
+                Directory.CreateDirectory(attachmentDir);
 
                 File.Move(localFile, fullFilePath);
 
                 // Generate Thumbnail if it's an image file
                 if (IsImageFile(contentType))
                 {
-                    await GenerateThumbnailAsync(fullFilePath, Path.Combine(thumbsDir, thumbnailFileName));
+                    await GenerateThumbnailAsync(fullFilePath, thumbsDir thumbnailFileName);
                 }
 
                 return attachmentFileName;
@@ -106,12 +106,13 @@ namespace projectaardvarkx2.FileStorage
             return imageTypes.Contains(contentType.ToLower());
         }
 
-        private async Task GenerateThumbnailAsync(string sourceFile, string thumbnailFile)
+        private async Task GenerateThumbnailAsync(string sourceFile, string dir, string thumbnailFilename)
         {
             try
             {
-                var dir = Path.GetDirectoryName(thumbnailFile)!;
                 Directory.CreateDirectory(dir);
+
+                var thumbnailFile = Path.Combine(dir, thumbnailFilename);
 
                 using (var image = await Image.LoadAsync(sourceFile))
                 {
@@ -129,7 +130,7 @@ namespace projectaardvarkx2.FileStorage
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to generate thumbnail for: {OriginalPath}", thumbnailFile);
+                _logger.LogWarning(ex, "Failed to generate thumbnail for: {OriginalPath}", thumbnailFilename);
             }
         }
 
