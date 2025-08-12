@@ -1,20 +1,21 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.FileProviders;
+using MudBlazor;
+using MudBlazor.Services;
+using MudBlazor.Template.Components.Account;
 using projectaardvarkx2.Components;
 using projectaardvarkx2.Components.Account;
 using projectaardvarkx2.Data;
-using projectaardvarkx2.Identity;
-using projectaardvarkx2.Services;
-using projectaardvarkx2.Logging;
-using Serilog;
-using MudBlazor.Services;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using projectaardvarkx2.Repositories;
 using projectaardvarkx2.Entities;
-using MudBlazor.Template.Components.Account;
 using projectaardvarkx2.FileStorage;
-using Microsoft.Extensions.FileProviders;
+using projectaardvarkx2.Identity;
+using projectaardvarkx2.Logging;
+using projectaardvarkx2.Repositories;
+using projectaardvarkx2.Services;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -34,7 +35,18 @@ try
 
     builder.Host.UseSerilog();
 
-    builder.Services.AddMudServices();
+    builder.Services.AddMudServices(config =>
+    {
+        config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
+
+        config.SnackbarConfiguration.PreventDuplicates = false;
+        config.SnackbarConfiguration.NewestOnTop = false;
+        config.SnackbarConfiguration.ShowCloseIcon = true;
+        config.SnackbarConfiguration.VisibleStateDuration = 2000;
+        config.SnackbarConfiguration.HideTransitionDuration = 500;
+        config.SnackbarConfiguration.ShowTransitionDuration = 500;
+        config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
+    });
 
     // Add services to the container.
     builder.Services.AddRazorComponents()

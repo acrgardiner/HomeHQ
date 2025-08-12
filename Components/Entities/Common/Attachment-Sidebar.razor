@@ -397,12 +397,14 @@
                     };
 
                     _attachments.Add(attachmentWithFile);
-                    Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
+                    //Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
                 }
                 catch (Exception ex)
                 {
                     Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
                 }
+
+                Snackbar.Add($"Attachments loaded", Severity.Success);
             }
         }
         finally
@@ -428,7 +430,7 @@
                 }
             }
             _attachments.Clear();
-            Snackbar.Add($"Attachments Saved", Severity.Success);
+            //Snackbar.Add($"Attachments Saved", Severity.Success);
             return true;
         }
         catch (Exception ex)

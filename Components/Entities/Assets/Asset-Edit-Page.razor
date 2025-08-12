@@ -40,13 +40,13 @@
             </div>
 
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudButton Variant="Variant.Filled"
+                <MudFab Variant="Variant.Filled"
                            Color="Color.Primary"
                            ButtonType="ButtonType.Submit"
                            StartIcon="@Icons.Material.Filled.Save"
                            Class="asset-action-btn">
                     Save
-                </MudButton>
+                </MudFab>
             </MudStack>
         </div>
 
@@ -65,7 +65,7 @@
                     <MudDivider />
                     <MudCardContent>
                         <MudGrid Spacing="3">
-                            <MudItem xs="6">
+                            <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="asset.Name"
                                     Label="Name"
                                     Required="true"
@@ -99,7 +99,7 @@
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="6">
+                            <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="asset.PurchasedFrom"
                                               Label="Purchased From"
                                               Required="true"
@@ -369,18 +369,22 @@
         }
         else
         {
-            var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
-            if (warrantyType != null)
+            if (asset.PurchaseDate.HasValue)
             {
-                if (warrantyType.Years is not null)
-                    asset.WarrantyExpiration = DateTime.Today.AddYears(warrantyType.Years.Value);
-                if (warrantyType.Months is not null)
-                    asset.WarrantyExpiration = DateTime.Today.AddMonths(warrantyType.Months.Value);
-                if (warrantyType.Days is not null)
-                    asset.WarrantyExpiration = DateTime.Today.AddDays(warrantyType.Days.Value);
+                var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
+                if (warrantyType != null)
+                {
+                    if (warrantyType.Years is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddYears(warrantyType.Years.Value);
+                    if (warrantyType.Months is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddMonths(warrantyType.Months.Value);
+                    if (warrantyType.Days is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddDays(warrantyType.Days.Value);
+
+                    StateHasChanged();
+                }
             }
         }
-        StateHasChanged();
     }
 
     private async Task SaveAttributes(Guid Id)
