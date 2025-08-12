@@ -74,9 +74,12 @@ try
 
     builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-    Directory.CreateDirectory("appdata");
-    Directory.CreateDirectory("appdata/db");
     Directory.CreateDirectory("logs");
+    Directory.CreateDirectory("appdata");
+    Directory.CreateDirectory(Path.Combine("appdata", "imports"));
+    Directory.CreateDirectory(Path.Combine("appdata", "attachments"));
+    Directory.CreateDirectory(Path.Combine("appdata", "thumbs"));
+    Directory.CreateDirectory(Path.Combine("appdata", "db"));
 
     builder.Services.AddControllers();
 
