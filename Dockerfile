@@ -4,6 +4,11 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
 #USER app
 
+# Install ICU for full globalization support
+RUN apk add --no-cache icu-libs tzdata
+# Set the env var to disable invariant globalization mode
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
