@@ -81,7 +81,7 @@ public class ContextSeed
         await context.AttachmentTypes.AddRangeAsync(
             new AttachmentType { Id = new Guid(), Name = "Receipt", Default = true }
             , new AttachmentType { Id = new Guid(), Name = "User Manual" }
-            , new AttachmentType { Id = new Guid(), Name = "Item Photo" }
+            , new AttachmentType { Id = new Guid(), Name = "Photo" }
         );
 
         context.SaveChanges();
@@ -94,6 +94,7 @@ public class ContextSeed
             return;
 
         await context.WarrantyTypes.AddRangeAsync(
+            new WarrantyType { Id = new Guid(), Name = "Custom", Days = 1, Months = null, Years = null },
             new WarrantyType { Id = new Guid(), Name = "6 Month", Days = null, Months = 6, Years = null },
             new WarrantyType { Id = new Guid(), Name = "12 Month", Days = null, Months = 12, Years = null, Default = true },
             new WarrantyType { Id = new Guid(), Name = "2 Year", Days = null, Months = null, Years = 2 },
