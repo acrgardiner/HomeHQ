@@ -418,11 +418,14 @@
         {
             foreach (var item in _attachments)
             {
-                item.Attachment.ParentId = Id;
-                item.Attachment.ParentType = ParentType;
-                item.Attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.File);
+                if (item.File != null) //only upload new files
+                {
+                    item.Attachment.ParentId = Id;
+                    item.Attachment.ParentType = ParentType;
+                    item.Attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.File);
 
-                var uploadedAttachment = await AttachmentService.AddAsync(item.Attachment);
+                    var uploadedAttachment = await AttachmentService.AddAsync(item.Attachment);
+                }
             }
             _attachments.Clear();
             Snackbar.Add($"Attachments Saved", Severity.Success);
