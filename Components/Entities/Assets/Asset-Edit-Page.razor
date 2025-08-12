@@ -116,7 +116,8 @@
                                              HelperText="When was this asset purchased?"
                                              Adornment="Adornment.Start"
                                              AdornmentIcon="@Icons.Material.Filled.CalendarToday"
-                                             DisableFuture="true" />
+                                             ShowToolbar="false"
+                                             Editable="true"/>
                             </MudItem>
                         </MudGrid>
                     </MudCardContent>
@@ -167,7 +168,10 @@
                                              HelperText="When does the warranty expire?"
                                              Adornment="Adornment.Start"
                                              AdornmentIcon="@Icons.Material.Filled.Event"
-                                             Disabled="asset.WarrantyTypeId == null" />
+                                             Disabled="asset.WarrantyTypeId == null"
+                                             ShowToolbar="false"
+                                             Editable="true"
+                                               />
                             </MudItem>
                         </MudGrid>
                     </MudCardContent>
