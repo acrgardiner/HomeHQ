@@ -50,7 +50,7 @@ namespace projectaardvarkx2.FileStorage
                     // Generate Thumbnail if it's an image file
                     if (IsImageFile(file.ContentType))
                     {
-                        await GenerateThumbnailAsync(fullFilePath, Path.Combine(thumbsDir, thumbnailFileName));
+                        await GenerateThumbnailAsync(fullFilePath, thumbsDir, thumbnailFileName);
                     }
                 }
 
@@ -85,7 +85,7 @@ namespace projectaardvarkx2.FileStorage
                 // Generate Thumbnail if it's an image file
                 if (IsImageFile(contentType))
                 {
-                    await GenerateThumbnailAsync(fullFilePath, thumbsDir thumbnailFileName);
+                    await GenerateThumbnailAsync(fullFilePath, thumbsDir, thumbnailFileName);
                 }
 
                 return attachmentFileName;
