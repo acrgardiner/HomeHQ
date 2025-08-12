@@ -18,8 +18,8 @@
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->
-    <div class="d-flex align-center justify-space-between mb-6">
-        <div>
+    <div class="d-flex align-center mb-6">
+        <div class="flex-grow-1">
             <MudText Typo="Typo.h4" Color="Color.Primary">
                 <MudIcon Icon="@Icons.Material.Filled.AccountBox" Class="mr-3" Size="Size.Large" />
                 Assets Management
@@ -28,23 +28,15 @@
                 Manage your assets, track warranties, and organize documentation
             </MudText>
         </div>
-        
+
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-            @* <MudButton Variant="Variant.Outlined" 
-                      Color="Color.Default" 
-                      StartIcon="@Icons.Material.Filled.Upload"
-                      OnClick="@(() => { /* TODO: Import functionality */ })"
-                      Class="entity-action-btn">
-                Import
-            </MudButton> *@
-            
-            <MudButton Variant="Variant.Filled" 
-                      Color="Color.Primary" 
-                      StartIcon="@Icons.Material.Filled.Add" 
+            <MudFab Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      StartIcon="@Icons.Material.Filled.Add"
                       OnClick="OpenCreate"
                       Class="entity-action-btn">
                 New Asset
-            </MudButton>
+            </MudFab>
         </MudStack>
     </div>
 
