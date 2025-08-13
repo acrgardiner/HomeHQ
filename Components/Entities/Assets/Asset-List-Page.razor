@@ -88,7 +88,7 @@
                             (new Func<Asset, object?>(x => x.Name), "Name"),
                             (new Func<Asset, object?>(x => x.Category?.Title ?? "Uncategorized"), "Category"),
                             (new Func<Asset, object?>(x => x.PurchasedFrom), "From"),
-                            (new Func<Asset, object?>(x => x.PurchaseDate.HasValue ? x.PurchaseDate.Value.ToString("MMM dd, yyyy") : ""), "Purchase Date"),
+                            (new Func<Asset, object?>(x => Formatter.FormatDate(x.PurchaseDate, "MMM dd, yyyy")), "Purchase Date"),
                             (new Func<Asset, object?>(x => Formatter.RenderWarrantyInfo(x)), "Warranty"),
                         }
                     )"

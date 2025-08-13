@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using projectaardvarkx2.Entities;
+using System.Globalization;
 
 namespace projectaardvarkx2.Helpers
 {
@@ -21,14 +22,27 @@ namespace projectaardvarkx2.Helpers
 
         public static string FormatDate(DateTime? date)
         {
-            string result = "";
+            if (!date.HasValue)
+                return "";
 
-            if (date.HasValue)
-            {
-                result = date.Value.ToString("d");
-            }
+            return date.Value.Date.ToString("d", CultureInfo.CurrentCulture);
+        }
 
-            return result;
+        public static string FormatDate(DateTime? date, string format)
+        {
+            if (!date.HasValue)
+                return "";
+
+            return date.Value.Date.ToString(format, CultureInfo.CurrentCulture);
+        }
+
+        public static string FormatDateTime(DateTime? dateTime, string? format = null)
+        {
+            if (!dateTime.HasValue)
+                return "";
+
+            format ??= "g"; // General short date/time pattern
+            return dateTime.Value.ToString(format, CultureInfo.CurrentCulture);
         }
 
         public static RenderFragment RenderWarrantyInfo(Asset asset) => builder =>
@@ -76,7 +90,7 @@ namespace projectaardvarkx2.Helpers
 
             builder.OpenComponent<MudText>(8);
             builder.AddAttribute(9, "Typo", Typo.body2);
-            builder.AddAttribute(10, "ChildContent", (RenderFragment)(b => b.AddContent(11, warrantyDate.ToString("MMM dd, yyyy"))));
+            builder.AddAttribute(10, "ChildContent", (RenderFragment)(b => b.AddContent(11, FormatDate(warrantyDate, "D"))));
             builder.CloseComponent();
 
             if (daysRemaining >= 0)
