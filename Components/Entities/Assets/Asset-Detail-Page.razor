@@ -328,14 +328,7 @@
         var warrantyDate = asset.WarrantyExpiration.Value;
         var daysRemaining = (warrantyDate - today).Days;
 
-        return (daysRemaining switch
-        {
-            < 0 => $"Expired {Math.Abs(daysRemaining)} days ago",
-            0 => "Expires today",
-            1 => "Expires tomorrow",
-            <= 30 => $"Expires in {daysRemaining} days",
-            _ => $"{daysRemaining} days remaining"
-        });
+        return Formatter.FormatWarrantyStatus(daysRemaining);
     }
 
     private void GoBack()

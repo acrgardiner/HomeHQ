@@ -45,6 +45,30 @@ namespace projectaardvarkx2.Helpers
             return dateTime.Value.ToString(format, CultureInfo.CurrentCulture);
         }
 
+        public static string FormatWarrantyStatus(DateTime? warrantyExpiration)
+        {
+            if (!warrantyExpiration.HasValue)
+                return "No warranty";
+            var today = DateTime.Today;
+            var daysRemaining = (warrantyExpiration.Value - today).Days;
+            return FormatWarrantyStatus(daysRemaining);
+        }
+        
+        public static string FormatWarrantyStatus(int daysRemaining)
+        {
+            if (daysRemaining < 0)
+                return "Expired";
+            if (daysRemaining <= 30)
+                return $"{daysRemaining} days remaining";
+            if (daysRemaining > 20000)
+                return "∞ days remaining";
+            if (daysRemaining > 365)
+                return $"{daysRemaining / 365} years remaining";
+            if (daysRemaining > 30)
+                return $"{daysRemaining / 30} months remaining";
+            return $"{daysRemaining / 7} weeks remaining";
+        }
+
         public static RenderFragment RenderWarrantyInfo(Asset asset) => builder =>
         {
             if (!asset.WarrantyExpiration.HasValue)
@@ -93,22 +117,21 @@ namespace projectaardvarkx2.Helpers
             builder.AddAttribute(10, "ChildContent", (RenderFragment)(b => b.AddContent(11, FormatDate(warrantyDate, "D"))));
             builder.CloseComponent();
 
-            if (daysRemaining >= 0)
+            builder.OpenComponent<MudText>(12);
+            builder.AddAttribute(13, "Typo", Typo.caption);
+            if (daysRemaining >= 30) {
+                builder.AddAttribute(14, "Class", "warranty-valid");
+            } 
+            else if (daysRemaining > 0)
             {
-                builder.OpenComponent<MudText>(12);
-                builder.AddAttribute(13, "Typo", Typo.caption);
-                builder.AddAttribute(14, "Class", daysRemaining <= 30 ? "warranty-expiring" : "mud-text-secondary");
-                builder.AddAttribute(15, "ChildContent", (RenderFragment)(b => b.AddContent(16, $"{daysRemaining} days remaining")));
-                builder.CloseComponent();
+                builder.AddAttribute(14, "Class", "warranty-expiring");
             }
             else
             {
-                builder.OpenComponent<MudText>(17);
-                builder.AddAttribute(18, "Typo", Typo.caption);
-                builder.AddAttribute(19, "Class", "warranty-expired");
-                builder.AddAttribute(20, "ChildContent", (RenderFragment)(b => b.AddContent(21, $"Expired {Math.Abs(daysRemaining)} days ago")));
-                builder.CloseComponent();
+                builder.AddAttribute(14, "Class", "warranty-expired");
             }
+            builder.AddAttribute(15, "ChildContent", (RenderFragment)(b => b.AddContent(16, FormatWarrantyStatus(daysRemaining))));
+            builder.CloseComponent();
 
             builder.CloseElement(); // div
             builder.CloseElement(); // warranty-status div
