@@ -58,9 +58,10 @@ public class ContextSeed
 
         await context.Categories.AddRangeAsync(
             new Category { Id = new Guid(), Icon = "📺", Name = "Electronics" },
-            new Category { Id = new Guid(), Icon = "💍", Name = "Jewelry" },
+            new Category { Id = new Guid(), Icon = "💍", Name = "Jewelery" },
             new Category { Id = new Guid(), Icon = "👚", Name = "Apparel" },
             new Category { Id = new Guid(), Icon = "🛠", Name = "Garage" },
+            new Category { Id = new Guid(), Icon = "🌲", Name = "Garden" },
             new Category { Id = new Guid(), Icon = "🛋", Name = "Lounge" },
             new Category { Id = new Guid(), Icon = "🧺", Name = "Laundry" },
             new Category { Id = new Guid(), Icon = "🍳", Name = "Kitchen" },
