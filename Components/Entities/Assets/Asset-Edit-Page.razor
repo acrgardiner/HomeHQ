@@ -334,6 +334,8 @@
     {
         try
         {
+            Snackbar.Add($"Saving...", Severity.Info);
+
             if (asset.CategoryId == Guid.Empty) asset.CategoryId = null;
             if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
 

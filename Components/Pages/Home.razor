@@ -287,7 +287,8 @@
                 x => x.WarrantyType
             },
         take: 5,
-        orderby: asset => asset.CreatedOn
+        orderby: asset => asset.CreatedOn,
+        descending: true
         )).ToList();
     }
 
