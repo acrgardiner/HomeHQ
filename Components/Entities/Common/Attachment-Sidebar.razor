@@ -192,6 +192,12 @@
                                 <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
                             }
                         </MudSelect>
+                        @if(!ReadOnly){
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       Variant="Variant.Text" OnClick="() => Remove(currentAttachment)" />
+                        }
                     </div>
                 </div>
                 <!-- Thumbnail Navigation (if more than one attachment) -->
@@ -368,7 +374,7 @@
 
         try
         {
-
+            Snackbar.Add($"Adding attachments...", Severity.Info);
             foreach (var file in files)
             {
                 try
@@ -447,6 +453,11 @@
 
     private void Remove(Attachment_wfile item)
     {
+        if (item.File == null)
+        {
+            // Attachment is on server, remove from database
+            AttachmentService.DeleteAsync(item.Attachment.Id);
+        };
         _attachments.Remove(item);
     }
 

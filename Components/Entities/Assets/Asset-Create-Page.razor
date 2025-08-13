@@ -62,7 +62,7 @@
                     <MudDivider />
                     <MudCardContent>
                         <MudGrid Spacing="3">
-                            <MudItem xs="6">
+                            <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="asset.Name"
                                     Label="Name"
                                     Required="true"
@@ -96,7 +96,7 @@
                                     }
                                 </MudSelect>
                             </MudItem>
-                            <MudItem xs="6">
+                            <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="asset.PurchasedFrom"
                                               Label="Purchased From"
                                               Required="true"
@@ -331,6 +331,7 @@
     {
         try
         {
+            Snackbar.Add($"Saving...", Severity.Info);
             // Set null for empty Guid selections
             if (asset.CategoryId == Guid.Empty) asset.CategoryId = null;
             if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
