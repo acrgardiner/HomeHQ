@@ -354,7 +354,7 @@
         Navigation.NavigateTo("/assets");
     }
 
-    private async void OnChangeWarrantyType()
+    private void OnChangeWarrantyType()
     {
         if (asset.WarrantyTypeId == nullGuid)
         {
@@ -362,17 +362,21 @@
         }
         else
         {
-            var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
-            if (warrantyType != null)
+            if (asset.PurchaseDate.HasValue)
             {
-                if (warrantyType.Years is not null)
-                    asset.WarrantyExpiration = DateTime.Today.AddYears(warrantyType.Years.Value);
-                if (warrantyType.Months is not null)
-                    asset.WarrantyExpiration = DateTime.Today.AddMonths(warrantyType.Months.Value);
-                if (warrantyType.Days is not null)
-                    asset.WarrantyExpiration = DateTime.Today.AddDays(warrantyType.Days.Value);
+                var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
+                if (warrantyType != null)
+                {
+                    if (warrantyType.Years is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddYears(warrantyType.Years.Value);
+                    if (warrantyType.Months is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddMonths(warrantyType.Months.Value);
+                    if (warrantyType.Days is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddDays(warrantyType.Days.Value);
+
+                    StateHasChanged();
+                }
             }
         }
-        StateHasChanged();
     }
 }
