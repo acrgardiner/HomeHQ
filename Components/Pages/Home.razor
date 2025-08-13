@@ -320,7 +320,7 @@
                 .ToArray();
 
             _activityChartLabels = months
-                .Select(m => m.ToString("MMM yyyy"))
+                .Select(m => Formatter.FormatDate(m, "MMM yyyy"))
                 .ToArray();
 
             //Prepare data for the chart

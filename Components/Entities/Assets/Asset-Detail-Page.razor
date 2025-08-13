@@ -117,7 +117,7 @@
                                 <div class="entity-field">
                                     <MudText Typo="Typo.caption" Class="entity-label">Purchase Date</MudText>
                                     <MudText Typo="Typo.body1" Class="entity-value">
-                                        @(asset.PurchaseDate?.ToString("MMMM dd, yyyy") ?? "Not specified")
+                                        @(asset.PurchaseDate.HasValue? Formatter.FormatDate(asset.PurchaseDate, "D") : "Not specified")
                                     </MudText>
                                 </div>
                             </MudItem>
@@ -158,7 +158,7 @@
                                                     Class="mr-2" />
                                             <div>
                                                 <MudText Typo="Typo.body1" Class="entity-value">
-                                                    @asset.WarrantyExpiration.Value.ToString("MMMM dd, yyyy")
+                                                    @Formatter.FormatDate(asset.WarrantyExpiration.Value, "D")
                                                 </MudText>
                                                 <MudText Typo="Typo.caption" Color="@GetWarrantyStatusColor()">
                                                     @GetWarrantyStatusText()
