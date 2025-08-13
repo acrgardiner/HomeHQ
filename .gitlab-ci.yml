@@ -46,4 +46,5 @@ docker image:
         - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
           when: on_success
         - if: $CI_COMMIT_BRANCH =~ /dev\/.*/
-          when: manual
+          when: on_success
+        - when: never
