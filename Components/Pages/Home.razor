@@ -11,7 +11,7 @@
 @inject ILogger<Home> Logger
 @inject ISnackbar Snackbar
 
-<PageTitle>Dashboard- Home Tracker</PageTitle>
+<PageTitle>Dashboard - Home Tracker</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">
@@ -213,11 +213,6 @@
                                   StartIcon="@Icons.Material.Filled.Login"
                                   OnClick="@(() => Navigation.NavigateTo("/account/login"))">
                             Sign In
-                        </MudButton>
-                        <MudButton Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Large"
-                                  StartIcon="@Icons.Material.Filled.PersonAdd"
-                                  OnClick="@(() => Navigation.NavigateTo("/account/register"))">
-                            Register
                         </MudButton>
                     </MudStack>
                 </MudCard>

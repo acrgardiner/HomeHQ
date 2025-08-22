@@ -79,12 +79,19 @@ try
         }
     );
 
-    builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options => options.SignIn.RequireConfirmedAccount = true)
+    builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options => {
+            options.User.RequireUniqueEmail = false;
+            options.Password.RequiredLength = 6;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireDigit = false;
+            options.Password.RequireNonAlphanumeric = false;
+        })
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddSignInManager()
         .AddDefaultTokenProviders();
 
-    builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+    //builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
     Directory.CreateDirectory("logs");
     Directory.CreateDirectory("appdata");

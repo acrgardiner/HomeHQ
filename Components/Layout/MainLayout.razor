@@ -1,9 +1,11 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Identity
 @using projectaardvarkx2.Identity
+@using projectaardvarkx2.Services
 
 @inject ISnackbar Snackbar
 @inject SignInManager<ApplicationUser> SignInManager
+@inject ICurrentUserService CurrentUserService
 
 <MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" @bind-IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -42,8 +44,7 @@
                                     }
                                 </CardHeaderAvatar>
                                 <CardHeaderContent>
-                                    <MudText Typo="Typo.body2">@FirstName @SecondName</MudText>
-                                    <MudText Typo="Typo.caption">context.User.Identity?.Name</MudText>
+                                    <MudText Typo="Typo.body2">@Name</MudText>
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudDivider />
@@ -166,7 +167,6 @@
     public string DarkLightModeButtonIcon => _isDarkMode ? Icons.Material.Outlined.LightMode : Icons.Material.Outlined.DarkMode;
 
     private string ImageDataUrl = null;
-    private string FirstName = "Sys";
-    private string SecondName = "Admin";
-    private char FirstLetterOfName = 'S';
+    private string? Name => CurrentUserService?.UserName;
+    private char? FirstLetterOfName => CurrentUserService?.UserName?.FirstOrDefault();
 }
