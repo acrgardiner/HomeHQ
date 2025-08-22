@@ -1,4 +1,5 @@
-﻿@using projectaardvarkx2.Identity
+﻿@using System.ComponentModel.DataAnnotations
+@using projectaardvarkx2.Identity
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Admin")]
@@ -7,28 +8,62 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<MudDialog>
-    <DialogContent>
-        <MudForm @ref="form" Model="@model">
-            <MudTextField T="string" @bind-Value="model.UserName" Label="User Name" Required="true"
-            RequiredError="Username is required!" />
+<EditForm Model="@newUser" OnValidSubmit="Submit">
+<DataAnnotationsValidator/>
+    <MudDialog Options="_dialogOptions">
+        <DialogContent>
+            <MudTextField Label="Username" HelperText="Max. 8 characters" @bind-Value="newUser.UserName" For="@(() => newUser.UserName)" />
+            <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
+                          @bind-Value="newUser.Password" For="@(() => newUser.Password)" InputType="InputType.Password" />
+            <MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"
+                          @bind-Value="newUser.Password2" For="@(() => newUser.Password2)" InputType="InputType.Password" />
+                <MudCheckBox T="bool" @bind-Value="newUser.IsAdmin" Label="Admin User" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Create</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
 
-            <MudTextField T="string" @bind-Value="model.Email" Label="Email" Required="true"
-            RequiredError="Email is required!" />
-        </MudForm>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="Submit">Create</MudButton>
-    </DialogActions>
-</MudDialog>
 
 @code {
     [Inject] private ILogger<CreateUser> _logger { get; set; }
 
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
-    private MudForm form = default!;
-    private ApplicationUser model = new();
+    private readonly DialogOptions _dialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Small };
+
+    private MudForm form;
+    private NewUserForm newUser = new();
+
+    bool success;
+    string[] errors = { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await MudDialog.SetOptionsAsync(_dialogOptions);
+    }
+
+    private class NewUserForm
+    {
+        [Required]
+        public string UserName { get; set; }
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string Password { get; set; }
+
+        [Required]
+        [Compare(nameof(Password))]
+        public string Password2 { get; set; }
+
+        public bool IsAdmin { get; set; } = false;
+
+        public NewUserForm()
+        {
+        }
+    }
 
     private void Cancel()
     {
@@ -37,20 +72,23 @@
 
     private async Task Submit()
     {
-        await form.Validate();
-        if (form.IsValid)
+        try
         {
-            try
+            List<Roles> userRoles = new() { Roles.Basic };
+
+            if (newUser.IsAdmin)
             {
-                //await UserService.CreateAsync(model);
-                Snackbar.Add("User created successfully", Severity.Success);
-                MudDialog.Close(DialogResult.Ok(true));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating user");
-                Snackbar.Add("Error creating user", Severity.Error);
-            }
+                userRoles.Add(Roles.Admin);
+            };
+
+            await UserService.AddUser(newUser.UserName, newUser.Password, userRoles);
+            Snackbar.Add("User created successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating user");
+            Snackbar.Add("Error creating user", Severity.Error);
         }
     }
 }

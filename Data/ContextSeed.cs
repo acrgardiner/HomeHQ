@@ -31,10 +31,7 @@ public class ContextSeed
         //Seed System Admin User
         var sysAdminUser = new ApplicationUser
         {
-            UserName = "sysadmin@email.com",
-            Email = "sysadmin@email.com",
-            EmailConfirmed = true,
-            PhoneNumberConfirmed = true
+            UserName = "sysadmin"
         };
         if (userManager.Users.All(u => u.Id != sysAdminUser.Id))
         {
@@ -46,7 +43,6 @@ public class ContextSeed
                 await userManager.AddToRoleAsync(sysAdminUser, Roles.Admin.ToString());
                 await userManager.AddToRoleAsync(sysAdminUser, Roles.SysAdmin.ToString());
             }
-
         }
     }
 

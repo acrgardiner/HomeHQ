@@ -21,25 +21,6 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
 
         var accountGroup = endpoints.MapGroup("/Account");
 
-        accountGroup.MapPost("/PerformExternalLogin", (
-            HttpContext context,
-            [FromServices] SignInManager<ApplicationUser> signInManager,
-            [FromForm] string provider,
-            [FromForm] string returnUrl) =>
-        {
-            IEnumerable<KeyValuePair<string, StringValues>> query = [
-                new("ReturnUrl", returnUrl),
-                new("Action", ExternalLogin.LoginCallbackAction)];
-
-            var redirectUrl = UriHelper.BuildRelative(
-                context.Request.PathBase,
-                "/Account/ExternalLogin",
-                QueryString.Create(query));
-
-            var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-            return TypedResults.Challenge(properties, [provider]);
-        });
-
         accountGroup.MapPost("/Logout", async (
             ClaimsPrincipal user,
             [FromServices] SignInManager<ApplicationUser> signInManager,
@@ -50,23 +31,6 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         });
 
         var manageGroup = accountGroup.MapGroup("/Manage").RequireAuthorization();
-
-        manageGroup.MapPost("/LinkExternalLogin", async (
-            HttpContext context,
-            [FromServices] SignInManager<ApplicationUser> signInManager,
-            [FromForm] string provider) =>
-        {
-            // Clear the existing external cookie to ensure a clean login process
-            await context.SignOutAsync(IdentityConstants.ExternalScheme);
-
-            var redirectUrl = UriHelper.BuildRelative(
-                context.Request.PathBase,
-                "/Account/Manage/ExternalLogins",
-                QueryString.Create("Action", ExternalLogins.LinkLoginCallbackAction));
-
-            var properties = signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl, signInManager.UserManager.GetUserId(context.User));
-            return TypedResults.Challenge(properties, [provider]);
-        });
 
         var loggerFactory = endpoints.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var downloadLogger = loggerFactory.CreateLogger("DownloadPersonalData");

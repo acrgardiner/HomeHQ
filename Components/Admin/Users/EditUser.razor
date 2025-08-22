@@ -14,12 +14,6 @@
         <MudForm @ref="form" Model="@model">
             <MudTextField T="string" @bind-Value="model.UserName" Label="Username" Required="true"
             RequiredError="Name is required!" />
-
-            <MudTextField T="string" Label="Email" @bind-Value="model.Email" Required="true"
-            RequiredError="Active flag is required!">
-                <MudSelectItem Value=@(true)>True</MudSelectItem>
-                <MudSelectItem Value="@(false)">False</MudSelectItem>
-            </MudTextField>
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -43,7 +37,6 @@
     {
         model.Id = User.Id;
         model.UserName = User.UserName;
-        model.Email = User.Email;
     }
 
     private void Cancel() => Dialog.Cancel();

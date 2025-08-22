@@ -97,8 +97,6 @@
                 <Columns>
                     <PropertyColumn Property="x => x.Id" />
                     <PropertyColumn Property="x => x.UserName" />
-                    <PropertyColumn Property="x => x.Email" />
-                    <PropertyColumn Property="x => x.PhoneNumber" />
                     <TemplateColumn Title="Actions" TextAlignment="TextAlignment.Right">
                         <CellTemplate>
                             <MudStack Row="true" Spacing="0" Class="pa-2">
@@ -132,6 +130,9 @@
     private List<ApplicationUser> _users = new();
     private bool _loading = true;
     private string _searchString = string.Empty;
+
+    //private readonly DialogOptions options = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
     private string SearchString
     {
         get => _searchString;
@@ -182,7 +183,6 @@
 
         if (
             x.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
-            || x.Email.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
         )
             return true;
 
@@ -255,11 +255,11 @@
         try
         {
             var csv = new StringBuilder("\uFEFF");
-            csv.AppendLine(string.Join(",", ["Id", "UserName", "Email", "PhoneNumber"]));
+            csv.AppendLine(string.Join(",", ["Id", "UserName"]));
             // Rows
             foreach (var item in _users)
             {
-                csv.AppendLine(string.Join(",", ["Id", "UserName", "Email", "PhoneNumber"]));
+                csv.AppendLine(string.Join(",", ["Id", "UserName"]));
             }
 
             var now = DateTime.UtcNow.ToString("yyyyMMddHHmm");
