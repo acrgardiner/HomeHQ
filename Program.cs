@@ -16,6 +16,7 @@ using projectaardvarkx2.Logging;
 using projectaardvarkx2.Repositories;
 using projectaardvarkx2.Services;
 using Serilog;
+using Cropper.Blazor.Extensions;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -50,7 +51,13 @@ try
 
     // Add services to the container.
     builder.Services.AddRazorComponents()
-        .AddInteractiveServerComponents();
+        .AddInteractiveServerComponents()
+        .AddHubOptions(options =>
+        {
+            options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+        });
+
+    builder.Services.AddCropper();
 
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<IdentityUserAccessor>();

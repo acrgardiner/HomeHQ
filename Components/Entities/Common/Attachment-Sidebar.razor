@@ -7,6 +7,10 @@
 @using projectaardvarkx2.FileStorage
 @using System.Linq.Expressions
 
+@using Cropper.Blazor.Components
+@using Cropper.Blazor.Extensions
+@using Cropper.Blazor.Models
+
 @attribute [Authorize()]
 
 @inject ISnackbar Snackbar
@@ -118,11 +122,11 @@
                     var currentAttachment = _attachments[_currentAttachmentIndex];
                 }
                  <!-- Main Attachment Display -->
-                 <div class="attachment-display mb-4" @onclick="@(async () => await ImageDialogOpen()/*ViewAttachment(currentAttachment)*/)" >
+                 <div class="attachment-display mb-4" @onclick="@(() =>ImageDialogOpen())" >
                     @if (IsImageAttachment(currentAttachment.Attachment))
                     {
                         <div class="attachment-preview image-preview">
-                            <MudImage Src="@currentAttachment.ImagePreviewUrl"
+                            <MudImage Src="@currentAttachment.GetImagePreviewUrl()"
                                       Alt="@currentAttachment.Attachment.OriginFileName"
                                       Class="attachment-image"
                                       ObjectFit="ObjectFit.Cover" />
@@ -131,7 +135,7 @@
                                     Size="Size.Large"
                                     Color="Color.Primary"
                                     Variant="Variant.Filled"
-                                    Class="zoom-button" OnClick="@(async () => await ImageDialogOpen()/*NavigateToAttachment(currentAttachment.Attachment)*/)" />
+                                    Class="zoom-button" OnClick="@(() => ImageDialogOpen())" />
                             </div>
                         </div>
                     }
@@ -148,7 +152,7 @@
                                                Size="Size.Large"
                                                Color="Color.Primary"
                                                Variant="Variant.Filled"
-                                               Class="view-button" />
+                                               Class="view-button" @onclick="@(() => ImageDialogOpen())" />
                             </div>
                         </div>
                     }
@@ -156,32 +160,14 @@
 
                 <!-- Attachment Info -->
                 <div class="attachment-info mb-3">
-                    @* <div class="d-flex align-center justify-space-between mb-2">
-                        <MudText Typo="Typo.subtitle1" Class="attachment-name text-truncate">
-                            @currentAttachment.Attachment.OriginFileName
-                        </MudText>
-                        <MudIconButton Icon="@Icons.Material.Filled.Download"
-                                       Size="Size.Small"
-                                       Color="Color.Primary"
-                                       Variant="Variant.Text" />
-                    </div> *@
-
                     <div class="d-flex align-center justify-space-between">
                         <MudText Typo="Typo.caption" Class="mud-text-secondary">
                             @Formatter.FormatFileSize(currentAttachment.Attachment.FileSize) • @currentAttachment.Attachment.Extension?.ToUpper()
                         </MudText>
                     </div>
                     <div class="d-flex align-center justify-space-between">
-                        @* @if (currentAttachment.Attachment.AttachmentType != null)
-                        {
-                            <MudChip T="string" Size="Size.Small"
-                                     Color="Color.Secondary"
-                                     Variant="Variant.Text">
-                                @currentAttachment.Attachment.AttachmentType.Name
-                            </MudChip>
-                        } *@
-                        <MudSelect T="Guid?"
-                                   @bind-Value="currentAttachment.Attachment.AttachmentTypeId"
+                        <MudSelect T="AttachmentType"
+                                   @bind-Value="_attachments[_currentAttachmentIndex].Attachment.AttachmentType"
                                    Label="Type"
                                    Dense="true"
                                    Variant="Variant.Outlined"
@@ -189,7 +175,7 @@
                                    Disabled="_uploading" ReadOnly="@ReadOnly">
                             @foreach (var type in AttachmentTypes)
                             {
-                                <MudSelectItem T="Guid?" Value="@type.Id">@type.Name</MudSelectItem>
+                                <MudSelectItem T="AttachmentType" Value="@type">@type.Name</MudSelectItem>
                             }
                         </MudSelect>
                         @if(!ReadOnly){
@@ -215,7 +201,7 @@
                                      @onclick="@(() => SetCurrentAttachment(index))">
                                     @if (IsImageAttachment(attachment.Attachment))
                                     {
-                                        <MudImage Src="@attachment.ImagePreviewUrl"
+                                        <MudImage Src="@attachment.GetImagePreviewUrl()"
                                                   Alt="@attachment.Attachment.OriginFileName"
                                                   Class="thumbnail-image"
                                                   ObjectFit="ObjectFit.Cover" />
@@ -251,10 +237,13 @@
         <div style="display: flex; align-items: center; justify-content: space-between;">
             <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachment</MudText>
             <div class="d-flex align-center gap-2">
-                @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment) && _attachments[_currentAttachmentIndex].File != null && !ReadOnly)
+                @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment) && !ReadOnly/* && _attachments[_currentAttachmentIndex].FileBytes != null*/)
                 {
+                    <MudIconButton Icon="@Icons.Material.Filled.RotateLeft" OnClick="@(() => Rotate(-90))" title="Rotate Left" />
+                    <MudIconButton Icon="@Icons.Material.Filled.RotateRight" OnClick="@(() => Rotate(90))" title="Rotate Right" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Primary" OnClick="@(async () => await AcceptCrop())" title="Save" />
                 }
-                <MudButton Color="Color.Primary" OnClick="@(async () => await ImageDialogClose())">Close</MudButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Primary" OnClick="@(() => ImageDialogClose())" title="Close" />
             </div>
         </div>
     </TitleContent>
@@ -262,15 +251,26 @@
         <MudContainer Fixed="true" style="height: 90%;">
             @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
             {
-                <div  style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
-                    <MudImage Src="@_attachments[_currentAttachmentIndex].ImageUrl"
-                              Alt="@_attachments[_currentAttachmentIndex].Attachment.OriginFileName"
-                              Style="max-width: 100%; max-height: 100%; object-fit: contain;" />
-                </div>
+                    @if (@ReadOnly)
+                    {
+                        <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                            <a href="@_attachments[_currentAttachmentIndex].GetImageUrl()" target="_blank" style="display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;">
+                                <MudImage Src="@_attachments[_currentAttachmentIndex].GetImageUrl()"
+                                    Alt="@_attachments[_currentAttachmentIndex].Attachment.OriginFileName"
+                                      Style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="width: 100%; height: 100%; justify-content: center; align-items: center; display: flex; ">
+                            <CropperComponent @ref="cropper" Class="cropper-example" Src="@_attachments[_currentAttachmentIndex].GetImageUrl()" Options="cropperOptions" />
+                        </div>
+                    }
             }
             else
             {
-                <iframe src="@_attachments[_currentAttachmentIndex].ImageUrl"
+                <iframe src="@_attachments[_currentAttachmentIndex].GetImageUrl()"
                         frameborder="0"
                         style="width: 100%; height: 100%; display: block;" />
             }
@@ -278,10 +278,18 @@
     </DialogContent>
 </MudDialog>
 
+<style>
+    .cropper-example {
+        max-height: 100%;
+        width: 100%;
+    }
+</style>
+
 @code {
+
     [Parameter] public Guid? ParentId { get; set; }
     [Parameter] public bool IsMobile { get; set; } = false;
-    [Parameter] public string ParentType { get; set; }
+    [Parameter] public string? ParentType { get; set; }
     [Parameter] public bool ReadOnly { get; set; } = false;
 
 
@@ -299,6 +307,15 @@
 
     private bool _dialogVisible = false;
     private readonly DialogOptions _maxWidthOptions = new() { MaxWidth = MaxWidth.Large };
+
+    private CropperComponent cropper;
+    private Cropper.Blazor.Models.Options cropperOptions = new() {
+        ViewMode = ViewMode.Vm1,
+        AutoCrop = false,
+        Responsive = true,
+        Zoomable = true,
+        AutoCropArea = 1
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -322,7 +339,7 @@
                     orderby: x => x.CreatedOn,
                     descending: true,
                     take: 10
-                )).Select(a => new Attachment_wfile { Attachment = a, File = null!, ImageUrl = GetImageUrl(a), ImagePreviewUrl = GetImagePreviewUrl(a) }).ToList();
+                )).Select(a => new Attachment_wfile { Attachment = a }).ToList();
             }
         }
         catch (Exception ex)
@@ -330,6 +347,15 @@
             Snackbar.Add("Failed to load", Severity.Error);
         }
 
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (cropper != null)
+        {
+            // Call the library's DisposeAsync method to destroy the JS cropper instance
+            await cropper.DisposeAsync();
+        }
     }
 
     private void NextAttachment()
@@ -380,18 +406,15 @@
                         AttachmentType = DefaultAttachmentType
                     };
 
-                    var imageUrl = await GetImagePreviewUrl(file);
+                    using var stream = file.OpenReadStream(MaxPreviewSize);
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
 
-                    Attachment_wfile attachmentWithFile = new Attachment_wfile
-                    {
-                        Attachment = attachment,
-                        ImagePreviewUrl = imageUrl,
-                        ImageUrl = imageUrl,
-                        File = file
-                    };
+                    var bytes = ms.ToArray();
+
+                    Attachment_wfile attachmentWithFile = new Attachment_wfile(attachment, bytes) { IsNew = true };
 
                     _attachments.Add(attachmentWithFile);
-                    //Snackbar.Add($"File {file.Name} added for upload.", Severity.Success);
                 }
                 catch (Exception ex)
                 {
@@ -414,17 +437,23 @@
         {
             foreach (var item in _attachments)
             {
-                if (item.File != null) //only upload new files
+                if (item.IsNew && item.FileBytes is not null)
                 {
                     item.Attachment.ParentId = Id;
                     item.Attachment.ParentType = ParentType;
-                    item.Attachment.LocalFileName = await FileStorageService.UploadAsync<Asset>(item.File);
+                    (item.Attachment.LocalFileName, item.Attachment.FileSize ) = await FileStorageService.UploadAsync<Asset>(item.FileBytes, item.Attachment.OriginFileName, item.Attachment.ContentType);
 
                     var uploadedAttachment = await AttachmentService.AddAsync(item.Attachment);
                 }
+
+                if (!item.IsNew && item.FileBytes is not null)
+                {
+                    //Update existing attachment file
+                    (item.Attachment.LocalFileName, item.Attachment.FileSize) = await FileStorageService.ReUploadAsync<Asset>(item.Attachment, item.FileBytes);
+                    await AttachmentService.UpdateAsync(item.Attachment);
+                }
             }
             _attachments.Clear();
-            //Snackbar.Add($"Attachments Saved", Severity.Success);
             return true;
         }
         catch (Exception ex)
@@ -441,7 +470,7 @@
 
     private void Remove(Attachment_wfile item)
     {
-        if (item.File == null)
+        if (item.FileBytes == null)
         {
             // Attachment is on server, remove from database
             AttachmentService.DeleteAsync(item.Attachment.Id);
@@ -449,59 +478,51 @@
         _attachments.Remove(item);
     }
 
-    struct Attachment_wfile
+    class Attachment_wfile
     {
         public Attachment Attachment;
-        public IBrowserFile File;
-        public string ImageUrl;
-        public string ImagePreviewUrl;
-    }
+        public byte[]? FileBytes;
+        public bool IsNew = false;
 
-    private async Task<string> GetImageUrl(Attachment_wfile item)
-    {
-        if (item.File == null)
+        public Attachment_wfile()
         {
-            //Attachment is on server use URL
-            return GetImageUrl(item.Attachment);
+            Attachment = new Attachment();
+            FileBytes = null;
         }
-        else
+
+        public Attachment_wfile(Attachment attachment, byte[]? fileBytes = null)
         {
-            return await GetImagePreviewUrl(item.File);
+            Attachment = attachment;
+            FileBytes = fileBytes;
         }
-    }
 
-    private async Task<string> GetImagePreviewUrl(Attachment_wfile item)
-    {
-        if (item.File == null)
+        public string GetImageUrl()
         {
-            //Attachment is on server use URL
-            return GetImagePreviewUrl(item.Attachment);
+            if (FileBytes == null)
+            {
+                //Attachment is on server use URL
+                return $"/api/uploads/{Attachment!.Id}";
+            }
+            else
+            {
+                var base64 = Convert.ToBase64String(FileBytes);
+                return $"data:{Attachment.ContentType};base64,{base64}";
+            }
         }
-        else
+
+        public string GetImagePreviewUrl()
         {
-            return await GetImagePreviewUrl(item.File);
+            if (FileBytes == null)
+            {
+                //Attachment is on server use URL
+                return $"/api/uploads/{Attachment!.Id}/preview";
+            }
+            else
+            {
+                var base64 = Convert.ToBase64String(FileBytes);
+                return $"data:{Attachment!.ContentType};base64,{base64}";
+            }
         }
-    }
-
-    private string GetImagePreviewUrl(Attachment attachment)
-    {
-        return $"/api/uploads/{attachment.Id}/preview";
-    }
-
-    private string GetImageUrl(Attachment attachment)
-    {
-        return $"/api/uploads/{attachment.Id}";
-    }
-
-    private async Task<string> GetImagePreviewUrl(IBrowserFile file)
-    {
-        using var stream = file.OpenReadStream(MaxPreviewSize);
-        using var ms = new MemoryStream();
-        await stream.CopyToAsync(ms);
-
-        var bytes = ms.ToArray();
-        var base64 = Convert.ToBase64String(bytes);
-        return $"data:{file.ContentType};base64,{base64}";
     }
 
     private bool IsImageAttachment(Attachment attachment)
@@ -511,21 +532,7 @@
 
     private async Task NavigateToAttachment(Attachment attachment)
     {
-        await JSRuntime.InvokeVoidAsync("open", "/api/uploads/" + attachment.Id.ToString(), "_blank");
-    }
-
-    private async Task DownloadAttachment(Attachment attachment)
-    {
-        try
-        {
-            //This would ideally trigger a download
-            Snackbar.Add($"Download started for {attachment.OriginFileName}", Severity.Info);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to download attachment {AttachmentId}", attachment.Id);
-            Snackbar.Add("Failed to download attachment", Severity.Error);
-        }
+        await JSRuntime.InvokeVoidAsync("open", $"/api/uploads/{attachment.Id}", "_blank");
     }
 
     private string GetAttachmentIcon(Attachment attachment)
@@ -543,16 +550,64 @@
         };
     }
 
-    private async Task ImageDialogClose()
+    private void ImageDialogClose()
     {
-        if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
-        {
-        }
         _dialogVisible = false;
     }
 
-    private async Task ImageDialogOpen()
+    private void ImageDialogOpen()
     {
         _dialogVisible = true;
+    }
+
+    private async Task Rotate(decimal degree)
+    {
+        cropper?.Rotate(degree);
+
+        await RecenterCropper();
+    }
+
+    private async Task RecenterCropper()
+    {
+        cropper.Clear();
+
+        cropper.MoveTo(0, 0);
+
+        var containerData = await cropper.GetContainerDataAsync();
+
+        cropper.SetCanvasData(new SetCanvasDataOptions
+        {
+            Height = containerData.Height,
+        });
+
+        var canvasData = await cropper.GetCanvasDataAsync();
+        containerData = await cropper.GetContainerDataAsync();
+
+        var x = (containerData.Width - canvasData.Width) / 2;
+        cropper.MoveTo(x, 0);
+    }
+
+    public async Task AcceptCrop()
+    {
+        var getCroppedCanvasOptions = new GetCroppedCanvasOptions() { MaxHeight = 16096, MaxWidth = 16096, ImageSmoothingQuality = ImageSmoothingQuality.Medium.ToEnumString() };
+
+        ImageReceiver imageReceiver = await cropper!.GetCroppedCanvasDataInBackgroundAsync(getCroppedCanvasOptions);
+
+        await ProcessAndOpenCroppedCanvasDialog(imageReceiver);
+
+        cropper.Reset();
+
+        ImageDialogClose();
+    }
+
+    private async Task ProcessAndOpenCroppedCanvasDialog(ImageReceiver imageReceiver)
+    {
+
+        using MemoryStream croppedCanvasDataStream = await imageReceiver.GetImageChunkStreamAsync();
+
+        byte[] croppedCanvasData = croppedCanvasDataStream.ToArray();
+
+        var attachment = _attachments[_currentAttachmentIndex];
+        attachment.FileBytes = croppedCanvasData;
     }
 }
