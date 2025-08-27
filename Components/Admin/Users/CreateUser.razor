@@ -13,11 +13,34 @@
     <MudDialog Options="_dialogOptions">
         <DialogContent>
             <MudTextField Label="Username" HelperText="Max. 8 characters" @bind-Value="newUser.UserName" For="@(() => newUser.UserName)" />
-            <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
-                          @bind-Value="newUser.Password" For="@(() => newUser.Password)" InputType="InputType.Password" />
-            <MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"
-                          @bind-Value="newUser.Password2" For="@(() => newUser.Password2)" InputType="InputType.Password" />
-                <MudCheckBox T="bool" @bind-Value="newUser.IsAdmin" Label="Admin User" />
+            <MudTextField @bind-Value="newUser.Password"
+                For="@(() => newUser.Password)"
+                Label="Password"
+                InputType="@_passwordInput"
+                Adornment="Adornment.End"
+                AdornmentIcon="@_passwordInputIcon"
+                OnAdornmentClick="TogglePasswordVisibility"
+                AdornmentAriaLabel="Show Password"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                HelperText="Choose a strong password"
+                Class="mt-3"
+            />
+            @*<MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"*@
+            <MudTextField @bind-Value="newUser.ConfirmPassword"
+                          For="@(() => newUser.ConfirmPassword)"
+                Label="Password"
+                InputType="@_confirmPasswordInput"
+                Adornment="Adornment.End"
+                AdornmentIcon="@_confirmPasswordInputIcon"
+                OnAdornmentClick="ToggleConfirmPasswordVisibility"
+                AdornmentAriaLabel="Show Password"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                HelperText="Repeat the password"
+                Class="mt-3"
+            />
+            <MudCheckBox T="bool" @bind-Value="newUser.IsAdmin" Label="Admin User" />
         </DialogContent>
         <DialogActions>
             <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -35,6 +58,15 @@
 
     private MudForm form;
     private NewUserForm newUser = new();
+
+    // Password visibility toggles
+    private bool _passwordVisible = false;
+    private InputType _passwordInput = InputType.Password;
+    private string _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    private bool _confirmPasswordVisible = false;
+    private InputType _confirmPasswordInput = InputType.Password;
+    private string _confirmPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
 
     bool success;
     string[] errors = { };
@@ -56,7 +88,7 @@
 
         [Required]
         [Compare(nameof(Password))]
-        public string Password2 { get; set; }
+        public string ConfirmPassword { get; set; }
 
         public bool IsAdmin { get; set; } = false;
 
@@ -89,6 +121,38 @@
         {
             _logger.LogError(ex, "Error creating user");
             Snackbar.Add("Error creating user", Severity.Error);
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        if (_passwordVisible)
+        {
+            _passwordVisible = false;
+            _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
+            _passwordInput = InputType.Password;
+        }
+        else
+        {
+            _passwordVisible = true;
+            _passwordInputIcon = Icons.Material.Filled.Visibility;
+            _passwordInput = InputType.Text;
+        }
+    }
+
+    private void ToggleConfirmPasswordVisibility()
+    {
+        if (_confirmPasswordVisible)
+        {
+            _confirmPasswordVisible = false;
+            _confirmPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            _confirmPasswordInput = InputType.Password;
+        }
+        else
+        {
+            _confirmPasswordVisible = true;
+            _confirmPasswordInputIcon = Icons.Material.Filled.Visibility;
+            _confirmPasswordInput = InputType.Text;
         }
     }
 }

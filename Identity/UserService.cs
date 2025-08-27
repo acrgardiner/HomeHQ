@@ -40,5 +40,25 @@ namespace projectaardvarkx2.Identity
 
             return newUser;
         }
+
+        public async Task<bool> ResetPasswordAsync(string userId, string newPassword)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                    return false;
+
+                // Remove current password and set new one
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+                return result.Succeeded;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

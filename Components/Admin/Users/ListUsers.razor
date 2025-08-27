@@ -95,7 +95,6 @@
                                 Size="Size.Medium" OnClick="ReloadData" Class="mx-1" />
                 </ToolBarContent>
                 <Columns>
-                    <PropertyColumn Property="x => x.Id" />
                     <PropertyColumn Property="x => x.UserName" />
                     <TemplateColumn Title="Actions" TextAlignment="TextAlignment.Right">
                         <CellTemplate>
@@ -104,6 +103,12 @@
                                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
                                     Size="Size.Small" Class="mx-1"
                                     OnClick="@(() => OpenEditDialog(context.Item))" />
+                                </div>
+                                <div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Lock" Color="Color.Warning"
+                                    Size="Size.Small" Class="mx-1"
+                                    OnClick="@(() => OpenPasswordResetDialog(context.Item))"
+                                    Title="Reset Password" />
                                 </div>
                                 <div>
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
@@ -219,6 +224,24 @@
         {
             await LoadUsers();
             Snackbar.Add("User updated successfully", Severity.Success);
+        }
+    }
+
+    @* Password Reset Dialog *@
+    private async Task OpenPasswordResetDialog(ApplicationUser user)
+    {
+        var parameters = new DialogParameters
+        {
+            ["User"] = user
+        };
+
+        var dialog = await DialogService.ShowAsync<ResetPasswordDialog>("Reset Password", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Password was reset successfully, no need to reload users
+            // The success message is already shown in the dialog
         }
     }
 
