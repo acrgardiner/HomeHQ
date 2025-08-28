@@ -41,6 +41,22 @@ namespace projectaardvarkx2.Identity
             return newUser;
         }
 
+        public async Task<bool> UpdateUserName(string userId, string newUsername)
+        {
+            if (string.IsNullOrWhiteSpace(newUsername))
+                return false;
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return false;
+
+            user.UserName = newUsername;
+            user.NormalizedUserName = newUsername.ToUpper();
+            var result = await _userManager.UpdateAsync(user);
+
+            return result.Succeeded;
+        }
+
         public async Task<bool> ResetPasswordAsync(string userId, string newPassword)
         {
             try
