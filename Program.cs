@@ -109,6 +109,12 @@ try
 
     builder.Services.AddControllers();
 
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    });
+
     var app = builder.Build();
 
     //Prepare Database
@@ -152,10 +158,7 @@ try
         app.UseHsts();
     }
 
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-    });
+    app.UseForwardedHeaders();
 
     app.UseAuthentication();
     app.UseAuthorization();
