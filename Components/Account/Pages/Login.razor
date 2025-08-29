@@ -8,6 +8,7 @@
 @using MudBlazor.StaticInput
 
 @inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
@@ -88,6 +89,13 @@
         var result = await SignInManager.PasswordSignInAsync(Input.Username, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
+            Logger.LogInformation("User logged in.");
+            var currentUser = await UserManager.FindByNameAsync(Input.Username);
+            // Update the LastLogin property
+            currentUser.LastLogin = DateTime.UtcNow;
+            // Save changes to the database
+            await UserManager.UpdateAsync(currentUser);
+
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl);
         }

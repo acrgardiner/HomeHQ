@@ -3,6 +3,7 @@
 @using projectaardvarkx2.Identity
 @using System.Text
 @using Microsoft.JSInterop
+@using projectaardvarkx2.Helpers
 
 @attribute [Authorize(Roles = "Admin")]
 
@@ -84,11 +85,10 @@
                 <ToolBarContent>
                     <MudTextField @bind-Value="SearchString" Placeholder="Search..." Adornment="Adornment.Start"
                                     Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mx-2" />
-                    <MudButton Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
-                                Size="Size.Medium" OnClick="ReloadData" Class="mx-1" />
                 </ToolBarContent>
                 <Columns>
                     <PropertyColumn Property="x => x.UserName" />
+                    <PropertyColumn Property="x => x.LastLogin.HasValue ? Formatter.FormatDateTime(x.LastLogin.Value.ToLocalTime(), null) : String.Empty" Title="Last Login" />
                     <TemplateColumn Title="Actions" TextAlignment="TextAlignment.Right">
                         <CellTemplate>
                             <MudStack Row="true" Spacing="0" Class="pa-2">
