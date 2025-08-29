@@ -18,4 +18,6 @@ public class ApplicationUser : IdentityUser
     public override bool PhoneNumberConfirmed { get; set; }
     [NotMapped]
     public override bool TwoFactorEnabled { get; set; }
+
+    public DateTime? LastLogin { get; set; }
 }

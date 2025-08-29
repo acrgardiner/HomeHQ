@@ -12,10 +12,12 @@ namespace projectaardvarkx2.Services
     public class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<CurrentUserService> _logger;
 
-        public CurrentUserService(IHttpContextAccessor httpContextAccessor)
+        public CurrentUserService(IHttpContextAccessor httpContextAccessor, ILogger<CurrentUserService> logger)
         {
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public string? UserId =>
@@ -31,6 +33,8 @@ namespace projectaardvarkx2.Services
                 var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
                 if (string.IsNullOrEmpty(userAgent))
                     return false;
+
+                _logger.LogInformation("User-Agent: {UserAgent}", userAgent);
 
                 // Simple mobile detection
                 string[] mobileKeywords = new[]

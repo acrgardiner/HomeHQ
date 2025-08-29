@@ -13,7 +13,7 @@ namespace projectaardvarkx2.FileStorage
     public class FileStorageService : IFileStorageService
     {
         private long maxFileSize = 1024 * 1024 * 15;
-        private readonly int[] thumbnailDimentions = [600, 600]; //[width, height]
+        private readonly int[] thumbnailDimentions = [1200, 1200]; //[width, height]
         private readonly int jpegQuality = 80;
         private readonly int webpQuality = 80;
         private readonly PngCompressionLevel pngCompressionLevel = PngCompressionLevel.BestCompression;
