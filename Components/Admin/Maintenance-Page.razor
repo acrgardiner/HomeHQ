@@ -7,6 +7,7 @@
 
 @inject ISnackbar Snackbar
 @inject IAssetImportService AssetImportService
+@inject IThumbnailService ThumbnailService
 
 <PageTitle>Dashboard - Home Tracker</PageTitle>
 
@@ -53,6 +54,16 @@
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AttachFile" OnClick="ManualLoad" Class="mx-1">Manual Load</MudButton>
                         </MudStack>
                     </MudPaper>
+                    <MudDivider />
+                    <MudPaper Class="pa-4" Elevation="0">
+                        <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                            <div>
+                                <MudText Typo="Typo.subtitle1">Rebuild Thumbnails </MudText>
+                                <MudText Typo="Typo.body2">Rebuild thumbnails from source files with current thumbnail settings</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" OnClick="RebuildThumbs" Class="mx-1">Rebuild Thumbnails</MudButton>
+                        </MudStack>
+                    </MudPaper>
                 </MudItem>
             </MudGrid>
         </MudCardContent>
@@ -62,7 +73,6 @@
     private async Task PurgeDeleted()
     {
         Snackbar.Add("Purging deleted items...", Severity.Info);
-
     }
 
     private async Task ManualLoad()
@@ -72,5 +82,14 @@
         var newAssets = await AssetImportService.ImportAssets();
 
         Snackbar.Add($"Successfully loaded {newAssets} new Assets", Severity.Success);
+    }
+
+    private async Task RebuildThumbs()
+    {
+        Snackbar.Add("Rebuilding...", Severity.Info);
+
+        var thumbCount = await ThumbnailService.RebuildAll();
+
+        Snackbar.Add($"Successfully rebuilt {thumbCount} thumbnails", Severity.Success);
     }
 }

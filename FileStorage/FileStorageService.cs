@@ -7,37 +7,38 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using Image = SixLabors.ImageSharp.Image;
+using projectaardvarkx2.Services;
 
 namespace projectaardvarkx2.FileStorage
 {
     public class FileStorageService : IFileStorageService
     {
         private long maxFileSize = 1024 * 1024 * 15;
-        private readonly int[] thumbnailDimentions = [1200, 1200]; //[width, height]
+
         private readonly int jpegQuality = 80;
         private readonly int webpQuality = 80;
         private readonly PngCompressionLevel pngCompressionLevel = PngCompressionLevel.BestCompression;
 
-        private readonly IGenericRepository<Attachment> _attachmentRepository;
         private readonly ILogger<FileStorageService> _logger;
+        private readonly IThumbnailService _thumbnailService;
 
-        public FileStorageService(IGenericRepository<Attachment> attachmentRepository, ILogger<FileStorageService> logger)
+        public FileStorageService(ILogger<FileStorageService> logger, IThumbnailService thumbnailService)
         {
-            _attachmentRepository = attachmentRepository;
             _logger = logger;
+            _thumbnailService = thumbnailService;
         }
 
         public async Task<string> UploadAsync<T>(IBrowserFile? file) where T : class
         {
+            if (file == null)
+                throw new ArgumentNullException(nameof(file), "File cannot be null.");
             try
             {
                 var uniqueFileName = Guid.NewGuid().ToString();
                 var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
-                var thumbsDir = Path.Combine("appdata", "thumbs", typeof(T).Name);
 
                 var fileExtension = Path.GetExtension(file.Name);
                 var attachmentFileName = uniqueFileName + fileExtension;
-                var thumbnailFileName = uniqueFileName + "_thumb.jpg";
 
                 // Save file to disk or database as needed
                 var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
@@ -54,7 +55,7 @@ namespace projectaardvarkx2.FileStorage
                     // Generate Thumbnail if it's an image file
                     if (IsImageFile(file.ContentType))
                     {
-                        await GenerateThumbnailAsync(fullFilePath, thumbsDir, thumbnailFileName);
+                        await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
                     }
                 }
 
@@ -76,11 +77,9 @@ namespace projectaardvarkx2.FileStorage
 
                 var uniqueFileName = Guid.NewGuid().ToString();
                 var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
-                var thumbsDir = Path.Combine("appdata", "thumbs", typeof(T).Name);
 
                 var fileExtension = Path.GetExtension(sourceFilename);
                 var attachmentFileName = uniqueFileName + fileExtension;
-                var thumbnailFileName = uniqueFileName + "_thumb.jpg";
                 float savedFileSize = fileBytes.Length;
 
                 // Save file to disk or database as needed
@@ -94,7 +93,7 @@ namespace projectaardvarkx2.FileStorage
                     savedFileSize = await SaveCompressedImageAsync(fileBytes, fullFilePath, contentType);
 
                     // Generate Thumbnail if it's an image file
-                    await GenerateThumbnailAsync(fullFilePath, thumbsDir, thumbnailFileName);
+                    await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
                 }
                 else
                 {
@@ -129,11 +128,8 @@ namespace projectaardvarkx2.FileStorage
                 } while (File.Exists(Path.Combine("appdata", "attachments", typeof(T).Name, attachmentFileName)));
 
                 var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
-                var thumbsDir = Path.Combine("appdata", "thumbs", typeof(T).Name);
 
                 //var fileExtension = attachment.Extension;
-                
-                var thumbnailFileName = uniqueFileName + "_thumb.jpg";
                 float savedFileSize = fileBytes.Length;
 
                 // Save file to disk or database as needed
@@ -147,7 +143,7 @@ namespace projectaardvarkx2.FileStorage
                     savedFileSize = await SaveCompressedImageAsync(fileBytes, fullFilePath, attachment.ContentType);
 
                     // Generate Thumbnail if it's an image file
-                    await GenerateThumbnailAsync(fullFilePath, thumbsDir, thumbnailFileName);
+                    await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
                 }
                 else
                 {
@@ -169,11 +165,9 @@ namespace projectaardvarkx2.FileStorage
             {
                 var uniqueFileName = Guid.NewGuid().ToString();
                 var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
-                var thumbsDir = Path.Combine("appdata", "thumbs", typeof(T).Name);
 
                 var fileExtension = Path.GetExtension(localFile);
                 var attachmentFileName = uniqueFileName + fileExtension;
-                var thumbnailFileName = uniqueFileName + "_thumb.jpg";
 
                 // Save file to disk or database as needed
                 var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
@@ -185,7 +179,7 @@ namespace projectaardvarkx2.FileStorage
                 // Generate Thumbnail if it's an image file
                 if (IsImageFile(contentType))
                 {
-                    await GenerateThumbnailAsync(fullFilePath, thumbsDir, thumbnailFileName);
+                    await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
                 }
 
                 return attachmentFileName;
@@ -204,34 +198,6 @@ namespace projectaardvarkx2.FileStorage
 
             var imageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/webp" };
             return imageTypes.Contains(contentType.ToLower());
-        }
-
-        private async Task GenerateThumbnailAsync(string sourceFile, string dir, string thumbnailFilename)
-        {
-            try
-            {
-                Directory.CreateDirectory(dir);
-
-                var thumbnailFile = Path.Combine(dir, thumbnailFilename);
-
-                using (var image = await Image.LoadAsync(sourceFile))
-                {
-                    // Calculate thumbnail dimensions while maintaining aspect ratio
-                    var (thumbWidth, thumbHeight) = CalculateThumbnailDimensions(image.Width, image.Height, thumbnailDimentions[0], thumbnailDimentions[1]);
-
-                    // Create thumbnail
-                    image.Mutate(x => x.Resize(thumbWidth, thumbHeight));
-                    
-                    // Save as JPEG with good quality
-                    await image.SaveAsJpegAsync(thumbnailFile, new JpegEncoder { Quality = jpegQuality });
-                }
-
-                _logger.LogInformation("Thumbnail generated: {ThumbnailPath}", thumbnailFile);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to generate thumbnail for: {OriginalPath}", thumbnailFilename);
-            }
         }
 
         private async Task<float> SaveCompressedImageAsync(byte[] imageBytes, string filePath, string contentType)
@@ -276,16 +242,6 @@ namespace projectaardvarkx2.FileStorage
             return 0;
         }
 
-        private (int width, int height) CalculateThumbnailDimensions(int originalWidth, int originalHeight, int maxWidth, int maxHeight)
-        {
-            if (originalWidth <= maxWidth && originalHeight <= maxHeight)
-                return (originalWidth, originalHeight);
 
-            var ratioX = (double)maxWidth / originalWidth;
-            var ratioY = (double)maxHeight / originalHeight;
-            var ratio = Math.Min(ratioX, ratioY);
-
-            return ((int)(originalWidth * ratio), (int)(originalHeight * ratio));
-        }
     }
 }
