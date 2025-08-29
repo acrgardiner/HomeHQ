@@ -78,6 +78,7 @@ try
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IFileStorageService, FileStorageService>();
     builder.Services.AddScoped<IAssetImportService, AssetImportService>();
+    builder.Services.AddScoped<IThumbnailService, ThumbnailService>();
 
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
