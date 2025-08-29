@@ -33,7 +33,6 @@
   <ItemGroup>
     <Folder Include="appdata\" />
     <Folder Include="Data\Migrations\" />
-    <Folder Include="logs\" />
   </ItemGroup>
 
 </Project>

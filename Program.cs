@@ -1,4 +1,6 @@
+using Cropper.Blazor.Extensions;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -16,7 +18,6 @@ using projectaardvarkx2.Logging;
 using projectaardvarkx2.Repositories;
 using projectaardvarkx2.Services;
 using Serilog;
-using Cropper.Blazor.Extensions;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -24,7 +25,7 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File(formatter: new CustomJsonFormatter(),
-        path: "logs/log-.json",
+        path: "appdata/logs/log-.json",
         rollingInterval: RollingInterval.Day,
         rollOnFileSizeLimit: true
     )
@@ -99,10 +100,8 @@ try
         .AddSignInManager()
         .AddDefaultTokenProviders();
 
-    //builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
-    Directory.CreateDirectory("logs");
     Directory.CreateDirectory("appdata");
+    Directory.CreateDirectory(Path.Combine("appdata", "logs"));
     Directory.CreateDirectory(Path.Combine("appdata", "imports"));
     Directory.CreateDirectory(Path.Combine("appdata", "attachments"));
     Directory.CreateDirectory(Path.Combine("appdata", "thumbs"));
@@ -152,6 +151,11 @@ try
         // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
         app.UseHsts();
     }
+
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
 
     app.UseAuthentication();
     app.UseAuthorization();
