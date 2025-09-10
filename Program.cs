@@ -113,6 +113,36 @@ try
     {
         options.ForwardedHeaders =
             ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        
+        // Configure trusted proxies from environment variable
+        var trustedProxiesEnv = builder.Configuration["TRUSTED_PROXIES"] ?? Environment.GetEnvironmentVariable("TRUSTED_PROXIES");
+        if (!string.IsNullOrWhiteSpace(trustedProxiesEnv))
+        {
+            var trustedProxies = trustedProxiesEnv
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(ip => ip.Trim())
+                .Where(ip => !string.IsNullOrWhiteSpace(ip))
+                .ToList();
+
+            foreach (var proxyIp in trustedProxies)
+            {
+                if (System.Net.IPAddress.TryParse(proxyIp, out var ipAddress))
+                {
+                    options.KnownProxies.Add(ipAddress);
+                    Log.Information("Added trusted proxy: {ProxyIP}", proxyIp);
+                }
+                else
+                {
+                    Log.Warning("Invalid proxy IP address in TRUSTED_PROXIES: {ProxyIP}", proxyIp);
+                }
+            }
+            
+            Log.Information("Configured {Count} trusted proxies", options.KnownProxies.Count);
+        }
+        else
+        {
+            Log.Information("No TRUSTED_PROXIES environment variable found - no proxy restrictions applied");
+        }
     });
 
     var app = builder.Build();
