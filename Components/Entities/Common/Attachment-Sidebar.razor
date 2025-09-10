@@ -470,17 +470,21 @@
                 if (item.IsNew && item.FileBytes is not null)
                 {
                     item.Attachment.ParentId = Id;
-                    item.Attachment.ParentType = ParentType;
-                    (item.Attachment.LocalFileName, item.Attachment.FileSize ) = await FileStorageService.UploadAsync<Asset>(item.FileBytes, item.Attachment.OriginFileName, item.Attachment.ContentType);
+                    item.Attachment.ParentType = ParentType!;
+                    await FileStorageService.UploadAsync<Asset>(item.FileBytes, item.Attachment);
 
                     var uploadedAttachment = await AttachmentService.AddAsync(item.Attachment);
                 }
 
                 if (!item.IsNew && item.FileBytes is not null)
                 {
-                    //Update existing attachment file
-                    (item.Attachment.LocalFileName, item.Attachment.FileSize) = await FileStorageService.ReUploadAsync<Asset>(item.Attachment, item.FileBytes);
-                    await AttachmentService.UpdateAsync(item.Attachment);
+                    //if edited, flag old attachment for deletion and re-upload
+                    var newAttachment = new Attachment(item.Attachment);
+                    await AttachmentService.DeleteAsync(item.Attachment.Id);
+
+                    await FileStorageService.UploadAsync<Asset>(item.FileBytes, newAttachment);
+
+                    var uploadedAttachment = await AttachmentService.AddAsync(newAttachment);
                 }
             }
             _attachments.Clear();
