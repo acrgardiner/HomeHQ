@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
 using projectaardvarkx2.Entities;
-using projectaardvarkx2.Repositories;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
@@ -68,7 +66,7 @@ namespace projectaardvarkx2.FileStorage
             }
         }
 
-        public async Task<(string, float)> UploadAsync<T>(byte[]? fileBytes, string sourceFilename, string contentType) where T : class
+        public async Task<bool> UploadAsync<T>(byte[]? fileBytes, Attachment attachment) where T : class
         {
             try
             {
@@ -78,58 +76,8 @@ namespace projectaardvarkx2.FileStorage
                 var uniqueFileName = Guid.NewGuid().ToString();
                 var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
 
-                var fileExtension = Path.GetExtension(sourceFilename);
+                var fileExtension = Path.GetExtension(attachment.OriginFileName);
                 var attachmentFileName = uniqueFileName + fileExtension;
-                float savedFileSize = fileBytes.Length;
-
-                // Save file to disk or database as needed
-                var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
-
-                Directory.CreateDirectory(Path.GetDirectoryName(fullFilePath)!);
-
-                if (IsImageFile(contentType))
-                {
-                    // Save image with compression
-                    savedFileSize = await SaveCompressedImageAsync(fileBytes, fullFilePath, contentType);
-
-                    // Generate Thumbnail if it's an image file
-                    await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
-                }
-                else
-                {
-                    File.WriteAllBytes(fullFilePath, fileBytes);
-                }
-
-                    return (attachmentFileName, savedFileSize);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error uploading {0}", sourceFilename);
-                throw new InvalidOperationException("Upload failed.", ex);
-            }
-        }
-
-        public async Task<(string, float)> ReUploadAsync<T>(Attachment attachment, byte[]? fileBytes) where T : class
-        {
-            try
-            {
-                if (fileBytes == null || fileBytes.Length == 0)
-                    throw new ArgumentException("File bytes cannot be null or empty.", nameof(fileBytes));
-
-                //Use existing filename, but add numbered suffix to avoid collisions
-                int i = 0;
-                var fileNameWithoutExt = Path.GetFileNameWithoutExtension(attachment.LocalFileName);
-                string uniqueFileName;
-                string attachmentFileName;
-
-                do {
-                    uniqueFileName = $"{fileNameWithoutExt}_{++i}";
-                    attachmentFileName = uniqueFileName + attachment.Extension;
-                } while (File.Exists(Path.Combine("appdata", "attachments", typeof(T).Name, attachmentFileName)));
-
-                var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
-
-                //var fileExtension = attachment.Extension;
                 float savedFileSize = fileBytes.Length;
 
                 // Save file to disk or database as needed
@@ -150,11 +98,13 @@ namespace projectaardvarkx2.FileStorage
                     File.WriteAllBytes(fullFilePath, fileBytes);
                 }
 
-                return (attachmentFileName, savedFileSize);
+                attachment.LocalFileName = attachmentFileName;
+                attachment.FileSize = savedFileSize;
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error re-uploading {0}", attachment.Id);
+                _logger.LogError(ex, "Error uploading {0}", attachment.OriginFileName);
                 throw new InvalidOperationException("Upload failed.", ex);
             }
         }
@@ -241,7 +191,5 @@ namespace projectaardvarkx2.FileStorage
             }
             return 0;
         }
-
-
     }
 }

@@ -18,7 +18,7 @@ public class AttachmentFileController : ControllerBase
     }
 
     [HttpGet("{attachmentId}")]
-    [Authorize] // Or [Authorize(Roles = "Admin")] for role-based
+    [Authorize]
     public async Task<IActionResult> GetFile(string attachmentId)
     {
         var attachment = await _attachmentService.GetByIdAsync(Guid.Parse(attachmentId));
@@ -40,7 +40,6 @@ public class AttachmentFileController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetFilePreview(string attachmentId)
     {
-        //TODO: update to use pre-generated thumbnails if available
         var attachment = await _attachmentService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
