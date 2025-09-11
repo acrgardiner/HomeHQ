@@ -38,7 +38,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
     [Parameter][EditorRequired] public Attachment Attachment { get; set; }
 
     private readonly DialogOptions _maxWidthOptions = new() { MaxWidth = MaxWidth.Large };

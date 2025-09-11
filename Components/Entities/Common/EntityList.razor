@@ -160,7 +160,7 @@
 
                     @if ((ItemActions != null) || EditDialog != null || EnableItemDelete)
                     {
-                        <TemplateColumn T="TEntityType" Title="Actions" TextAlignment="TextAlignment.Right" Sortable="false">
+                        <TemplateColumn T="TEntityType" Title="Actions" Sortable="false">
                             <CellTemplate>
                                 <MudStack Row="true" Spacing="0" Justify="Justify.FlexEnd" Class="entity-actions">
                                     @if (ItemActions != null)
@@ -215,14 +215,14 @@
 </MudCard>
 
 @code {
-    [Parameter] public ILogger Logger { get; set; }
+    [Parameter] public required ILogger Logger { get; set; }
 
     [Parameter] public MaxWidth MaxWidth { get; set; } = MaxWidth.Large;
 
     [Parameter] public string Plural { get; set; } = "Entities";
     [Parameter] public string Singular { get; set; } = "Entity";
 
-    [Parameter] public IEntityService<TEntityType> EntityService { get; set; } = default!;
+    [Parameter] public required IEntityService<TEntityType> EntityService { get; set; }
 
     [Parameter] public List<(Func<TEntityType, object?> Selector, string Title)>? Columns { get; set; } = null;
     [Parameter] public RenderFragment? ToolbarActions { get; set; }
@@ -365,7 +365,7 @@
                 var dialog = await CreateDialog();
                 var result = await dialog.Result;
 
-                if (!result.Canceled)
+                if (!result!.Canceled)
                 {
                     await LoadData();
                     Snackbar.Add($"{Singular} created successfully", Severity.Success);
@@ -393,7 +393,7 @@
             var dialog = await EditDialog!(parameters);
             var result = await dialog.Result;
 
-            if (!result.Canceled)
+            if (!result!.Canceled)
             {
                 await LoadData();
                 Snackbar.Add($"{Singular} updated successfully", Severity.Success);
@@ -418,7 +418,7 @@
         var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             try
             {

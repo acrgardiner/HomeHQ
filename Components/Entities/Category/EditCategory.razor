@@ -7,6 +7,7 @@
 
 @inject IEntityService<Category> CategoryService
 @inject ISnackbar Snackbar
+@inject ILogger<EditCategory> Logger
 
 <MudDialog>
     <TitleContent>
@@ -25,11 +26,10 @@
 </MudDialog>
 
 @code {
-    [Inject] private ILogger<EditCategory> _logger { get; set; }
-    [CascadingParameter] IMudDialogInstance Dialog { get; set; }
+    [CascadingParameter] public required IMudDialogInstance Dialog { get; set; }
 
-    [Parameter] public Category Entity { get; set; }
-    [Parameter] public string Title { get; set; }
+    [Parameter] public required Category Entity { get; set; }
+    [Parameter] public required string Title { get; set; }
 
     private MudForm form;
     private Category model = new();
@@ -54,7 +54,7 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating");
+                Logger.LogError(ex, "Error updating");
                 Snackbar.Add("Error updating", Severity.Error);
             }
         }

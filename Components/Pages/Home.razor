@@ -134,8 +134,7 @@
                         </MudCardHeader>
                         <MudDivider />
                         <MudCardContent>
-                            <MudChart T="int"
-                                      ChartType="ChartType.Line"
+                            <MudChart ChartType="ChartType.Line"
                                       XAxisLabels="@_activityChartLabels"
                                       ChartOptions="@_activityChartOptions"
                                       ChartSeries="@_activityChartData"
@@ -168,14 +167,14 @@
                                 </ToolBarContent>
                                 <Columns>
                                     <PropertyColumn Property="x => x.Name" Title="Asset" />
-                                    <PropertyColumn Property="x => x.Category.Title" Title="Category" />
+                                    <PropertyColumn Property="x => x.Category!.Title" Title="Category" />
                                     <PropertyColumn Property="x => Formatter.FormatDate(x.PurchaseDate)" Title="Purchase Date" />
                                     <TemplateColumn T="Asset" Title="Warranty">
                                         <CellTemplate Context="asset">
                                             @Formatter.RenderWarrantyInfo(asset.Item)
                                         </CellTemplate>
                                     </TemplateColumn>
-                                    <TemplateColumn T="Asset" Title="Actions" TextAlignment="TextAlignment.Right" Sortable="false">
+                                    <TemplateColumn T="Asset" Title="Actions" Sortable="false">
                                         <CellTemplate Context="asset">
                                             <MudStack Row="true" Spacing="0" Justify="Justify.FlexEnd" Class="entity-actions">
                                                 <MudTooltip Text="View Details">
@@ -224,9 +223,9 @@
 @code {
     private bool _loading = true;
     private int _totalAssets = 0;
-    private int _totalCategories = 0;
+    //private int _totalCategories = 0;
     private int _expiringWarranties = 0;
-    private List<Asset> _warrantyExpiringSoon;
+    private List<Asset> _warrantyExpiringSoon = new();
     private List<Asset> _recentAssets = new();
 
     //Activity Chart
@@ -337,7 +336,7 @@
         }
     }
 
-    private async Task OpenDetails(Asset asset)
+    private void OpenDetails(Asset asset)
     {
         Navigation.NavigateTo($"/assets/{asset.Id}");
     }

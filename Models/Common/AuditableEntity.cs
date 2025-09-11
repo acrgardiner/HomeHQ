@@ -13,5 +13,5 @@ public abstract class AuditableEntity<T> : BaseEntity<T>, IAuditableEntity, ISof
     public string? DeletedBy { get; set; }
     public DateTime? DeletedOn { get; set; }
 
-    internal bool IsDeleted;
+    internal bool IsDeleted => DeletedBy is not null;
 }

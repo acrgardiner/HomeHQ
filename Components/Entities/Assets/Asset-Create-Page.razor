@@ -37,13 +37,10 @@
             </div>
 
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                <MudFab Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           ButtonType="ButtonType.Submit"
-                           StartIcon="@Icons.Material.Filled.Save"
-                           Class="asset-action-btn">
-                    Save
-                </MudFab>
+                <MudFab Color="Color.Primary"
+                    ButtonType="ButtonType.Submit"
+                    StartIcon="@Icons.Material.Filled.Save"
+                    Class="asset-action-btn" />
             </MudStack>
         </div>
 
@@ -201,7 +198,7 @@
                                 {
                                     <MudCard Elevation="0" Class="attribute-card">
                                         <MudCardContent Class="px-4 pt-1 pb-1">
-                                            <MudGrid Spacing="2" AlignItems="Center">
+                                            <MudGrid Spacing="2">
                                                 <MudItem xs="12" sm="5">
                                                     <MudTextField @bind-Value="attr.Attribute"
                                                                 Label="Attribute"
@@ -268,8 +265,6 @@
     private static readonly Guid? nullGuid = null;
 
     private List<AttributeValue> _attributes = new();
-    private int maxAllowedFiles = 3;
-    private bool _uploading = false;
     private List<string> _validationErrors = new();
 
     private Guid defaultWarrantyTypeId;
@@ -304,7 +299,7 @@
         }
     }
 
-    private async Task AddAttribute()
+    private void AddAttribute()
     {
         _attributes.Add(new AttributeValue());
     }

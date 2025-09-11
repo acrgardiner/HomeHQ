@@ -7,6 +7,7 @@
 @inject IUserService UserService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<CreateUser> Logger
 
 <EditForm Model="@newUser" OnValidSubmit="Submit">
 <DataAnnotationsValidator/>
@@ -26,7 +27,6 @@
                 HelperText="Choose a strong password"
                 Class="mt-3"
             />
-            @*<MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"*@
             <MudTextField @bind-Value="newUser.ConfirmPassword"
                           For="@(() => newUser.ConfirmPassword)"
                 Label="Password"
@@ -51,12 +51,9 @@
 
 
 @code {
-    [Inject] private ILogger<CreateUser> _logger { get; set; }
-
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; } = default!;
     private readonly DialogOptions _dialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Small };
 
-    private MudForm form;
     private NewUserForm newUser = new();
 
     // Password visibility toggles
@@ -68,9 +65,6 @@
     private InputType _confirmPasswordInput = InputType.Password;
     private string _confirmPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
 
-    bool success;
-    string[] errors = { };
-
     protected override async Task OnInitializedAsync()
     {
         await MudDialog.SetOptionsAsync(_dialogOptions);
@@ -79,16 +73,16 @@
     private class NewUserForm
     {
         [Required]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [Required]
         [Compare(nameof(Password))]
-        public string ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
 
         public bool IsAdmin { get; set; } = false;
 
@@ -119,7 +113,7 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating user");
+            Logger.LogError(ex, "Error creating user");
             Snackbar.Add("Error creating user", Severity.Error);
         }
     }

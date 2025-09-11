@@ -87,7 +87,7 @@
 
 
 
-        <MudGrid GutterSize="3">
+        <MudGrid>
 
             @if (_largeAttach.Any())
             {
@@ -112,7 +112,7 @@
                             </TemplateColumn>
                             <PropertyColumn Property="x => x.Parent.Name" Title="Asset Name" />
                             <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" Title="File Size" />
-                            <TemplateColumn T="Attachment" Title="Actions" TextAlignment="TextAlignment.Right">
+                            <TemplateColumn T="Attachment" Title="Actions">
                                 <CellTemplate>
                                     <MudStack Row="true" Spacing="0" Class="pa-2">
                                         <div>
@@ -173,9 +173,9 @@
 
     private int _usercount;
     private int _attachmentcount;
-    private List<Attachment> _largeAttach;
+    private List<Attachment> _largeAttach = new();
 
-    private List<Asset> _warrantyExpirigSoon;
+    private List<Asset> _warrantyExpirigSoon = new();
     private float _totalAttachmentSize;
 
     private double[] _pendingPurgeData = { 0, 0, 0, 0, 0 };

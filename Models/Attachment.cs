@@ -6,7 +6,7 @@ public class Attachment : AuditableEntity, IEntity
 {
     public Guid? ParentId { get; set; }
     public string ParentType { get; set; } = string.Empty;
-    public virtual Asset? Parent { get; set; }
+    public virtual Asset? Parent { get; set; } //IEntityNamed
     public Guid? AttachmentTypeId { get; set; }
     public virtual AttachmentType? AttachmentType { get; set; }
 

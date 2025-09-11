@@ -10,6 +10,8 @@
 @inject IUserService UserService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject ILogger<ListUsers> Logger
+@inject IJSRuntime JS
 
 <PageTitle>Assets- Home Tracker</PageTitle>
 
@@ -89,7 +91,7 @@
                 <Columns>
                     <PropertyColumn Property="x => x.UserName" />
                     <PropertyColumn Property="x => x.LastLogin.HasValue ? Formatter.FormatDateTime(x.LastLogin.Value.ToLocalTime(), null) : String.Empty" Title="Last Login" />
-                    <TemplateColumn Title="Actions" TextAlignment="TextAlignment.Right">
+                    <TemplateColumn Title="Actions">
                         <CellTemplate>
                             <MudStack Row="true" Spacing="0" Class="pa-2">
                                 <div>
@@ -101,7 +103,7 @@
                                     <MudIconButton Icon="@Icons.Material.Filled.Lock" Color="Color.Warning"
                                     Size="Size.Small" Class="mx-1"
                                     OnClick="@(() => OpenPasswordResetDialog(context.Item))"
-                                    Title="Reset Password" />
+                                    />
                                 </div>
                                 <div>
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
@@ -121,15 +123,9 @@
 </MudContainer>
 
 @code {
-    [Inject] private ILogger<ListUsers> _logger { get; set; }
-
-    [Inject] private IJSRuntime JS { get; set; } = default!;
-
     private List<ApplicationUser> _users = new();
     private bool _loading = true;
     private string _searchString = string.Empty;
-
-    //private readonly DialogOptions options = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
 
     private string SearchString
     {
@@ -164,7 +160,7 @@
         }
         catch (Exception ex)
         {
-            //_logger.LogError(ex, "Failed to load users");
+            Logger.LogError(ex, "Failed to load users");
             Snackbar.Add("Failed to load users", Severity.Error);
         }
         finally
@@ -194,7 +190,7 @@
         var dialog = await DialogService.ShowAsync<CreateUser>("Add New User");
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             await LoadUsers();
             Snackbar.Add("User created successfully", Severity.Success);
@@ -213,7 +209,7 @@
         var dialog = await DialogService.ShowAsync<EditUser>("Edit User", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             await LoadUsers();
             Snackbar.Add("User updated successfully", Severity.Success);
@@ -231,7 +227,7 @@
         var dialog = await DialogService.ShowAsync<ResetPasswordDialog>("Reset Password", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             // Password was reset successfully, no need to reload users
             // The success message is already shown in the dialog
@@ -250,7 +246,7 @@
         var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             try
             {
@@ -260,7 +256,7 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to delete user");
+                Logger.LogError(ex, "Failed to delete user");
                 Snackbar.Add("Failed to delete user", Severity.Error);
             }
         }
@@ -285,7 +281,7 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to export Users to CSV");
+            Logger.LogError(ex, "Failed to export Users to CSV");
             Snackbar.Add($"Failed to export Users", Severity.Error);
         }
     }

@@ -4,13 +4,13 @@
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Helpers
 @using System.Linq.Expressions
-@using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize()]
 
 @inject ISnackbar Snackbar
 @inject IEntityService<Attachment> AttachmentService
 @inject IDialogService DialogService
+@inject ILogger<AttachmentList_view> Logger
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6" Gutters="false">
     <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4">Attachments</MudText>
@@ -22,7 +22,7 @@
                 <PropertyColumn Property="x => x.Extension" />
                 <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" />
                 <PropertyColumn Property="x => x.AttachmentType.Name" />
-                <TemplateColumn T="Attachment" Title="Actions" TextAlignment="TextAlignment.Right">
+                <TemplateColumn T="Attachment" Title="Actions">
                     <CellTemplate>
                         <MudStack Row="true" Spacing="0" Class="pa-2">
                             <div>
@@ -41,8 +41,6 @@
 </MudContainer>
 
 @code {
-    [Inject] private ILogger<AttachmentList_view> _logger { get; set; }
-
     [Parameter] public Guid? ParentId { get; set; }
 
     private List<Attachment> _attachments { get; set; } = new();
@@ -59,7 +57,6 @@
         await LoadAttachments();
     }
 
-
     private async Task LoadAttachments()
     {
         try
@@ -75,6 +72,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading attachments for ParentId {ParentId}", ParentId);
             Snackbar.Add("Failed to load", Severity.Error);
         }
         finally
