@@ -8,6 +8,7 @@
 @inject IEntityService<AttachmentType> AttachmentService;
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<CreateAttachmentType> Logger
 
 <MudDialog>
     <DialogContent>
@@ -22,8 +23,6 @@
 </MudDialog>
 
 @code {
-    [Inject] private ILogger<CreateAttachmentType> _logger { get; set; }
-
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     private MudForm form = default!;
     private AttachmentType model = new();
@@ -46,7 +45,7 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating Attachment Type");
+                Logger.LogError(ex, "Error creating Attachment Type");
                 Snackbar.Add("Error creating Attachment Type", Severity.Error);
             }
         }

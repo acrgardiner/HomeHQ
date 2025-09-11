@@ -8,6 +8,7 @@
 @inject IEntityService<Category> CategoryService;
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<CreateCategory> Logger
 
 <MudDialog>
     <DialogContent>
@@ -23,8 +24,6 @@
 </MudDialog>
 
 @code {
-    [Inject] private ILogger<CreateCategory> _logger { get; set; }
-
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     private MudForm form = default!;
     private Category model = new();
@@ -47,7 +46,7 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating Category");
+                Logger.LogError(ex, "Error creating Category");
                 Snackbar.Add("Error creating Category", Severity.Error);
             }
         }

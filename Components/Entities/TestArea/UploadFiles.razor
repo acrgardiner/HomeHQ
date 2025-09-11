@@ -10,7 +10,7 @@
 @inject ISnackbar Snackbar
 @inject IEntityService<Attachment> AttachmentService
 @inject IEntityService<AttachmentType> AttachmentTypeService
-@inject ILogger<UploadFiles> _logger
+@inject ILogger<UploadFiles> Logger
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
     <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Upload Files</MudText>
@@ -94,7 +94,7 @@
 @code {
     private List<Attachment_wfile> _attachments = new();
     private long maxFileSize = 1024 * 1024 * 15;
-    private int maxAllowedFiles = 3;
+    //private int maxAllowedFiles = 3;
     private bool _uploading = false;
 
     private List<AttachmentType> AttachmentTypes = new();
@@ -182,7 +182,7 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save attachments");
+            Logger.LogError(ex, "Failed to save attachments");
             Snackbar.Add($"Failed to save attachments: {ex.Message}", Severity.Error);
         }
         finally
@@ -192,7 +192,7 @@
         }
     }
 
-    private async Task Remove(Attachment_wfile item)
+    private void Remove(Attachment_wfile item)
     {
         _attachments.Remove(item);
     }

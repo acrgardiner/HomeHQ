@@ -21,27 +21,13 @@
             <Authorized>
                 <MudMenu Dense="true" Class="mt-1 ml-4">
                     <ActivatorContent>
-                        @if (string.IsNullOrEmpty(ImageDataUrl))
-                        {
-                            <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
-                        }
-                        else
-                        {
-                            <MudAvatar Image="@ImageDataUrl" Style="height:50px; width:50px;"> </MudAvatar>
-                        }
+                        <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
                     </ActivatorContent>
                     <ChildContent>
                         <MudCard Elevation="0" Square="true" Class="mt-n2">
                             <MudCardHeader>
                                 <CardHeaderAvatar>
-                                    @if (string.IsNullOrEmpty(ImageDataUrl))
-                                    {
-                                        <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
-                                    }
-                                    else
-                                    {
-                                        <MudAvatar Image="@ImageDataUrl" Style="height:50px; width:50px;"> </MudAvatar>
-                                    }
+                                    <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
                                 </CardHeaderAvatar>
                                 <CardHeaderContent>
                                     <MudText Typo="Typo.body2">@Name</MudText>
@@ -166,7 +152,6 @@
 
     public string DarkLightModeButtonIcon => _isDarkMode ? Icons.Material.Outlined.LightMode : Icons.Material.Outlined.DarkMode;
 
-    private string ImageDataUrl = null;
     private string? Name => CurrentUserService?.UserName;
     private char? FirstLetterOfName => CurrentUserService?.UserName?.FirstOrDefault();
 }

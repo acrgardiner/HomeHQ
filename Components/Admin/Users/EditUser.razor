@@ -4,6 +4,7 @@
 
 @inject IUserService UserService
 @inject ISnackbar Snackbar
+@inject ILogger<EditUser> Logger
 
 @attribute [Authorize(Roles = "Admin")]
 
@@ -24,11 +25,10 @@
 </MudDialog>
 
 @code {
-    [Inject] private ILogger<EditUser> _logger { get; set; }
-    [CascadingParameter] IMudDialogInstance Dialog { get; set; }
+    [CascadingParameter] public required IMudDialogInstance Dialog { get; set; }
 
-    [Parameter] public ApplicationUser User { get; set; }
-    [Parameter] public string Title { get; set; }
+    [Parameter] public required ApplicationUser User { get; set; }
+    [Parameter] public required string Title { get; set; }
 
 
     private MudForm form;
@@ -63,7 +63,7 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating user");
+                Logger.LogError(ex, "Error updating user");
                 Snackbar.Add("Error updating user", Severity.Error);
             }
         }

@@ -36,20 +36,14 @@
         </div>
 
         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-            <MudFab Variant="Variant.Filled"
-                      Color="Color.Primary"
+            <MudFab Color="Color.Primary"
                       StartIcon="@Icons.Material.Filled.Edit"
                       OnClick="OpenEdit"
-                       Class="entity-action-btn">
-                Edit
-            </MudFab>
-            <MudFab Variant="Variant.Filled"
-                       Color="Color.Error"
+                      Class="entity-action-btn" />
+            <MudFab Color="Color.Error"
                       StartIcon="@Icons.Material.Filled.Delete"
                       OnClick="OpenDeleteDialog"
-                       Class="entity-action-btn">
-                Delete
-            </MudFab>
+                      Class="entity-action-btn" />
         </MudStack>
     </div>
 
@@ -197,7 +191,7 @@
                                 {
                                     <MudCard Elevation="0" Class="attribute-card">
                                         <MudCardContent Class="px-4 pt-1 pb-1">
-                                            <MudGrid Spacing="2" AlignItems="Center">
+                                            <MudGrid Spacing="2">
                                                 <MudItem xs="12" sm="5">
                                                     <MudText Typo="Typo.body1" Class="entity-value">@attr.Attribute</MudText>
                                                 </MudItem>
@@ -291,7 +285,7 @@
             return Color.Default;
 
         var today = DateTime.Today;
-        var warrantyDate = asset.WarrantyExpiration.Value;
+        var warrantyDate = asset!.WarrantyExpiration!.Value;
         var daysRemaining = (warrantyDate - today).Days;
 
         return (daysRemaining switch
@@ -336,7 +330,7 @@
         Navigation.NavigateTo("/assets");
     }
 
-    private async Task OpenEdit()
+    private void OpenEdit()
     {
         if (asset != null)
         {
@@ -358,7 +352,7 @@
         var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             try
             {

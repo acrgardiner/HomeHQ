@@ -4,13 +4,13 @@
 @using projectaardvarkx2.Entities
 @using projectaardvarkx2.Helpers
 @using System.Linq.Expressions
-@using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize()]
 
 @inject ISnackbar Snackbar
 @inject IEntityService<AttributeValue> AttributeService
 @inject IDialogService DialogService
+@inject ILogger<AttributeList_view> Logger
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6" Gutters="false">
     <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4">Attributes</MudText>
@@ -30,8 +30,6 @@
 </MudContainer>
 
 @code {
-    [Inject] private ILogger<AttributeList_view> _logger { get; set; }
-
     [Parameter] public Guid? ParentId { get; set; }
 
     private List<AttributeValue> _attributes { get; set; } = new();
@@ -63,6 +61,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading attributes");
             Snackbar.Add("Failed to load", Severity.Error);
         }
         finally

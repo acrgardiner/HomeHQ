@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
 using projectaardvarkx2.Entities;
 using projectaardvarkx2.FileStorage;
-using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;

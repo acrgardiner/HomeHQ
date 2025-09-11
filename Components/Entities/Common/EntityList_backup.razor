@@ -59,7 +59,7 @@
                         </TemplateColumn>
                     }
                 }
-                <TemplateColumn T="TEntityType" Title="Actions" TextAlignment="TextAlignment.Right">
+                <TemplateColumn T="TEntityType" Title="Actions">
                     <CellTemplate>
                         <MudStack Row="true" Spacing="0" Class="pa-2">
                             @if (ItemActions != null)
@@ -260,7 +260,7 @@
         var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
             try
             {

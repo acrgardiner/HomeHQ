@@ -23,7 +23,7 @@ public class WarrantyTypesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<IActionResult>> Get(Guid id)
+    public ActionResult<IActionResult> Get(Guid id)
     {
         //var warrantyType = await _service.GetByIdAsync(id);
         //if (warrantyType == null)
@@ -34,7 +34,7 @@ public class WarrantyTypesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] WarrantyType warrantyType)
+    public IActionResult Create([FromBody] WarrantyType warrantyType)
     {
         //if (warrantyType == null)
         //{
@@ -48,7 +48,7 @@ public class WarrantyTypesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] WarrantyType warrantyType)
+    public IActionResult Update(Guid id, [FromBody] WarrantyType warrantyType)
     {
         //if (warrantyType == null || id != warrantyType.Id)
         //{

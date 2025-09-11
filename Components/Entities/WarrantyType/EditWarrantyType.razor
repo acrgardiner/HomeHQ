@@ -7,6 +7,7 @@
 
 @inject IEntityService<WarrantyType> WarrantyService
 @inject ISnackbar Snackbar
+@inject ILogger<EditWarrantyType> Logger
 
 <MudDialog>
     <TitleContent>
@@ -28,11 +29,10 @@
 </MudDialog>
 
 @code {
-    [Inject] private ILogger<EditWarrantyType> _logger { get; set; }
-    [CascadingParameter] IMudDialogInstance Dialog { get; set; }
+    [CascadingParameter] public required IMudDialogInstance Dialog { get; set; }
 
-    [Parameter] public WarrantyType Entity { get; set; }
-    [Parameter] public string Title { get; set; }
+    [Parameter] public required WarrantyType Entity { get; set; }
+    [Parameter] public required string Title { get; set; }
 
     private MudForm form;
     private WarrantyType model = new();
@@ -57,7 +57,7 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating");
+                Logger.LogError(ex, "Error updating");
                 Snackbar.Add("Error updating", Severity.Error);
             }
         }
