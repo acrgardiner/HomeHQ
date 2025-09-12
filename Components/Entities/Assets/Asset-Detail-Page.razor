@@ -10,7 +10,7 @@
 
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<AttributeValue> AttributeService
-@inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<Note> NoteService
 
 @inject ISnackbar Snackbar
 @inject ILogger<Asset_Detail_Page> Logger
@@ -213,6 +213,48 @@
                         }
                     </MudCardContent>
                 </MudCard>
+
+                <!-- Notes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" Color="Color.Warning" />
+                                <MudText Typo="Typo.h6">Notes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        @if (_notes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var note in _notes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="12" sm="12">
+                                                    <MudText Typo="Typo.body1" Class="entity-value"><b>@note.Title</b></MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="12">
+                                                    <MudText Typo="Typo.body1" Class="entity-value" Style="white-space: pre-wrap;">@note.Content</MudText>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">No notes</MudText>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
             </MudItem>
 
             <!-- Attachments Sidebar -->
@@ -228,6 +270,7 @@
 
     private Asset? asset;
     private List<AttributeValue> _attributes = new();
+    private List<Note> _notes = new();
     private bool _loading = true;
 
     private Attachment_Sidebar attachmentSidebar;
@@ -259,12 +302,17 @@
             {
                 // Load attributes and attachments in parallel
                 var attributesTask = AttributeService.GetAsync(
-                    filter: x => x.ParentId == guid
+                    filter: x => x.ParentId == guid && x.ParentType == nameof(Asset)
                 );
 
-                await Task.WhenAll(attributesTask);
+                var notesTask = NoteService.GetAsync(
+                    filter: x => x.ParentId == guid && x.ParentType == nameof(Asset)
+                );
+
+                await Task.WhenAll(attributesTask, notesTask);
 
                 _attributes = attributesTask.Result.ToList();
+                _notes = notesTask.Result.ToList();
             }
         }
         catch (Exception ex)
