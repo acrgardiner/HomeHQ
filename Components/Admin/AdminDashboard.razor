@@ -19,6 +19,7 @@
 @inject IEntityService<WarrantyType> WarrantyTypeService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ILogger<AdminDashboard> Logger
 
 <PageTitle>Admin Dashboard - Home Tracker</PageTitle>
 
@@ -84,88 +85,85 @@
             </MudCard>
         </MudItem>
     </MudGrid>
+    <MudGrid>
 
-
-
-        <MudGrid>
-
-            @if (_largeAttach.Any())
-            {
-                <MudItem xs="12">
-                    <MudText Typo="Typo.h6" Class="text-white">Largest Attachments</MudText>
-                    <MudDataGrid T="Attachment" Items="@_largeAttach" Loading="@_loading"
-                    Hideable="true" Hover="true" Dense="true"
-                    Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
-                    >
-                        <ToolBarContent>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
-                            Size="Size.Medium"  Class="mx-1">
-                                Export CSV
-                            </MudButton>
-                        </ToolBarContent>
-                        <Columns>
-                            <PropertyColumn Property="x => x.Id" Title="Id" />
-                            <TemplateColumn T="Attachment" Title="Parent" Context="attach">
-                                <CellTemplate>
-                                    <MudLink Href="@($"/assets/{attach.Item.ParentId}")">@attach.Item.ParentId</MudLink>
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <PropertyColumn Property="x => x.Parent.Name" Title="Asset Name" />
-                            <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" Title="File Size" />
-                            <TemplateColumn T="Attachment" Title="Actions">
-                                <CellTemplate>
-                                    <MudStack Row="true" Spacing="0" Class="pa-2">
-                                        <div>
-                                            <MudIconButton Icon="@Icons.Material.Filled.Image" Color="Color.Primary" Size="Size.Small" Class="mx-1"
-                                                           OnClick="@(() => ShowGalleryAsync(context.Item))" />
-                                        </div>
-                                    </MudStack>
-                                </CellTemplate>
-                            </TemplateColumn>
-                        </Columns>
-                    </MudDataGrid>
-                </MudItem>
-            }
-
-            @if (_warrantyExpirigSoon.Any())
-            {
-                <MudItem xs="12">
-                    <MudText Typo="Typo.h6" Class="text-white">Warranties Expiring Soon</MudText>
-                    <MudDataGrid T="Asset" Items="@_warrantyExpirigSoon" Loading="@_loading"
-                    Hideable="true" Hover="true" Dense="true"
-                    Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
-                    >
-                        <ToolBarContent>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
-                            Size="Size.Medium"  Class="mx-1">
-                                Export CSV
-                            </MudButton>
-                        </ToolBarContent>
-                        <Columns>
-                            <TemplateColumn T="Asset" Title="Id" Context="asset">
-                                <CellTemplate>
-                                    <MudLink Href="@($"/assets/{asset.Item.Id}")">@asset.Item.Id</MudLink>
-                                </CellTemplate>
-                            </TemplateColumn>
-                            <PropertyColumn  Property="x => x.Name" Title="Name" />
-                            <PropertyColumn Property="x => x.Category.Title" Title="Category" />
-                            <PropertyColumn Property="x => Formatter.FormatDate(x.WarrantyExpiration)" Title="WarrantyExpiration" />
-
-                        </Columns>
-                    </MudDataGrid>
-                </MudItem>
-            }
-
+        @if (_largeAttach.Any())
+        {
             <MudItem xs="12">
-                <MudText Typo="Typo.h6" Class="mb-2">Pending Purge</MudText>
-                <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@_pendingPurgeData" InputLabels="@_pendingPurgeLabels">
-                    <CustomGraphics>
-                        <text class="mud-typography" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="20" style="fill:var(--mud-palette-primary-text)">Total</text>
-                        <text class="mud-typography" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="50" style="fill:var(--mud-palette-primary-text)">@_pendingPurgeData.Sum().ToString()</text>
-                    </CustomGraphics>
-                </MudChart>
+                <MudText Typo="Typo.h6" Class="text-white">Largest Attachments</MudText>
+                <MudDataGrid T="Attachment" Items="@_largeAttach" Loading="@_loading"
+                Hideable="true" Hover="true" Dense="true"
+                Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
+                >
+                    <ToolBarContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                        Size="Size.Medium"  Class="mx-1">
+                            Export CSV
+                        </MudButton>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Id" Title="Id" />
+                        <TemplateColumn T="Attachment" Title="Parent" Context="attach">
+                            <CellTemplate>
+                                <MudLink Href="@($"/assets/{attach.Item.ParentId}")">@attach.Item.ParentId</MudLink>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.Parent.Name" Title="Parent Name" />
+                        <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" Title="File Size" />
+                        <TemplateColumn T="Attachment" Title="Actions">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="0" Class="pa-2">
+                                    <div>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Image" Color="Color.Primary" Size="Size.Small" Class="mx-1"
+                                                        OnClick="@(() => ShowGalleryAsync(context.Item))" />
+                                    </div>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
             </MudItem>
-        </MudGrid>
+        }
+
+        @if (_warrantyExpirigSoon.Any())
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="text-white">Warranties Expiring Soon</MudText>
+                <MudDataGrid T="Asset" Items="@_warrantyExpirigSoon" Loading="@_loading"
+                Hideable="true" Hover="true" Dense="true"
+                Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
+                >
+                    <ToolBarContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                        Size="Size.Medium"  Class="mx-1">
+                            Export CSV
+                        </MudButton>
+                    </ToolBarContent>
+                    <Columns>
+                        <TemplateColumn T="Asset" Title="Id" Context="asset">
+                            <CellTemplate>
+                                <MudLink Href="@($"/assets/{asset.Item.Id}")">@asset.Item.Id</MudLink>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn  Property="x => x.Name" Title="Name" />
+                        <PropertyColumn Property="x => x.Category.Title" Title="Category" />
+                        <PropertyColumn Property="x => Formatter.FormatDate(x.WarrantyExpiration)" Title="WarrantyExpiration" />
+
+                    </Columns>
+                </MudDataGrid>
+            </MudItem>
+        }
+
+        <MudItem xs="12">
+            <MudText Typo="Typo.h6" Class="mb-2">Pending Purge</MudText>
+            <MudChart ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@_pendingPurgeData" InputLabels="@_pendingPurgeLabels">
+                <CustomGraphics>
+                    <text class="mud-typography" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="20" style="fill:var(--mud-palette-primary-text)">Total</text>
+                    <text class="mud-typography" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="50" style="fill:var(--mud-palette-primary-text)">@_pendingPurgeData.Sum().ToString()</text>
+                </CustomGraphics>
+            </MudChart>
+        </MudItem>
+    </MudGrid>
 </MudContainer>
 
 @code {
@@ -200,14 +198,12 @@
                 GetWarrantiesExpiringSoon(),
                 GetDeletedPendingPurge()
             };
-            
-
             await Task.WhenAll(tasks);
         }
         catch (Exception ex)
         {
             Snackbar.Add("Error loading dashboard data", Severity.Error);
-            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+            Logger.LogError(ex, $"Error loading dashboard data");
         }
         finally
         {
@@ -265,7 +261,7 @@
         catch (Exception ex)
         {
             Snackbar.Add("Error loading pending purge data", Severity.Error);
-            Console.WriteLine($"Error loading pending purge data: {ex.Message}");
+            Logger.LogError(ex, $"Error loading pending purge data");
         }
     }
 

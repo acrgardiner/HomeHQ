@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using projectaardvarkx2.Contracts;
 using projectaardvarkx2.Data;
+using projectaardvarkx2.Entities;
 using System.Linq.Expressions;
 
 namespace projectaardvarkx2.Repositories
@@ -13,7 +14,7 @@ namespace projectaardvarkx2.Repositories
             Expression<Func<T, TKey>>? orderBy = null,
             bool descending = false,
             int? skip = null,
-            int? take = null, 
+            int? take = null,
             List<Expression<Func<T, object>>>? includes = null
         );
         Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null);
@@ -63,29 +64,52 @@ namespace projectaardvarkx2.Repositories
         {
             IQueryable<T> query = GetQueryable();
 
+            bool includeParent = false;
+
             if (includes != null && includes.Count > 0)
             {
+                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
+
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
                 }
             }
 
-            return await query.FirstOrDefaultAsync(e => e.Id == id);
+            var result = await query.FirstOrDefaultAsync(e => e.Id == id);
+
+            if (includeParent && result != null)
+            {
+                await LoadPolymorphicParents(new[] { result });
+            }
+
+            return result;
         }
 
         public async Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null)
         {
             IQueryable<T> query = GetQueryable();
 
+            bool includeParent = false;
+
             if (includes != null && includes.Count > 0)
             {
+                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
+
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
                 }
             }
-            return await query.ToListAsync();
+            
+            var result = await query.ToListAsync();
+
+            if (includeParent)
+            {
+                await LoadPolymorphicParents(result);
+            }
+
+            return result;
         }
 
         public async Task<IEnumerable<T>> GetAsync<TKey>(
@@ -99,8 +123,12 @@ namespace projectaardvarkx2.Repositories
         {
             IQueryable<T> query = GetQueryable();
 
+            bool includeParent = false;
+
             if (includes != null && includes.Count > 0)
             {
+                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
+
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
@@ -119,7 +147,98 @@ namespace projectaardvarkx2.Repositories
             if (take.HasValue)
                 query = query.Take(take.Value);
 
-            return await query.ToListAsync();
+            var result = await query.ToListAsync();
+
+            if (includeParent)
+            {
+                await LoadPolymorphicParents(result);
+            }
+
+            return result;
+        }
+
+        private async Task LoadPolymorphicParents(IEnumerable<T> entities)
+        {
+            if (!entities.Any()) return;
+
+            // Group entities by ParentType for efficient querying
+            var parentGroups = entities
+                .GroupBy(e => GetParentType(e))
+                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .ToList();
+
+            foreach (var group in parentGroups)
+            {
+                var parentType = group.Key;
+                var parentIds = group
+                    .Select(e => GetParentId(e))
+                    .Where(id => id.HasValue)
+                    .Select(id => id!.Value)
+                    .Distinct()
+                    .ToList();
+
+                if (!parentIds.Any()) continue;
+
+                // Load parents based on type
+                var parents = await LoadParentsByType(parentType, parentIds);
+                
+                // Assign parents to entities
+                foreach (var entity in group)
+                {
+                    var parentId = GetParentId(entity);
+                    if (parentId.HasValue)
+                    {
+                        var parent = parents.FirstOrDefault(p => GetEntityId(p) == parentId.Value);
+                        SetParent(entity, parent);
+                    }
+                }
+            }
+        }
+
+        private string? GetParentType(T entity)
+        {
+            return entity.GetType().GetProperty("ParentType")?.GetValue(entity)?.ToString();
+        }
+
+        private Guid? GetParentId(T entity)
+        {
+            return entity.GetType().GetProperty("ParentId")?.GetValue(entity) as Guid?;
+        }
+
+        private void SetParent(T entity, object? parent)
+        {
+            var parentProperty = entity.GetType().GetProperty("Parent");
+            parentProperty?.SetValue(entity, parent);
+        }
+
+        private Guid GetEntityId(object entity)
+        {
+            var idProperty = entity.GetType().GetProperty("Id");
+            return (Guid)(idProperty?.GetValue(entity) ?? Guid.Empty);
+        }
+
+        private async Task<List<object>> LoadParentsByType(string parentType, List<Guid> parentIds)
+        {
+            return parentType switch
+            {
+                nameof(Asset) => (await _applicationContext.Assets
+                    .Where(a => parentIds.Contains(a.Id))
+                    .ToListAsync()).Cast<object>().ToList(),
+                    
+                nameof(Category) => (await _applicationContext.Categories
+                    .Where(c => parentIds.Contains(c.Id))
+                    .ToListAsync()).Cast<object>().ToList(),
+                    
+                nameof(WarrantyType) => (await _applicationContext.WarrantyTypes
+                    .Where(w => parentIds.Contains(w.Id))
+                    .ToListAsync()).Cast<object>().ToList(),
+                    
+                nameof(AttachmentType) => (await _applicationContext.AttachmentTypes
+                    .Where(at => parentIds.Contains(at.Id))
+                    .ToListAsync()).Cast<object>().ToList(),
+                    
+                _ => new List<object>()
+            };
         }
 
         public async Task AddAsync(T entity)

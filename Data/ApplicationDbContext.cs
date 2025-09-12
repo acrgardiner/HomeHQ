@@ -19,6 +19,7 @@ namespace projectaardvarkx2.Data
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<AttachmentType> AttachmentTypes { get; set; }
         public DbSet<AttributeValue> Attributes { get; set; }
+        public DbSet<Note> Notes { get; set; }
 
         private readonly ICurrentUserService _currentUserService;
 
@@ -94,6 +95,7 @@ namespace projectaardvarkx2.Data
             base.OnModelCreating(modelBuilder);
 
             RenameIdentityTables(modelBuilder);
+            ConfigurePolymorphicRelationships(modelBuilder);
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
@@ -102,6 +104,29 @@ namespace projectaardvarkx2.Data
                     foreignKey.DeleteBehavior = DeleteBehavior.SetNull;
                 }
             }
+        }
+
+        private void ConfigurePolymorphicRelationships(ModelBuilder modelBuilder)
+        {
+            // Configure polymorphic entities to ignore the Parent navigation property
+            // since it's polymorphic and will be loaded manually
+            modelBuilder.Entity<Note>()
+                .Ignore(n => n.Parent);
+            modelBuilder.Entity<Attachment>()
+                .Ignore(a => a.Parent);
+            modelBuilder.Entity<AttributeValue>()
+                .Ignore(a => a.Parent);
+
+            // Optional: Add indexes for better query performance
+            modelBuilder.Entity<Note>()
+                .HasIndex(n => new { n.ParentId, n.ParentType })
+                .HasDatabaseName("IX_Notes_Parent");
+            modelBuilder.Entity<Attachment>()
+                .HasIndex(a => new { a.ParentId, a.ParentType })
+                .HasDatabaseName("IX_Attachments_Parent");
+            modelBuilder.Entity<AttributeValue>()
+                .HasIndex(a => new { a.ParentId, a.ParentType })
+                .HasDatabaseName("IX_AttributeValue_Parent");
         }
 
         protected void RenameIdentityTables(ModelBuilder builder)

@@ -15,5 +15,6 @@ public class Asset : AuditableEntity, IEntity, IEntityNamed
     public DateTime? WarrantyExpiration { get; set; }
 
     //public virtual IEnumerable<Attachment>? Attachments { get; set; } = new List<Attachment>();
-    public virtual IEnumerable<AttributeValue>? Attributes { get; set; } = new List<AttributeValue>();
+    //public virtual IEnumerable<AttributeValue>? Attributes { get; set; } = new List<AttributeValue>();
+    //public virtual IEnumerable<Note>? Notes { get; set; } = new List<Note>();
 }

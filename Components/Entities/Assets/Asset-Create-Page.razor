@@ -12,6 +12,7 @@
 @inject IEntityService<Category> CategoryService
 @inject IEntityService<WarrantyType> WarrantyTypeService
 @inject IEntityService<AttributeValue> AttributeService
+@inject IEntityService<Note> NoteService
 
 @inject ICurrentUserService CurrentUser
 
@@ -199,13 +200,13 @@
                                     <MudCard Elevation="0" Class="attribute-card">
                                         <MudCardContent Class="px-4 pt-1 pb-1">
                                             <MudGrid Spacing="2">
-                                                <MudItem xs="12" sm="5">
+                                                <MudItem xs="11" sm="5">
                                                     <MudTextField @bind-Value="attr.Attribute"
                                                                 Label="Attribute"
                                                                 Variant="Variant.Outlined"
                                                                 Margin="Margin.Dense" />
                                                 </MudItem>
-                                                <MudItem xs="10" sm="5">
+                                                <MudItem xs="11" sm="6">
                                                     <MudTextField @bind-Value="attr.Value"
                                                         Label="Value"
                                                         Variant="Variant.Outlined"
@@ -214,7 +215,7 @@
                                                         Error="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
                                                         ErrorText="Value is required if Attribute is set." />
                                                 </MudItem>
-                                                <MudItem xs="2" sm="2" Class="d-flex justify-end">
+                                                <MudItem xs="1" sm="1" Class="d-flex justify-end">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                  Color="Color.Error"
                                                                  Size="Size.Small"
@@ -236,6 +237,81 @@
                                          StartIcon="@Icons.Material.Filled.Add"
                                          OnClick="AddAttribute">
                                     Add First Attribute
+                                </MudButton>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Notes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" Color="Color.Warning" />
+                                <MudText Typo="Typo.h6">Notes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudTooltip Text="Add note">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                             Color="Color.Primary"
+                                             Size="Size.Medium"
+                                             OnClick="AddNote" />
+                            </MudTooltip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent Class="pa-0">
+                        @if (_notes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var note in _notes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="11" sm="11">
+                                                    <MudTextField @bind-Value="note.Title"
+                                                                Label="Title"
+                                                                Variant="Variant.Outlined"
+                                                                Margin="Margin.Dense"
+                                                                 />
+                                                </MudItem>
+                                                <MudItem xs="1" sm="1" Class="d-flex justify-end">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Color="Color.Error"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => _notes.Remove(note))" />
+                                                </MudItem>
+                                            </MudGrid>
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="11" sm="11">
+                                                    <MudTextField @bind-Value="note.Content"
+                                                        Label="Content"
+                                                        Variant="Variant.Outlined"
+                                                        Margin="Margin.Dense"
+                                                        Lines="4"
+                                                        MaxLines="20"
+                                                        AutoGrow="true"
+                                                         />
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.StickyNote2" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No notes added</MudText>
+                                <MudButton Color="Color.Primary"
+                                         Variant="Variant.Text"
+                                         StartIcon="@Icons.Material.Filled.Add"
+                                         OnClick="AddNote">
+                                    Add First Note
                                 </MudButton>
                             </div>
                         }
@@ -265,6 +341,7 @@
     private static readonly Guid? nullGuid = null;
 
     private List<AttributeValue> _attributes = new();
+    private List<Note> _notes = new();
     private List<string> _validationErrors = new();
 
     private Guid defaultWarrantyTypeId;
@@ -291,6 +368,7 @@
             OnChangeWarrantyType();
 
             _attributes.Add(new AttributeValue()); // Add initial empty attribute
+            _notes.Add(new Note()); // Add initial empty note
         }
         catch (Exception ex)
         {
@@ -304,6 +382,11 @@
         _attributes.Add(new AttributeValue());
     }
 
+    private void AddNote()
+    {
+        _notes.Add(new Note());
+    }
+
     private async Task SaveAttributes(Guid Id)
     {
         try
@@ -311,6 +394,7 @@
             foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
             {
                 attr.ParentId = Id;
+                attr.ParentType = nameof(Asset);
 
                 await AttributeService.AddAsync(attr);
             }
@@ -319,6 +403,25 @@
         {
             Logger.LogError(ex, "Failed to save attributes");
             Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SaveNotes(Guid Id)
+    {
+        try
+        {
+            foreach (var note in _notes.Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content)))
+            {
+                note.ParentId = Id;
+                note.ParentType = nameof(Asset);
+
+                await NoteService.AddAsync(note);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save notes");
+            Snackbar.Add($"Failed to save notes: {ex.Message}", Severity.Error);
         }
     }
 
@@ -334,6 +437,7 @@
             var newAsset = await AssetService.AddAsync(asset);
 
             await SaveAttributes(newAsset.Id);
+            await SaveNotes(newAsset.Id);
             await attachmentSidebar.SaveAttachments(newAsset.Id);
 
             Snackbar.Add("Asset created successfully.", Severity.Success);

@@ -1,4 +1,5 @@
 ﻿using projectaardvarkx2.Contracts;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace projectaardvarkx2.Entities;
 
@@ -6,7 +7,8 @@ public class Attachment : AuditableEntity, IEntity
 {
     public Guid? ParentId { get; set; }
     public string ParentType { get; set; } = string.Empty;
-    public virtual Asset? Parent { get; set; } //IEntityNamed
+    [NotMapped]
+    public virtual IEntityNamed? Parent { get; set; }
     public Guid? AttachmentTypeId { get; set; }
     public virtual AttachmentType? AttachmentType { get; set; }
 

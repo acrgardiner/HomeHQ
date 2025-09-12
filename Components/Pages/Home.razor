@@ -332,7 +332,7 @@
         catch (Exception ex)
         {
             Snackbar.Add("Error loading history chart data", Severity.Error);
-            Console.WriteLine($"Error loading history chart data: {ex.Message}");
+            Logger.LogError(ex, $"Error loading history chart data");
         }
     }
 
