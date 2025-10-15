@@ -441,10 +441,7 @@
 
     private void GoBack()
     {
-        // Decode state to get destination
-        string destination = NavigationStateHelper.DecodeUrl(ReturnState) ?? "/assets";
-
-        Navigation.NavigateTo($"{destination}");
+        Navigation.GoBack(ReturnState, "/assets");
     }
 
     private void OnChangeWarrantyType()
