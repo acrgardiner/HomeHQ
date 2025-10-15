@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using System.Linq.Expressions
 @using projectaardvarkx2.Helpers
+@using projectaardvarkx2.Components.Entities.Common
 
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<Category> CategoryService
@@ -338,6 +339,9 @@
 
     private void OpenDetails(Asset asset)
     {
-        Navigation.NavigateTo($"/assets/{asset.Id}");
+        var state = NavigationStateHelper.CreateState("/");
+        var encodedState = NavigationStateHelper.Encode(state);
+        var queryString = !string.IsNullOrWhiteSpace(encodedState) ? $"?returnState={Uri.EscapeDataString(encodedState)}" : "";
+        Navigation.NavigateTo($"/assets/{asset.Id}{queryString}");
     }
 }

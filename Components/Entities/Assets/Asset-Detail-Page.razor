@@ -265,8 +265,9 @@
     }
 </MudContainer>
 
-    @code{
+@code{
     [Parameter] public string Id { get; set; } = string.Empty;
+    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
 
     private Asset? asset;
     private List<AttributeValue> _attributes = new();
@@ -375,14 +376,19 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/assets");
+        // Decode state to get destination
+        string destination = NavigationStateHelper.DecodeUrl(ReturnState) ?? "/assets";
+
+        Navigation.NavigateTo($"{destination}");
     }
 
     private void OpenEdit()
     {
         if (asset != null)
         {
-            Navigation.NavigateTo($"/assets/edit/{asset.Id}");
+            // Pass along the return state to the edit page
+            var queryString = !string.IsNullOrWhiteSpace(ReturnState) ? $"?returnState={Uri.EscapeDataString(ReturnState)}" : "";
+            Navigation.NavigateTo($"/assets/edit/{asset.Id}{queryString}");
         }
     }
 
@@ -406,7 +412,7 @@
             {
                 await AssetService.DeleteAsync(asset.Id);
                 Snackbar.Add($"Asset '{asset.Name}' deleted successfully", Severity.Success);
-                Navigation.NavigateTo("/assets");
+                GoBack(); // Use GoBack to preserve navigation state
             }
             catch (Exception ex)
             {

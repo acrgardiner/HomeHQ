@@ -337,6 +337,7 @@
 
 @code {
     [Parameter] public Guid Id { get; set; }
+    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
 
     private Asset asset = new();
     private List<Category> categories = new();
@@ -367,7 +368,7 @@
             if (loadedAsset == null)
             {
                 Snackbar.Add("Asset not found.", Severity.Error);
-                Navigation.NavigateTo("/assets");
+                GoBack();
                 return;
             }
             asset = loadedAsset;
@@ -430,7 +431,7 @@
             await attachmentSidebar.SaveAttachments(asset.Id);
 
             Snackbar.Add("Asset updated successfully.", Severity.Success);
-            Navigation.NavigateTo("/assets");
+            GoBack(); // Use GoBack to preserve navigation state
         }
         catch (Exception ex)
         {
@@ -440,7 +441,10 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/assets");
+        // Decode state to get destination
+        string destination = NavigationStateHelper.DecodeUrl(ReturnState) ?? "/assets";
+
+        Navigation.NavigateTo($"{destination}");
     }
 
     private void OnChangeWarrantyType()

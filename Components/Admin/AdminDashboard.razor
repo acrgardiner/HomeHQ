@@ -20,6 +20,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ILogger<AdminDashboard> Logger
+@inject NavigationManager Navigation
 
 <PageTitle>Admin Dashboard - Home Tracker</PageTitle>
 
@@ -105,7 +106,7 @@
                         <PropertyColumn Property="x => x.Id" Title="Id" />
                         <TemplateColumn T="Attachment" Title="Parent" Context="attach">
                             <CellTemplate>
-                                <MudLink Href="@($"/assets/{attach.Item.ParentId}")">@attach.Item.ParentId</MudLink>
+                                <MudLink OnClick="@(() => NavigateToAsset(attach.Item.ParentId ?? Guid.Empty))" Style="cursor: pointer;">@attach.Item.ParentId</MudLink>
                             </CellTemplate>
                         </TemplateColumn>
                         <PropertyColumn Property="x => x.Parent.Name" Title="Parent Name" />
@@ -142,7 +143,7 @@
                     <Columns>
                         <TemplateColumn T="Asset" Title="Id" Context="asset">
                             <CellTemplate>
-                                <MudLink Href="@($"/assets/{asset.Item.Id}")">@asset.Item.Id</MudLink>
+                                <MudLink OnClick="@(() => NavigateToAsset(asset.Item.Id))" Style="cursor: pointer;">@asset.Item.Id</MudLink>
                             </CellTemplate>
                         </TemplateColumn>
                         <PropertyColumn  Property="x => x.Name" Title="Name" />
@@ -272,5 +273,13 @@
             { x => x.Attachment, attachment }
         };
         return DialogService.ShowAsync<ViewImage>("View Attachment", param);
+    }
+
+    private void NavigateToAsset(Guid assetId)
+    {
+        var state = NavigationStateHelper.CreateState("/admin/dashboard");
+        var encodedState = NavigationStateHelper.Encode(state);
+        var queryString = !string.IsNullOrWhiteSpace(encodedState) ? $"?returnState={Uri.EscapeDataString(encodedState)}" : "";
+        Navigation.NavigateTo($"/assets/{assetId}{queryString}");
     }
 }

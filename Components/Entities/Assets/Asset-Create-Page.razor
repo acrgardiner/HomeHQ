@@ -335,6 +335,8 @@
 </MudContainer>
 
 @code {
+    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
+    
     private Asset asset = new() { PurchaseDate = DateTime.Today, WarrantyExpiration = DateTime.Today };
     private List<Category> categories = new();
     private List<WarrantyType> warrantyTypes = new();
@@ -441,7 +443,7 @@
             await attachmentSidebar.SaveAttachments(newAsset.Id);
 
             Snackbar.Add("Asset created successfully.", Severity.Success);
-            Navigation.NavigateTo("/assets");
+            GoBack(); // Use GoBack to preserve navigation state
         }
         catch (Exception ex)
         {
@@ -451,7 +453,10 @@
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/assets");
+        // Decode state to get destination
+        string destination = NavigationStateHelper.DecodeUrl(ReturnState) ?? "/assets";
+
+        Navigation.NavigateTo($"{destination}");
     }
 
     private void OnChangeWarrantyType()
