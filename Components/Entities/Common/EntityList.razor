@@ -55,7 +55,7 @@
                                   Disabled="_loading" />
                 </MudTooltip>
 
-                @if (EnableExport && _entities.Any())
+                @if (EnableExport && (_entities?.Any() ?? false))
                 {
                     <MudTooltip Text="Export to CSV">
                         <MudIconButton Color="Color.Default" 
@@ -134,7 +134,8 @@
                         Bordered="false"
                         ReadOnly="true"
                         RowClick="@RowClicked"
-                        Class="entity-data-grid">
+                        Class="entity-data-grid"
+                        @bind-CurrentPage="@CurrentPage" @bind-RowsPerPage="@RowsPerPage">
                 <Columns>
                     @if (Columns != null)
                     {
@@ -205,8 +206,8 @@
                 </Columns>
 
                 <PagerContent>
-                    <MudDataGridPager T="TEntityType" 
-                                     PageSizeOptions="new int[] { 10, 25, 50, 100 }" 
+                    <MudDataGridPager T="TEntityType"
+                                     PageSizeOptions="new int[] { 10, 25, 50, 100 }"
                                      InfoFormat="{first_item}-{last_item} of {all_items}" />
                 </PagerContent>
             </MudDataGrid>
@@ -229,6 +230,7 @@
 
     [Parameter] public Func<TEntityType, bool>? QuickFilter { get; set; }
     [Parameter] public List<Expression<Func<TEntityType, object>>>? Includes { get; set; }
+    //[Parameter] public string? InitialSearchString { get; set; }
 
     [Parameter] public Func<Task<IDialogReference>>? CreateDialog { get; set; } = null;
     [Parameter] public Func<DialogParameters, Task<IDialogReference>>? EditDialog { get; set; } = null;
@@ -237,13 +239,30 @@
     [Parameter] public List<EntityAction<TEntityType>>? ItemActions { get; set; } = null;
     [Parameter] public bool EnableItemDelete { get; set; } = true;
     [Parameter] public bool EnableExport { get; set; } = true;
+    public int CurrentPage { get; set; } = 0;
+    public int RowsPerPage { get; set; } = 10;
+
+    public void SetRowsPerPage(int rowsPerPage)
+    {
+        RowsPerPage = rowsPerPage;
+    }
+
+    public void SetPage(int page)
+    {
+        CurrentPage = page;
+    }
+
+    public void SetSearchString(string searchString)
+    {
+        _searchString = searchString;
+    }
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
-    private List<TEntityType> _entities = new();
+    private List<TEntityType>? _entities;
     private bool _loading = true;
     private string _searchString = string.Empty;
-    private string SearchString
+    public string SearchString
     {
         get => _searchString;
         set
@@ -251,17 +270,19 @@
             if (_searchString != value)
             {
                 _searchString = value;
-                StateHasChanged();
             }
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
+        // if (_entities is null )
+        // {
+        //     await LoadData();
+        // }
     }
 
-    private async Task ReloadData() => await LoadData();
+    public async Task ReloadData() => await LoadData();
 
     private async Task LoadData()
     {
@@ -281,7 +302,6 @@
         finally
         {
             _loading = false;
-            StateHasChanged();
         }
     }
 

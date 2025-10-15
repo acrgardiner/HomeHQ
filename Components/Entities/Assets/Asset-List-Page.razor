@@ -5,6 +5,8 @@
 @using projectaardvarkx2.Components.Entities.Common
 @using projectaardvarkx2.Helpers
 @using Microsoft.AspNetCore.Authorization
+@using System.Text.Json
+@using System.Text
 
 @attribute [Authorize()]
 
@@ -75,7 +77,7 @@
 
     <!-- Main Content Card -->
     <MudCard Elevation="2" Class="assets-list-card">
-        <EntityList TEntityType="Asset" 
+        <EntityList @ref="@entityList" TEntityType="Asset" 
                     Plural="Assets" 
                     Singular="Asset" 
                     EntityService="AssetService"
@@ -102,6 +104,13 @@
 </MudContainer>
 
 @code {
+    [Parameter] [SupplyParameterFromQuery(Name = "search")]  public string? SearchString { get; set; }
+    [Parameter] [SupplyParameterFromQuery(Name = "page")] public int? Page { get; set; }
+    [Parameter] [SupplyParameterFromQuery(Name = "pagesize")] public int? PageSize { get; set; }
+    //[Parameter] [SupplyParameterFromQuery(Name = "state")] public string? EncodedState { get; set; }
+
+    private EntityList<Asset>? entityList;
+
     private List<EntityAction<Asset>>? AssetActions = null;
 
     private Func<Asset, Task> RowClicked => async (asset) => await OpenDetails(asset);
@@ -125,7 +134,68 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadStatistics();
+        await Task.Yield();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Decode state from base64 JSON if present
+        string? searchString = null;
+        int? page = null;
+        int? pageSize = null;
+
+        // if (!string.IsNullOrWhiteSpace(EncodedState))
+        // {
+        //     try
+        //     {
+        //         var decodedState = DecodeNavigationState(EncodedState);
+        //         searchString = decodedState.Search;
+        //         page = decodedState.Page;
+        //         pageSize = decodedState.PageSize;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Logger.LogWarning(ex, "Failed to decode navigation state");
+        //     }
+        // }
+        // else
+        // {
+            // Fall back to individual query parameters for backwards compatibility
+            searchString = SearchString;
+            page = Page;
+            pageSize = PageSize;
+        //}
+
+        // Apply query parameters to restore navigation state
+        if (!string.IsNullOrWhiteSpace(searchString))
+        {
+            entityList?.SetSearchString(searchString);
+        }
+        else if (entityList?.SearchString != null)
+        {
+            // Clear search if no query parameter present
+            entityList?.SetSearchString(string.Empty);
+        }
+
+        if (page.HasValue)
+        {
+            entityList?.SetPage(page.Value);
+        }
+        else
+        {
+            // Reset to first page if no query parameter present
+            entityList?.SetPage(0);
+        }
+
+        if (pageSize.HasValue)
+        {
+            entityList?.SetRowsPerPage(pageSize.Value);
+        }
+
+        var loaddataTask = entityList?.ReloadData();
+        var statisticsTask = LoadStatistics();
+
+        await Task.WhenAll(loaddataTask ?? Task.CompletedTask, statisticsTask);
     }
 
     private async Task LoadStatistics()
@@ -133,19 +203,17 @@
         try
         {
             var assets = await AssetService.GetAllAsync(Includes);
-            
+
             _totalAssets = assets.Count();
-            
+
             // Count warranties expiring in next 30 days
             var thirtyDaysFromNow = DateTime.Today.AddDays(30);
             _warrantiesExpiring = assets.Where(a => a.WarrantyExpiration.HasValue && 
                                                    a.WarrantyExpiration.Value <= thirtyDaysFromNow &&
                                                    a.WarrantyExpiration.Value >= DateTime.Today).Count();
-            
+
             // Get unique categories count
             _categoriesCount = assets.Where(a => a.Category != null).Select(a => a.CategoryId).Distinct().Count();
-            
-            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -169,12 +237,35 @@
 
     private async Task OpenDetails(Asset asset)
     {
-        NavigationManager.NavigateTo($"/assets/{asset.Id}");
+        var encodedState = EncodeNavigationState();
+        var queryString = !string.IsNullOrWhiteSpace(encodedState) ? $"?returnState={Uri.EscapeDataString(encodedState)}" : "";
+        NavigationManager.NavigateTo($"/assets/{asset.Id}{queryString}");
     }
 
     private async Task OpenEdit(Asset asset)
     {
-        NavigationManager.NavigateTo($"/assets/edit/{asset.Id}");
+        var encodedState = EncodeNavigationState();
+        var queryString = !string.IsNullOrWhiteSpace(encodedState) ? $"?returnState={Uri.EscapeDataString(encodedState)}" : "";
+        NavigationManager.NavigateTo($"/assets/edit/{asset.Id}{queryString}");
+    }
+
+    // Helper methods for encoding/decoding navigation state
+    private string EncodeNavigationState()
+    {
+        var state = NavigationStateHelper.CreateListState(
+            destination: "/assets",
+            page: entityList?.CurrentPage,
+            search: entityList?.SearchString,
+            pageSize: entityList?.RowsPerPage
+        );
+
+        return state != null ? NavigationStateHelper.Encode(state) : string.Empty;
+    }
+
+    private (string? Search, int? Page, int? PageSize) DecodeNavigationState(string encodedState)
+    {
+        var state = NavigationStateHelper.Decode(encodedState);
+        return (state?.Parameters?.Search, state?.Parameters?.Page, state?.Parameters?.PageSize);
     }
 }
 
