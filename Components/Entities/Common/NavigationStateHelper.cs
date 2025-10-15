@@ -122,5 +122,18 @@ public static class NavigationStateHelper
             Parameters = null
         };
     }
+
+    /// <summary>
+    /// Navigates back to the return state destination or a default destination
+    /// </summary>
+    /// <param name="navigation">The NavigationManager instance</param>
+    /// <param name="returnState">The encoded return state string</param>
+    /// <param name="defaultDestination">The default destination if no return state is provided</param>
+    public static void GoBack(this Microsoft.AspNetCore.Components.NavigationManager navigation, string? returnState, string defaultDestination)
+    {
+        // Decode state to get destination
+        string destination = DecodeUrl(returnState) ?? defaultDestination;
+        navigation.NavigateTo(destination);
+    }
 }
 
