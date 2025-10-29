@@ -34,8 +34,6 @@ namespace projectaardvarkx2.Services
                 if (string.IsNullOrEmpty(userAgent))
                     return false;
 
-                _logger.LogInformation("User-Agent: {UserAgent}", userAgent);
-
                 // Simple mobile detection
                 string[] mobileKeywords = new[]
                 {
