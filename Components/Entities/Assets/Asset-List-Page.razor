@@ -77,9 +77,9 @@
 
     <!-- Main Content Card -->
     <MudCard Elevation="2" Class="assets-list-card">
-        <EntityList @ref="@entityList" TEntityType="Asset" 
-                    Plural="Assets" 
-                    Singular="Asset" 
+        <EntityList @ref="@entityList" TEntityType="Asset"
+                    Plural="Assets"
+                    Singular="Asset"
                     EntityService="AssetService"
                     Logger="Logger"
                     Includes="@(Includes)"
@@ -104,10 +104,7 @@
 </MudContainer>
 
 @code {
-    [Parameter] [SupplyParameterFromQuery(Name = "search")]  public string? SearchString { get; set; }
-    [Parameter] [SupplyParameterFromQuery(Name = "page")] public int? Page { get; set; }
-    [Parameter] [SupplyParameterFromQuery(Name = "pagesize")] public int? PageSize { get; set; }
-    //[Parameter] [SupplyParameterFromQuery(Name = "state")] public string? EncodedState { get; set; }
+    [Parameter] [SupplyParameterFromQuery(Name = "state")] public string? State { get; set; }
 
     private EntityList<Asset>? entityList;
 
@@ -144,27 +141,20 @@
         int? page = null;
         int? pageSize = null;
 
-        // if (!string.IsNullOrWhiteSpace(EncodedState))
-        // {
-        //     try
-        //     {
-        //         var decodedState = DecodeNavigationState(EncodedState);
-        //         searchString = decodedState.Search;
-        //         page = decodedState.Page;
-        //         pageSize = decodedState.PageSize;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Logger.LogWarning(ex, "Failed to decode navigation state");
-        //     }
-        // }
-        // else
-        // {
-            // Fall back to individual query parameters for backwards compatibility
-            searchString = SearchString;
-            page = Page;
-            pageSize = PageSize;
-        //}
+        if (!string.IsNullOrWhiteSpace(State))
+        {
+            try
+            {
+                var decodedState =  NavigationStateHelper.Decode<NavigationParameters>(State);
+                searchString = decodedState?.Search;
+                page = decodedState?.Page;
+                pageSize = decodedState?.PageSize;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to decode navigation state");
+            }
+        }
 
         // Apply query parameters to restore navigation state
         if (!string.IsNullOrWhiteSpace(searchString))
@@ -208,7 +198,7 @@
 
             // Count warranties expiring in next 30 days
             var thirtyDaysFromNow = DateTime.Today.AddDays(30);
-            _warrantiesExpiring = assets.Where(a => a.WarrantyExpiration.HasValue && 
+            _warrantiesExpiring = assets.Where(a => a.WarrantyExpiration.HasValue &&
                                                    a.WarrantyExpiration.Value <= thirtyDaysFromNow &&
                                                    a.WarrantyExpiration.Value >= DateTime.Today).Count();
 
@@ -260,12 +250,6 @@
         );
 
         return state != null ? NavigationStateHelper.Encode(state) : string.Empty;
-    }
-
-    private (string? Search, int? Page, int? PageSize) DecodeNavigationState(string encodedState)
-    {
-        var state = NavigationStateHelper.Decode(encodedState);
-        return (state?.Parameters?.Search, state?.Parameters?.Page, state?.Parameters?.PageSize);
     }
 }
 

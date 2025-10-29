@@ -12,30 +12,30 @@ public static class NavigationStateHelper
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public static string Encode(ReturnState state)
+    public static string Encode<T>(T obj)
     {
-        if (state == null)
+        if (obj == null)
             return string.Empty;
 
-        var json = JsonSerializer.Serialize(state, JsonOptions);
+        var json = JsonSerializer.Serialize(obj, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
         return Convert.ToBase64String(bytes);
     }
 
-    public static ReturnState? Decode(string encodedState)
+    public static T? Decode<T>(string encoded)
     {
-        if (string.IsNullOrWhiteSpace(encodedState))
-            return null;
+        if (string.IsNullOrWhiteSpace(encoded))
+            return default(T);
 
         try
         {
-            var bytes = Convert.FromBase64String(encodedState);
+            var bytes = Convert.FromBase64String(encoded);
             var json = Encoding.UTF8.GetString(bytes);
-            return JsonSerializer.Deserialize<ReturnState>(json);
+            return JsonSerializer.Deserialize<T>(json);
         }
         catch
         {
-            return null;
+            return default(T);
         }
     }
 
@@ -63,9 +63,9 @@ public static class NavigationStateHelper
         return query + paramString;
     }
 
-    public static string? DecodeUrl(string? stateStr, string? defaultDestination = null)
+    public static string? DecodeReturnUrl(string? stateStr, string? defaultDestination = null)
     {
-        var state = Decode(stateStr ?? string.Empty);
+        var state = Decode<ReturnState>(stateStr ?? string.Empty);
 
         if (state is null)
             return defaultDestination;
@@ -74,17 +74,9 @@ public static class NavigationStateHelper
 
         string paramString = string.Empty;
 
-        foreach (var param in state?.Parameters?.GetType().GetProperties() ?? Array.Empty<System.Reflection.PropertyInfo>())
+        if (state?.Parameters is not null)
         {
-            var value = param.GetValue(state?.Parameters);
-            if (value != null)
-            {
-                if (paramString.Length > 0)
-                    paramString += "&";
-                else
-                    paramString += "?";
-                paramString += $"{param.Name.ToLower()}={Uri.EscapeDataString(value.ToString() ?? string.Empty)}";
-            }
+            paramString += "?state=" + Encode(state.Parameters);
         }
 
         return query + paramString;
@@ -132,7 +124,7 @@ public static class NavigationStateHelper
     public static void GoBack(this Microsoft.AspNetCore.Components.NavigationManager navigation, string? returnState, string defaultDestination)
     {
         // Decode state to get destination
-        string destination = DecodeUrl(returnState) ?? defaultDestination;
+        string destination = DecodeReturnUrl(returnState) ?? defaultDestination;
         navigation.NavigateTo(destination);
     }
 }
