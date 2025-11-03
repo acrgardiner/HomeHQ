@@ -2,10 +2,11 @@
 using projectaardvarkx2.Entities;
 using projectaardvarkx2.FileStorage;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
+using System.Net.Mail;
 using Image = SixLabors.ImageSharp.Image;
 
 
@@ -14,7 +15,15 @@ namespace projectaardvarkx2.Services
     public interface IThumbnailService
     {
         Task<int> RebuildAll();
-        Task GenerateThumbnailAsync<T>(string sourceFile);
+        Task<ThumbnailMetadata?> GenerateThumbnailAsync<T>(string sourceFile);
+    }
+
+    public class ThumbnailMetadata
+    {
+        public string LocalFileName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = "image/jpeg";
+        public string Extension { get; set; } = ".jpg";
+        public float FileSize { get; set; }
     }
 
     public class ThumbnailService : IThumbnailService
@@ -55,16 +64,26 @@ namespace projectaardvarkx2.Services
                     if (attachment != null && IsImageFile(attachment.ContentType))
                     {
                         string attachmentFile = Path.Combine(assetAttachmentDir, attachment.LocalFileName);
-                        await GenerateThumbnailAsync<Asset>(attachmentFile);
+                        var thumbMetadata = await GenerateThumbnailAsync<Asset>(attachmentFile);
+                        if (thumbMetadata != null)
+                        {
+                            attachment.Thumb_LocalFileName = thumbMetadata.LocalFileName;
+                            attachment.Thumb_ContentType = thumbMetadata.ContentType;
+                            attachment.Thumb_Extension = thumbMetadata.Extension;
+                            attachment.Thumb_FileSize = thumbMetadata.FileSize;
+                        }
+
                         processedCount++;
                     }
                 }
+
+                await _attachmentService.UpdateAsync(attachments);
             }
 
             return processedCount;
         }
 
-        public async Task GenerateThumbnailAsync<T>(string sourceFile)
+        public async Task<ThumbnailMetadata?> GenerateThumbnailAsync<T>(string sourceFile)
         {
             try
             {
@@ -86,11 +105,22 @@ namespace projectaardvarkx2.Services
                     await image.SaveAsJpegAsync(thumbnailFile, new JpegEncoder { Quality = thumbnailJpegQuality });
                 }
 
+                var fileInfo = new FileInfo(thumbnailFile);
+                var metadata = new ThumbnailMetadata
+                {
+                    LocalFileName = thumbnailFilename,
+                    ContentType = "image/jpeg",
+                    Extension = ".jpg",
+                    FileSize = fileInfo.Length
+                };
+
                 _logger.LogInformation("Thumbnail generated: {ThumbnailPath}", thumbnailFile);
+                return metadata;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to generate thumbnail for: {0}", sourceFile);
+                return null;
             }
         }
 

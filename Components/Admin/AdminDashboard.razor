@@ -14,9 +14,7 @@
 @inject IUserService UserService
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<Attachment> AttachmentService
-@inject IEntityService<AttachmentType> AttachmentTypeService
-@inject IEntityService<Category> CategoryService
-@inject IEntityService<WarrantyType> WarrantyTypeService
+@inject IPurgeService PurgeService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject ILogger<AdminDashboard> Logger
@@ -177,8 +175,8 @@
     private List<Asset> _warrantyExpirigSoon = new();
     private float _totalAttachmentSize;
 
-    private double[] _pendingPurgeData = { 0, 0, 0, 0, 0 };
-    private string[] _pendingPurgeLabels = { "Assets", "Attachments", "Attachment Types", "Categories", "Warranty Types" };
+    private double[] _pendingPurgeData = Array.Empty<double>();
+    private string[] _pendingPurgeLabels = Array.Empty<string>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -253,11 +251,10 @@
     {
         try
         {
-            _pendingPurgeData[0] = await AssetService.CountAsync(a =>  a.DeletedOn != null, true);
-            _pendingPurgeData[1] = await AttachmentService.CountAsync(a => a.DeletedOn != null, true);
-            _pendingPurgeData[2] = await AttachmentTypeService.CountAsync(a => a.DeletedOn != null, true);
-            _pendingPurgeData[3] = await CategoryService.CountAsync(a => a.DeletedOn != null, true);
-            _pendingPurgeData[4] = await WarrantyTypeService.CountAsync(a => a.DeletedOn != null, true);
+            var purgeRecords = await PurgeService.GetSoftDeletedCountAsync();
+
+            _pendingPurgeLabels = purgeRecords.Keys.ToArray();
+            _pendingPurgeData = purgeRecords.Values.Select(v => (double)v).ToArray();
         }
         catch (Exception ex)
         {

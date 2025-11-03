@@ -26,45 +26,7 @@ namespace projectaardvarkx2.FileStorage
             _thumbnailService = thumbnailService;
         }
 
-        public async Task<string> UploadAsync<T>(IBrowserFile? file) where T : class
-        {
-            if (file == null)
-                throw new ArgumentNullException(nameof(file), "File cannot be null.");
-            try
-            {
-                var uniqueFileName = Guid.NewGuid().ToString();
-                var attachmentDir = Path.Combine("appdata", "attachments", typeof(T).Name);
 
-                var fileExtension = Path.GetExtension(file.Name);
-                var attachmentFileName = uniqueFileName + fileExtension;
-
-                // Save file to disk or database as needed
-                var fullFilePath = Path.Combine(attachmentDir, attachmentFileName);
-
-                Directory.CreateDirectory(Path.GetDirectoryName(fullFilePath)!);
-
-                using (var stream = file.OpenReadStream(maxFileSize))
-                {
-                    using (var fileStream = new FileStream(fullFilePath, FileMode.Create))
-                    {
-                        await stream.CopyToAsync(fileStream);
-                    }
-
-                    // Generate Thumbnail if it's an image file
-                    if (IsImageFile(file.ContentType))
-                    {
-                        await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
-                    }
-                }
-
-                return attachmentFileName;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error uploading: {FileName}", file?.Name);
-                throw new InvalidOperationException("Upload failed.", ex);
-            }
-        }
 
         public async Task<bool> UploadAsync<T>(byte[]? fileBytes, Attachment attachment) where T : class
         {
@@ -91,7 +53,14 @@ namespace projectaardvarkx2.FileStorage
                     savedFileSize = await SaveCompressedImageAsync(fileBytes, fullFilePath, attachment.ContentType);
 
                     // Generate Thumbnail if it's an image file
-                    await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
+                    var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
+                    if (thumbMetadata != null)
+                    {
+                        attachment.Thumb_LocalFileName = thumbMetadata.LocalFileName;
+                        attachment.Thumb_ContentType = thumbMetadata.ContentType;
+                        attachment.Thumb_Extension = thumbMetadata.Extension;
+                        attachment.Thumb_FileSize = thumbMetadata.FileSize;
+                    }
                 }
                 else
                 {
@@ -109,7 +78,7 @@ namespace projectaardvarkx2.FileStorage
             }
         }
 
-        public async Task<string> UploadAsync<T>(string localFile, string contentType) where T : class
+        public async Task<bool> UploadAsync<T>(string localFile, Attachment attachment) where T : class
         {
             try
             {
@@ -127,12 +96,20 @@ namespace projectaardvarkx2.FileStorage
                 File.Move(localFile, fullFilePath);
 
                 // Generate Thumbnail if it's an image file
-                if (IsImageFile(contentType))
+                if (IsImageFile(attachment.ContentType))
                 {
-                    await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
+                    var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
+                    if (thumbMetadata != null)
+                    {
+                        attachment.Thumb_LocalFileName = thumbMetadata.LocalFileName;
+                        attachment.Thumb_ContentType = thumbMetadata.ContentType;
+                        attachment.Thumb_Extension = thumbMetadata.Extension;
+                        attachment.Thumb_FileSize = thumbMetadata.FileSize;
+                    }
                 }
 
-                return attachmentFileName;
+                attachment.LocalFileName = attachmentFileName;
+                return true;
             }
             catch (Exception ex)
             {
