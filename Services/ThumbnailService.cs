@@ -1,12 +1,8 @@
-﻿using Microsoft.AspNetCore.StaticFiles;
+﻿
 using projectaardvarkx2.Entities;
-using projectaardvarkx2.FileStorage;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
-using System.Net.Mail;
 using Image = SixLabors.ImageSharp.Image;
 
 
