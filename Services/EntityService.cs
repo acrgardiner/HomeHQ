@@ -58,6 +58,20 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
         return entity;
     }
 
+    public async Task<IEnumerable<T>> UpdateAsync(IEnumerable<T> entities)
+    {
+        var entityList = entities.ToList();
+        
+        foreach (var entity in entityList)
+        {
+            _repository.Update(entity);
+        }
+        
+        await _repository.SaveChangesAsync();
+
+        return entityList;
+    }
+
     public async Task DeleteAsync(Guid id)
     {
         var entity = await _repository.GetByIdAsync(id);

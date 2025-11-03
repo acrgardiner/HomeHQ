@@ -64,8 +64,10 @@ namespace projectaardvarkx2.Services
                     Extension = Path.GetExtension(importFile),
                     FileSize = new FileInfo(importFile).Length,
                     AttachmentTypeId = defaultAttachmentType?.Id ?? Guid.Empty,
-                    LocalFileName = await _fileStorageService.UploadAsync<Asset>(importFile, contentType), //must be last, as it moves file
                 };
+
+                // Upload file and populate attachment including thumb fields
+                await _fileStorageService.UploadAsync<Asset>(importFile, attachment); //must be last, as it moves file
 
                 await _attachmentService.AddAsync(attachment);
 

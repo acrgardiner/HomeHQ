@@ -46,7 +46,7 @@ public class AttachmentFileController : ControllerBase
             return NotFound();
 
         var uploadsPath = Path.Combine(_env.ContentRootPath, "appdata", "thumbs", attachment.ParentType);
-        var filePath = Path.Combine(uploadsPath, Path.GetFileNameWithoutExtension(attachment.LocalFileName) + "_thumb.jpg");
+        var filePath = Path.Combine(uploadsPath, attachment.Thumb_LocalFileName);
 
         if (!System.IO.File.Exists(filePath))
             return NotFound();

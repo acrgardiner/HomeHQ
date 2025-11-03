@@ -18,6 +18,11 @@ public class Attachment : AuditableEntity, IEntity
     public string Extension { get; set; } = string.Empty;
     public float FileSize { get; set; }
 
+    public string Thumb_LocalFileName { get; set; } = string.Empty;
+    public string Thumb_ContentType { get; set; } = string.Empty;
+    public string Thumb_Extension { get; set; } = string.Empty;
+    public float Thumb_FileSize { get; set; }
+
     public Attachment() { }
 
     public Attachment(Attachment attachment)

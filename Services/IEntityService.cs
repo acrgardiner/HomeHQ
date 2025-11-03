@@ -12,6 +12,7 @@ public interface IEntityService<T> where T : AuditableEntity, IEntity
     Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null);
     Task<T> AddAsync(T entity);
     Task<T> UpdateAsync(T entity);
+    Task<IEnumerable<T>> UpdateAsync(IEnumerable<T> entities);
     Task DeleteAsync(Guid id);
 
     Task<TResult> AggregateAsync<TResult>(

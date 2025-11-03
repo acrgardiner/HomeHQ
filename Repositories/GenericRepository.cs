@@ -101,7 +101,7 @@ namespace projectaardvarkx2.Repositories
                     query = query.Include(include);
                 }
             }
-            
+
             var result = await query.ToListAsync();
 
             if (includeParent)
@@ -181,7 +181,7 @@ namespace projectaardvarkx2.Repositories
 
                 // Load parents based on type
                 var parents = await LoadParentsByType(parentType, parentIds);
-                
+
                 // Assign parents to entities
                 foreach (var entity in group)
                 {
@@ -224,19 +224,19 @@ namespace projectaardvarkx2.Repositories
                 nameof(Asset) => (await _applicationContext.Assets
                     .Where(a => parentIds.Contains(a.Id))
                     .ToListAsync()).Cast<object>().ToList(),
-                    
+
                 nameof(Category) => (await _applicationContext.Categories
                     .Where(c => parentIds.Contains(c.Id))
                     .ToListAsync()).Cast<object>().ToList(),
-                    
+
                 nameof(WarrantyType) => (await _applicationContext.WarrantyTypes
                     .Where(w => parentIds.Contains(w.Id))
                     .ToListAsync()).Cast<object>().ToList(),
-                    
+
                 nameof(AttachmentType) => (await _applicationContext.AttachmentTypes
                     .Where(at => parentIds.Contains(at.Id))
                     .ToListAsync()).Cast<object>().ToList(),
-                    
+
                 _ => new List<object>()
             };
         }
@@ -253,7 +253,46 @@ namespace projectaardvarkx2.Repositories
 
         public void Delete(T entity)
         {
+            // Delete polymorphic children first
+            DeletePolymorphicChildren(entity.Id);
+
             _dbSet.Remove(entity);
+        }
+
+        private void DeletePolymorphicChildren(Guid parentId)
+        {
+            // Get the parent type name
+            var parentType = typeof(T).Name;
+
+            // Delete all Attachments linked to this parent
+            var attachments = _applicationContext.Attachments
+                .Where(a => a.ParentId == parentId && a.ParentType == parentType)
+                .ToList();
+
+            if (attachments.Any())
+            {
+                _applicationContext.Attachments.RemoveRange(attachments);
+            }
+
+            // Delete all Notes linked to this parent
+            var notes = _applicationContext.Notes
+                .Where(n => n.ParentId == parentId && n.ParentType == parentType)
+                .ToList();
+
+            if (notes.Any())
+            {
+                _applicationContext.Notes.RemoveRange(notes);
+            }
+
+            // Delete all AttributeValues linked to this parent
+            var attributes = _applicationContext.Attributes
+                .Where(a => a.ParentId == parentId && a.ParentType == parentType)
+                .ToList();
+
+            if (attributes.Any())
+            {
+                _applicationContext.Attributes.RemoveRange(attributes);
+            }
         }
 
         public async Task SaveChangesAsync()
