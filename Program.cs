@@ -1,4 +1,3 @@
-using Cropper.Blazor.Extensions;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -57,8 +56,6 @@ try
         {
             options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
         });
-
-    builder.Services.AddCropper();
 
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<IdentityUserAccessor>();
