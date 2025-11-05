@@ -7,9 +7,7 @@
 @using projectaardvarkx2.FileStorage
 @using System.Linq.Expressions
 
-@using Cropper.Blazor.Components
-@using Cropper.Blazor.Extensions
-@using Cropper.Blazor.Models
+@implements IAsyncDisposable
 
 @attribute [Authorize()]
 
@@ -122,7 +120,7 @@
                     var currentAttachment = _attachments[_currentAttachmentIndex];
                 }
                  <!-- Main Attachment Display -->
-                 <div class="attachment-display mb-4" @onclick="@(() =>ImageDialogOpen())" >
+                 <div class="attachment-display mb-4" @onclick="@(async () => await ImageDialogOpen())" >
                     @if (IsImageAttachment(currentAttachment.Attachment))
                     {
                         <div class="attachment-preview image-preview">
@@ -135,7 +133,7 @@
                                     Size="Size.Large"
                                     Color="Color.Primary"
                                     Variant="Variant.Filled"
-                                    Class="zoom-button" OnClick="@(() => ImageDialogOpen())" />
+                                    Class="zoom-button" OnClick="@(async () => await ImageDialogOpen())" />
                             </div>
                         </div>
                     }
@@ -152,7 +150,7 @@
                                                Size="Size.Large"
                                                Color="Color.Primary"
                                                Variant="Variant.Filled"
-                                               Class="view-button" @onclick="@(() => ImageDialogOpen())" />
+                                               Class="view-button" @onclick="@(async () => await ImageDialogOpen())" />
                             </div>
                         </div>
                     }
@@ -241,6 +239,10 @@
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.RotateLeft" OnClick="@(() => Rotate(-90))" title="Rotate Left" />
                     <MudIconButton Icon="@Icons.Material.Filled.RotateRight" OnClick="@(() => Rotate(90))" title="Rotate Right" />
+                    <MudIconButton Icon="@(_cropModeEnabled ? Icons.Material.Filled.Crop : Icons.Material.Filled.CropFree)" 
+                                   Color="@(_cropModeEnabled ? Color.Success : Color.Default)"
+                                   OnClick="@ToggleCropMode"
+                                   title="@(_cropModeEnabled ? "Disable Crop" : "Enable Crop")" />
                     <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Primary" OnClick="@(async () => await AcceptCrop())" title="Save" />
                 }
                 @if (ReadOnly)
@@ -250,7 +252,7 @@
                                    OnClick="@ToggleImageFitMode"
                                    title="Switch Fill Mode" />
                 }
-                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Primary" OnClick="@(() => ImageDialogClose())" title="Close" />
+                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Primary" OnClick="@(async () => await ImageDialogClose())" title="Close" />
             </div>
         </div>
     </TitleContent>
@@ -293,8 +295,15 @@
                     }
                     else
                     {
-                        <div style="width: 100%; height: 100%; justify-content: center; align-items: center; display: flex; ">
-                            <CropperComponent @ref="cropper" Class="cropper-example" Src="@_attachments[_currentAttachmentIndex].GetImageUrl()" Options="cropperOptions" />
+                        <div style="position: relative; width: 100%; height: 100%;">
+                            <div id="image-editor-container" style="width: 100%; height: 100%; justify-content: center; align-items: center; display: flex;">
+                            </div>
+                            @if (_cropModeEnabled)
+                            {
+                                <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 4px; pointer-events: none; z-index: 1000;">
+                                    <MudText Typo="Typo.body2">Click and drag to create crop area</MudText>
+                                </div>
+                            }
                         </div>
                     }
             }
@@ -307,13 +316,6 @@
         </MudContainer>
     </DialogContent>
 </MudDialog>
-
-<style>
-    .cropper-example {
-        max-height: 100%;
-        width: 100%;
-    }
-</style>
 
 @code {
 
@@ -335,15 +337,9 @@
 
     private bool _dialogVisible = false;
     private readonly DialogOptions _maxWidthOptions = new() { MaxWidth = MaxWidth.Large };
-
-    private CropperComponent cropper;
-    private Cropper.Blazor.Models.Options cropperOptions = new() {
-        ViewMode = ViewMode.Vm1,
-        AutoCrop = false,
-        Responsive = true,
-        Zoomable = true,
-        AutoCropArea = 1
-    };
+    private const string EditorContainerId = "image-editor-container";
+    private bool _editorInitialized = false;
+    private bool _cropModeEnabled = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -380,10 +376,9 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (cropper != null)
+        if (_editorInitialized)
         {
-            // Call the library's DisposeAsync method to destroy the JS cropper instance
-            await cropper.DisposeAsync();
+            await JSRuntime.InvokeVoidAsync("ImageEditorInterop.destroy", EditorContainerId);
         }
     }
 
@@ -583,64 +578,80 @@
         };
     }
 
-    private void ImageDialogClose()
+    private async Task ImageDialogClose()
     {
+        if (_editorInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("ImageEditorInterop.destroy", EditorContainerId);
+            _editorInitialized = false;
+        }
+        _cropModeEnabled = false;
         _dialogVisible = false;
     }
 
-    private void ImageDialogOpen()
+    private async Task ImageDialogOpen()
     {
         _dialogVisible = true;
+        _cropModeEnabled = false;
+        
+        if (!ReadOnly && IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
+        {
+            // Wait for dialog to render
+            await Task.Delay(100);
+            
+            var imageSrc = _attachments[_currentAttachmentIndex].GetImageUrl();
+            _editorInitialized = await JSRuntime.InvokeAsync<bool>("ImageEditorInterop.initialize", EditorContainerId, imageSrc);
+        }
+    }
+
+    private async Task ToggleCropMode()
+    {
+        if (!_editorInitialized) return;
+
+        _cropModeEnabled = !_cropModeEnabled;
+
+        if (_cropModeEnabled)
+        {
+            await JSRuntime.InvokeVoidAsync("ImageEditorInterop.enableCrop", EditorContainerId);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("ImageEditorInterop.disableCrop", EditorContainerId);
+        }
     }
 
     private async Task Rotate(decimal degree)
     {
-        cropper?.Rotate(degree);
-
-        await RecenterCropper();
-    }
-
-    private async Task RecenterCropper()
-    {
-        cropper.Clear();
-
-        cropper.MoveTo(0, 0);
-
-        var containerData = await cropper.GetContainerDataAsync();
-
-        cropper.SetCanvasData(new SetCanvasDataOptions
+        if (_editorInitialized)
         {
-            Height = containerData.Height,
-        });
-
-        var canvasData = await cropper.GetCanvasDataAsync();
-        containerData = await cropper.GetContainerDataAsync();
-
-        var x = (containerData.Width - canvasData.Width) / 2;
-        cropper.MoveTo(x, 0);
+            await JSRuntime.InvokeVoidAsync("ImageEditorInterop.rotate", EditorContainerId, (int)degree);
+        }
     }
 
     public async Task AcceptCrop()
     {
-        var getCroppedCanvasOptions = new GetCroppedCanvasOptions() { MaxHeight = 16096, MaxWidth = 16096, ImageSmoothingQuality = ImageSmoothingQuality.Medium.ToEnumString() };
+        if (_editorInitialized)
+        {
+            try
+            {
+                var imageDataArray = await JSRuntime.InvokeAsync<int[]>("ImageEditorInterop.getCroppedImageData", EditorContainerId);
+                
+                if (imageDataArray != null)
+                {
+                    var croppedCanvasData = imageDataArray.Select(i => (byte)i).ToArray();
+                    var attachment = _attachments[_currentAttachmentIndex];
+                    attachment.FileBytes = croppedCanvasData;
+                    
+                    Snackbar.Add("Image saved successfully", Severity.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to save cropped image");
+                Snackbar.Add("Failed to save image", Severity.Error);
+            }
+        }
 
-        ImageReceiver imageReceiver = await cropper!.GetCroppedCanvasDataInBackgroundAsync(getCroppedCanvasOptions);
-
-        await ProcessAndOpenCroppedCanvasDialog(imageReceiver);
-
-        cropper.Reset();
-
-        ImageDialogClose();
-    }
-
-    private async Task ProcessAndOpenCroppedCanvasDialog(ImageReceiver imageReceiver)
-    {
-
-        using MemoryStream croppedCanvasDataStream = await imageReceiver.GetImageChunkStreamAsync();
-
-        byte[] croppedCanvasData = croppedCanvasDataStream.ToArray();
-
-        var attachment = _attachments[_currentAttachmentIndex];
-        attachment.FileBytes = croppedCanvasData;
+        await ImageDialogClose();
     }
 }
