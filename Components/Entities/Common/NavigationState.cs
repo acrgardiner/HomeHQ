@@ -1,4 +1,4 @@
-namespace projectaardvarkx2.Components.Entities.Common;
+namespace HomeHQ.Components.Entities.Common;
 
 public class ReturnState
 {

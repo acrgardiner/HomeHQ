@@ -1,9 +1,9 @@
 ﻿@page "/admin/users"
 @using Microsoft.AspNetCore.Authorization
-@using projectaardvarkx2.Identity
+@using HomeHQ.Identity
 @using System.Text
 @using Microsoft.JSInterop
-@using projectaardvarkx2.Helpers
+@using HomeHQ.Helpers
 
 @attribute [Authorize(Roles = "Admin")]
 
@@ -13,7 +13,7 @@
 @inject ILogger<ListUsers> Logger
 @inject IJSRuntime JS
 
-<PageTitle>Assets- Home Tracker</PageTitle>
+<PageTitle>Assets - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->

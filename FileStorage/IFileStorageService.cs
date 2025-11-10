@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
-using projectaardvarkx2.Entities;
+using HomeHQ.Entities;
 
-namespace projectaardvarkx2.FileStorage
+namespace HomeHQ.FileStorage
 {
     public interface IFileStorageService
     {

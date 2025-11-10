@@ -1,12 +1,12 @@
 ﻿
-using projectaardvarkx2.Entities;
+using HomeHQ.Entities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
 using Image = SixLabors.ImageSharp.Image;
 
 
-namespace projectaardvarkx2.Services
+namespace HomeHQ.Services
 {
     public interface IThumbnailService
     {

@@ -7,15 +7,15 @@ using Microsoft.Extensions.FileProviders;
 using MudBlazor;
 using MudBlazor.Services;
 using MudBlazor.Template.Components.Account;
-using projectaardvarkx2.Components;
-using projectaardvarkx2.Components.Account;
-using projectaardvarkx2.Data;
-using projectaardvarkx2.Entities;
-using projectaardvarkx2.FileStorage;
-using projectaardvarkx2.Identity;
-using projectaardvarkx2.Logging;
-using projectaardvarkx2.Repositories;
-using projectaardvarkx2.Services;
+using HomeHQ.Components;
+using HomeHQ.Components.Account;
+using HomeHQ.Data;
+using HomeHQ.Entities;
+using HomeHQ.FileStorage;
+using HomeHQ.Identity;
+using HomeHQ.Logging;
+using HomeHQ.Repositories;
+using HomeHQ.Services;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()

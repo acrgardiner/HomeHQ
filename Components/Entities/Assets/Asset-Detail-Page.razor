@@ -1,8 +1,8 @@
 ﻿@page "/assets/{id}"
-@using projectaardvarkx2.Entities
-@using projectaardvarkx2.Services
-@using projectaardvarkx2.Helpers
-@using projectaardvarkx2.Components.Entities.Common
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Helpers
+@using HomeHQ.Components.Entities.Common
 @using Microsoft.AspNetCore.Authorization
 @using System.Linq.Expressions
 
@@ -19,7 +19,7 @@
 @inject IJSRuntime JSRuntime
 @inject ICurrentUserService CurrentUser
 
-<PageTitle>@(asset?.Name ?? "Asset Details")- Home Tracker</PageTitle>
+<PageTitle>@(asset?.Name ?? "Asset Details") - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header -->

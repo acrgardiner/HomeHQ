@@ -1,4 +1,4 @@
-﻿namespace projectaardvarkx2.Identity
+﻿namespace HomeHQ.Identity
 {
     public interface IUserService
     {

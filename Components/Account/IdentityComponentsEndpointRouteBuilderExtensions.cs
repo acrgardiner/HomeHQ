@@ -6,9 +6,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
-using projectaardvarkx2.Components.Account.Pages;
-using projectaardvarkx2.Components.Account.Pages.Manage;
-using projectaardvarkx2.Identity;
+using HomeHQ.Identity;
 
 namespace Microsoft.AspNetCore.Routing;
 

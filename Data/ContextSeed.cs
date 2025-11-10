@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using projectaardvarkx2.Entities;
-using projectaardvarkx2.Identity;
+using HomeHQ.Entities;
+using HomeHQ.Identity;
 using System;
 
-namespace projectaardvarkx2.Data;
+namespace HomeHQ.Data;
 
 public class ContextSeed
 {

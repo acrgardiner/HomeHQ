@@ -1,9 +1,5 @@
 ﻿@page "/assets"
-@using projectaardvarkx2.Entities
-@using projectaardvarkx2.Services
 @using System.Linq.Expressions
-@using projectaardvarkx2.Components.Entities.Common
-@using projectaardvarkx2.Helpers
 @using Microsoft.AspNetCore.Authorization
 @using System.Text.Json
 @using System.Text
@@ -16,7 +12,7 @@
 @inject ILogger<Asset_List_Page> Logger
 @inject NavigationManager NavigationManager
 
-<PageTitle>Assets - Home Tracker</PageTitle>
+<PageTitle>Assets - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->

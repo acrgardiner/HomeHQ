@@ -1,4 +1,4 @@
-namespace projectaardvarkx2.Services;
+namespace HomeHQ.Services;
 
 public interface IPurgeService
 {

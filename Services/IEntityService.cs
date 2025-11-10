@@ -1,8 +1,8 @@
-﻿using projectaardvarkx2.Contracts;
-using projectaardvarkx2.Entities;
+﻿using HomeHQ.Contracts;
+using HomeHQ.Entities;
 using System.Linq.Expressions;
 
-namespace projectaardvarkx2.Services;
+namespace HomeHQ.Services;
 
 public interface IEntityService<T> where T : AuditableEntity, IEntity
 {

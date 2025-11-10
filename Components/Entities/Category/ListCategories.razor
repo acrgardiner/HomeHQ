@@ -1,8 +1,8 @@
 ﻿@page "/categories"
 
-@using projectaardvarkx2.Entities
-@using projectaardvarkx2.Services
-@using projectaardvarkx2.Components.Entities.Common
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Components.Entities.Common
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize()]
@@ -12,7 +12,7 @@
 @inject ISnackbar Snackbar
 @inject ILogger<ListCategories> Logger
 
-<PageTitle>Categories- Home Tracker</PageTitle>
+<PageTitle>Categories - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->
@@ -48,7 +48,7 @@
 
     <!-- Main Content Card -->
     <MudCard Elevation="2" Class="entity-list-card">
-        <EntityList TEntityType="Category" Plural="Categories" Singular="Category" EntityService="CategoryService"
+        <EntityList @ref="@entityList" TEntityType="Category" Plural="Categories" Singular="Category" EntityService="CategoryService"
             EditDialog="@(parameters => DialogService.ShowAsync<EditCategory>("Edit Category", parameters))"
             Logger="Logger"
             Columns="@(
@@ -62,6 +62,18 @@
 </MudContainer>
 
 @code {
+    private EntityList<Category>? entityList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Yield();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await entityList?.ReloadData();
+    }
+
     private async Task OpenCreate()
     {
         await DialogService.ShowAsync<CreateCategory>("Add New Category");

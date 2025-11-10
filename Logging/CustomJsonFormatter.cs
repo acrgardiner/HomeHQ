@@ -2,7 +2,7 @@
 using Serilog.Formatting;
 using System.Text.Json;
 
-namespace projectaardvarkx2.Logging
+namespace HomeHQ.Logging
 {
     public class CustomJsonFormatter : ITextFormatter
     {

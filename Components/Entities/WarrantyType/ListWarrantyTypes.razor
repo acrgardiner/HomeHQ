@@ -1,8 +1,8 @@
 ﻿@page "/warrantytypes"
 
-@using projectaardvarkx2.Entities
-@using projectaardvarkx2.Services
-@using projectaardvarkx2.Components.Entities.Common
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Components.Entities.Common
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize()]
@@ -12,7 +12,7 @@
 @inject ISnackbar Snackbar
 @inject ILogger<ListWarrantyTypes> Logger
 
-<PageTitle>Warranty Types- Home Tracker</PageTitle>
+<PageTitle>Warranty Types - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->
@@ -48,7 +48,7 @@
 
     <!-- Main Content Card -->
     <MudCard Elevation="2" Class="entity-list-card">
-        <EntityList TEntityType="WarrantyType" Plural="Warranty Types" Singular="Warranty Type" EntityService="WarrantyTypeService"
+        <EntityList @ref="@entityList" TEntityType="WarrantyType" Plural="Warranty Types" Singular="Warranty Type" EntityService="WarrantyTypeService"
             EditDialog="@(parameters => DialogService.ShowAsync<EditWarrantyType>("Edit Warranty Type", parameters))"
             Logger="Logger"
             Columns="@(
@@ -64,6 +64,18 @@
 </MudContainer>
 
 @code {
+    private EntityList<WarrantyType>? entityList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Yield();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await entityList?.ReloadData();
+    }
+
     private async Task OpenCreate()
     {
         await DialogService.ShowAsync<CreateWarrantyType>("Add New Warranty Type");

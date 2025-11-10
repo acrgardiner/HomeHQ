@@ -1,13 +1,13 @@
-﻿using projectaardvarkx2.Entities;
-using projectaardvarkx2.Contracts;
+﻿using HomeHQ.Entities;
+using HomeHQ.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using projectaardvarkx2.Identity;
+using HomeHQ.Identity;
 
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using projectaardvarkx2.Services;
+using HomeHQ.Services;
 
-namespace projectaardvarkx2.Data
+namespace HomeHQ.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {

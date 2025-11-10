@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace projectaardvarkx2.Contracts;
+﻿namespace HomeHQ.Contracts;
 
 public interface IEntity
 {

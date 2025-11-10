@@ -3,11 +3,11 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using projectaardvarkx2.Data;
+using HomeHQ.Data;
 
 #nullable disable
 
-namespace projectaardvarkx2.data.migrations
+namespace HomeHQ.data.migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot

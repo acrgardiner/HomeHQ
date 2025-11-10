@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
-using projectaardvarkx2.Entities;
-using projectaardvarkx2.FileStorage;
-using static MudBlazor.CategoryTypes;
+using HomeHQ.Entities;
+using HomeHQ.FileStorage;
 
-namespace projectaardvarkx2.Services
+namespace HomeHQ.Services
 {
     public interface IAssetImportService
     {

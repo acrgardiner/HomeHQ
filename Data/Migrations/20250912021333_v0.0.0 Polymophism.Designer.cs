@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using projectaardvarkx2.Data;
+using HomeHQ.Data;
 
 #nullable disable
 
-namespace projectaardvarkx2.data.migrations
+namespace HomeHQ.data.migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20250912021333_v0.0.0 Polymophism")]

@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using projectaardvarkx2.Contracts;
-using projectaardvarkx2.Data;
-using projectaardvarkx2.Entities;
+using HomeHQ.Contracts;
+using HomeHQ.Data;
+using HomeHQ.Entities;
 using System.Linq.Expressions;
 
-namespace projectaardvarkx2.Repositories
+namespace HomeHQ.Repositories
 {
     public interface IGenericRepository<T> where T : AuditableEntity, IEntity
     {

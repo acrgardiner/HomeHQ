@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace projectaardvarkx2.Services
+namespace HomeHQ.Services
 {
     public interface ICurrentUserService
     {

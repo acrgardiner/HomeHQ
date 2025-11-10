@@ -1,4 +1,4 @@
-﻿namespace projectaardvarkx2.Contracts;
+﻿namespace HomeHQ.Contracts;
 
 // Apply this marker interface only to aggregate root entities (top level)
 // Repositories will only work with aggregate roots, not their children

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using projectaardvarkx2.Entities;
-using projectaardvarkx2.Services;
+using HomeHQ.Entities;
+using HomeHQ.Services;
 
-namespace projectaardvarkx2.Controllers;
+namespace HomeHQ.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
