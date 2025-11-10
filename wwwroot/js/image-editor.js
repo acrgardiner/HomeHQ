@@ -23,7 +23,16 @@ class ImageEditor {
         this.resizeHandle = null;
         this.cropDragStartX = 0;
         this.cropDragStartY = 0;
-        this.handleSize = 10;
+        
+        // Larger handle size for touch devices
+        this.handleSize = this.isTouchDevice() ? 20 : 10;
+        
+        // Pinch zoom support
+        this.lastTouchDistance = 0;
+    }
+
+    isTouchDevice() {
+        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     }
 
     async initialize(imageSrc) {
@@ -120,9 +129,10 @@ class ImageEditor {
         this.canvas.addEventListener('mouseleave', () => this.handleMouseUp());
 
         // Touch events for mobile
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-        this.canvas.addEventListener('touchend', () => this.handleMouseUp());
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e));
 
         // Wheel event for zoom
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
@@ -280,9 +290,69 @@ class ImageEditor {
     }
 
     handleTouchStart(e) {
+        e.preventDefault();
+        
+        if (e.touches.length === 2) {
+            // Two-finger pinch zoom
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            this.lastTouchDistance = this.getTouchDistance(touch1, touch2);
+            return;
+        }
+        
         if (e.touches.length === 1) {
-            e.preventDefault();
             const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            if (this.cropEnabled) {
+                // If crop rectangle doesn't exist yet, start creating it
+                if (!this.cropRect) {
+                    this.isCreatingCrop = true;
+                    this.cropDragStartX = touchX;
+                    this.cropDragStartY = touchY;
+                    this.cropRect = {
+                        x: touchX,
+                        y: touchY,
+                        width: 0,
+                        height: 0
+                    };
+                    return;
+                }
+
+                // Check if touching resize handles
+                const handle = this.getResizeHandle(touchX, touchY);
+                if (handle) {
+                    this.isResizingCrop = true;
+                    this.resizeHandle = handle;
+                    this.cropDragStartX = touchX;
+                    this.cropDragStartY = touchY;
+                    return;
+                }
+
+                // Check if touching inside crop area
+                if (this.isInsideCropRect(touchX, touchY)) {
+                    this.isDraggingCrop = true;
+                    this.cropDragStartX = touchX - this.cropRect.x;
+                    this.cropDragStartY = touchY - this.cropRect.y;
+                    return;
+                }
+
+                // Touching outside existing crop - start creating a new one
+                this.isCreatingCrop = true;
+                this.cropDragStartX = touchX;
+                this.cropDragStartY = touchY;
+                this.cropRect = {
+                    x: touchX,
+                    y: touchY,
+                    width: 0,
+                    height: 0
+                };
+                return;
+            }
+
+            // Default image panning
             this.isDragging = true;
             this.dragStartX = touch.clientX - this.offsetX;
             this.dragStartY = touch.clientY - this.offsetY;
@@ -290,13 +360,105 @@ class ImageEditor {
     }
 
     handleTouchMove(e) {
-        if (this.isDragging && e.touches.length === 1) {
-            e.preventDefault();
+        e.preventDefault();
+        
+        if (e.touches.length === 2) {
+            // Two-finger pinch zoom
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const currentDistance = this.getTouchDistance(touch1, touch2);
+            
+            if (this.lastTouchDistance > 0) {
+                const delta = currentDistance / this.lastTouchDistance;
+                this.scale *= delta;
+                this.scale = Math.max(0.1, Math.min(10, this.scale));
+                this.draw();
+            }
+            
+            this.lastTouchDistance = currentDistance;
+            return;
+        }
+        
+        if (e.touches.length === 1) {
             const touch = e.touches[0];
-            this.offsetX = touch.clientX - this.dragStartX;
-            this.offsetY = touch.clientY - this.offsetStartY;
+            const rect = this.canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            if (this.isCreatingCrop) {
+                // Calculate the crop rectangle as user drags
+                const startX = this.cropDragStartX;
+                const startY = this.cropDragStartY;
+                
+                this.cropRect.x = Math.min(startX, touchX);
+                this.cropRect.y = Math.min(startY, touchY);
+                this.cropRect.width = Math.abs(touchX - startX);
+                this.cropRect.height = Math.abs(touchY - startY);
+                
+                // Keep within canvas bounds
+                this.cropRect.x = Math.max(0, this.cropRect.x);
+                this.cropRect.y = Math.max(0, this.cropRect.y);
+                this.cropRect.width = Math.min(this.cropRect.width, this.canvas.width - this.cropRect.x);
+                this.cropRect.height = Math.min(this.cropRect.height, this.canvas.height - this.cropRect.y);
+                
+                this.draw();
+                return;
+            }
+
+            if (this.isResizingCrop) {
+                this.resizeCropRect(touchX, touchY);
+                this.draw();
+                return;
+            }
+
+            if (this.isDraggingCrop) {
+                this.cropRect.x = touchX - this.cropDragStartX;
+                this.cropRect.y = touchY - this.cropDragStartY;
+                
+                // Keep crop within canvas bounds
+                this.cropRect.x = Math.max(0, Math.min(this.canvas.width - this.cropRect.width, this.cropRect.x));
+                this.cropRect.y = Math.max(0, Math.min(this.canvas.height - this.cropRect.height, this.cropRect.y));
+                
+                this.draw();
+                return;
+            }
+
+            if (this.isDragging) {
+                this.offsetX = touch.clientX - this.dragStartX;
+                this.offsetY = touch.clientY - this.dragStartY;
+                this.draw();
+            }
+        }
+    }
+
+    getTouchDistance(touch1, touch2) {
+        const dx = touch2.clientX - touch1.clientX;
+        const dy = touch2.clientY - touch1.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    handleTouchEnd(e) {
+        // Reset pinch zoom distance
+        this.lastTouchDistance = 0;
+        
+        // Handle crop creation end
+        if (this.isCreatingCrop) {
+            this.isCreatingCrop = false;
+            
+            // If crop is too small, remove it
+            const minSize = 10;
+            if (this.cropRect.width < minSize || this.cropRect.height < minSize) {
+                this.cropRect = null;
+            }
+            
             this.draw();
         }
+        
+        // Reset all dragging states
+        this.isDragging = false;
+        this.isDraggingCrop = false;
+        this.isResizingCrop = false;
+        this.resizeHandle = null;
     }
 
     handleWheel(e) {
@@ -471,7 +633,8 @@ class ImageEditor {
         if (!this.cropRect) return null;
         
         const handles = this.getResizeHandlePositions();
-        const threshold = this.handleSize;
+        // Larger touch target for mobile devices
+        const threshold = this.isTouchDevice() ? this.handleSize * 1.5 : this.handleSize;
         
         for (const handle of handles) {
             const dx = mouseX - handle.x;
