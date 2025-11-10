@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using projectaardvarkx2.Identity;
+using HomeHQ.Identity;
 
 namespace MudBlazor.Template.Components.Account;
 

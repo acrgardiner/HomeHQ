@@ -1,10 +1,10 @@
 ﻿@page "/"
-@using projectaardvarkx2.Services
-@using projectaardvarkx2.Entities
+@using HomeHQ.Services
+@using HomeHQ.Entities
 @using Microsoft.AspNetCore.Authorization
 @using System.Linq.Expressions
-@using projectaardvarkx2.Helpers
-@using projectaardvarkx2.Components.Entities.Common
+@using HomeHQ.Helpers
+@using HomeHQ.Components.Entities.Common
 
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<Category> CategoryService
@@ -12,7 +12,7 @@
 @inject ILogger<Home> Logger
 @inject ISnackbar Snackbar
 
-<PageTitle>Dashboard - Home Tracker</PageTitle>
+<PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">
@@ -201,7 +201,7 @@
             <MudContainer MaxWidth="MaxWidth.Medium" Class="text-center">
                 <MudCard Elevation="2" Class="pa-8">
                     <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" Class="mb-4" />
-                    <MudText Typo="Typo.h3" Class="mb-4">Welcome to Project Aardvark x2</MudText>
+                    <MudText Typo="Typo.h3" Class="mb-4">Welcome to @Constants.Application.Name</MudText>
                     <MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary">
                         Streamline your asset management by easily uploading and organizing receipt attachments 
                         while tracking assets in a centralized system. With intuitive tools for uploading receipts 

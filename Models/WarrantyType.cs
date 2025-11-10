@@ -1,7 +1,6 @@
-﻿using projectaardvarkx2.Contracts;
-using System.ComponentModel.DataAnnotations;
+﻿using HomeHQ.Contracts;
 
-namespace projectaardvarkx2.Entities;
+namespace HomeHQ.Entities;
 
 public class WarrantyType : AuditableEntity, IEntity, IEntityNamed
 {

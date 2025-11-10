@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace projectaardvarkx2.Components.Entities.Common;
+namespace HomeHQ.Components.Entities.Common;
 
 public static class NavigationStateHelper
 {

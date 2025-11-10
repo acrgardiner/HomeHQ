@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace projectaardvarkx2.data.migrations
+namespace HomeHQ.data.migrations
 {
     /// <inheritdoc />
     public partial class v000UserSimplification : Migration

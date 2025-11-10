@@ -1,7 +1,7 @@
-﻿using projectaardvarkx2.Contracts;
+﻿using HomeHQ.Contracts;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace projectaardvarkx2.Entities;
+namespace HomeHQ.Entities;
 
 public class AttributeValue : AuditableEntity, IEntity
 {

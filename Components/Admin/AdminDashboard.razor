@@ -1,12 +1,12 @@
 ﻿@page "/admin/dashboard"
 @using MudBlazor
-@using projectaardvarkx2.Entities
-@using projectaardvarkx2.Services
-@using projectaardvarkx2.Identity
-@using projectaardvarkx2.Helpers
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Identity
+@using HomeHQ.Helpers
 @using Microsoft.EntityFrameworkCore
 @using System.Linq.Expressions
-@using projectaardvarkx2.Components.Entities.Common
+@using HomeHQ.Components.Entities.Common
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Admin")]
@@ -20,7 +20,7 @@
 @inject ILogger<AdminDashboard> Logger
 @inject NavigationManager Navigation
 
-<PageTitle>Admin Dashboard - Home Tracker</PageTitle>
+<PageTitle>Admin Dashboard - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">

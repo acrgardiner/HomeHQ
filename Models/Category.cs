@@ -1,6 +1,6 @@
-﻿using projectaardvarkx2.Contracts;
+﻿using HomeHQ.Contracts;
 
-namespace projectaardvarkx2.Entities;
+namespace HomeHQ.Entities;
 
 public class Category : AuditableEntity, IEntity, IEntityNamed
 {

@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using projectaardvarkx2.Contracts;
-using projectaardvarkx2.Repositories;
+using HomeHQ.Contracts;
+using HomeHQ.Repositories;
 using System;
 using System.Linq.Expressions;
 
-namespace projectaardvarkx2.Services;
+namespace HomeHQ.Services;
 
 public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEntity
 {

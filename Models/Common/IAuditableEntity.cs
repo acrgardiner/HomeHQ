@@ -1,4 +1,4 @@
-namespace projectaardvarkx2.Contracts;
+namespace HomeHQ.Contracts;
 
 public interface IAuditableEntity
 {

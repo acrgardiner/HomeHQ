@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor;
-using projectaardvarkx2.Data;
-using projectaardvarkx2.Repositories;
+using HomeHQ.Data;
+using HomeHQ.Repositories;
 
-namespace projectaardvarkx2.Identity
+namespace HomeHQ.Identity
 {
     public class UserService : IUserService
     {

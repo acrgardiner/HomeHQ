@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using projectaardvarkx2.Contracts;
-using projectaardvarkx2.Data;
-using projectaardvarkx2.Entities;
+using HomeHQ.Contracts;
+using HomeHQ.Data;
+using HomeHQ.Entities;
 
-namespace projectaardvarkx2.Services;
+namespace HomeHQ.Services;
 
 public class PurgeService : IPurgeService
 {

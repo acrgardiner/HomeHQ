@@ -1,6 +1,6 @@
 ﻿@page "/admin/maintenance"
 
-@using projectaardvarkx2.Services
+@using HomeHQ.Services
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Admin")]
@@ -12,7 +12,7 @@
 @inject IDialogService DialogService
 @inject ILogger<Maintenance_Page> Logger
 
-<PageTitle>Dashboard - Home Tracker</PageTitle>
+<PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">

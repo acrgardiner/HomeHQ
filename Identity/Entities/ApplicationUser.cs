@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace projectaardvarkx2.Identity;
+namespace HomeHQ.Identity;
 
 public class ApplicationUser : IdentityUser
 {

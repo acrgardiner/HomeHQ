@@ -1,4 +1,4 @@
-﻿namespace projectaardvarkx2.Models;
+﻿namespace HomeHQ.Models;
 
 public class Settings
 {

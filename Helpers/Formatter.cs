@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using projectaardvarkx2.Entities;
+using HomeHQ.Entities;
 using System.Globalization;
 
-namespace projectaardvarkx2.Helpers
+namespace HomeHQ.Helpers
 {
     public static class Formatter
     {

@@ -3,7 +3,6 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
-@using projectaardvarkx2.Identity
 @using MudBlazor.Template.Components.Account
 @using MudBlazor.StaticInput
 
@@ -13,7 +12,7 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in - Home Tracker</PageTitle>
+<PageTitle>Log in - @Constants.Application.Title</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">
@@ -89,19 +88,18 @@
         var result = await SignInManager.PasswordSignInAsync(Input.Username, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
-            Logger.LogInformation("User logged in.");
+            Logger.LogInformation("User {username} logging in.", Input.Username);
             var currentUser = await UserManager.FindByNameAsync(Input.Username);
             // Update the LastLogin property
             currentUser.LastLogin = DateTime.UtcNow;
             // Save changes to the database
             await UserManager.UpdateAsync(currentUser);
 
-            Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            Logger.LogWarning("User account {username} locked out.", Input.Username);
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else

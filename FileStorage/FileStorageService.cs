@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
-using projectaardvarkx2.Entities;
+using HomeHQ.Entities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using Image = SixLabors.ImageSharp.Image;
-using projectaardvarkx2.Services;
+using HomeHQ.Services;
 
-namespace projectaardvarkx2.FileStorage
+namespace HomeHQ.FileStorage
 {
     public class FileStorageService : IFileStorageService
     {

@@ -20,7 +20,7 @@ env:
 jobs:
   debug:
     name: Debug Info
-    runs-on: [self-hosted, HomeVault]
+    runs-on: [self-hosted, HomeHQ]
     if: ${{ vars.DEBUG == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Print environment variables
@@ -28,7 +28,7 @@ jobs:
 
   build:
     name: Build .NET Project
-    runs-on: [self-hosted, HomeVault]
+    runs-on: [self-hosted, HomeHQ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Identity
-@using projectaardvarkx2.Identity
-@using projectaardvarkx2.Services
+@using HomeHQ.Identity
+@using HomeHQ.Services
 
 @inject ISnackbar Snackbar
 @inject SignInManager<ApplicationUser> SignInManager
@@ -14,7 +14,7 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">🏠 Home Tracker</MudText>
+        <MudText Typo="Typo.h5" Class="ml-3">🏠 @Constants.Application.Title</MudText>
         <MudSpacer />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" Edge="Edge.End" />
         <AuthorizeView>

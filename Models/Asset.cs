@@ -1,7 +1,6 @@
-﻿using projectaardvarkx2.Contracts;
-using projectaardvarkx2.Entities;
+﻿using HomeHQ.Contracts;
 
-namespace projectaardvarkx2.Entities;
+namespace HomeHQ.Entities;
 
 public class Asset : AuditableEntity, IEntity, IEntityNamed
 {
