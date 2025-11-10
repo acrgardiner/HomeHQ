@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-projectaardvarkx2-7960f3aa-fa61-47bc-94c0-e6949d10e4c6</UserSecretsId>
+    <UserSecretsId>aspnet-homehq-7960f3aa-fa61-47bc-94c0-e6949d10e4c6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +31,6 @@
 
   <ItemGroup>
     <Folder Include="appdata\" />
-    <Folder Include="appdata\logs\" />
     <Folder Include="Data\Migrations\" />
     <Folder Include="docs\" />
   </ItemGroup>

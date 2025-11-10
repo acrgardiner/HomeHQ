@@ -122,7 +122,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.Asset", b =>
+            modelBuilder.Entity("homehq.Entities.Asset", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -176,7 +176,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("Assets");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.Attachment", b =>
+            modelBuilder.Entity("homehq.Entities.Attachment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -240,7 +240,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("Attachments");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.AttachmentType", b =>
+            modelBuilder.Entity("homehq.Entities.AttachmentType", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -278,7 +278,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("AttachmentTypes");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.AttributeValue", b =>
+            modelBuilder.Entity("homehq.Entities.AttributeValue", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -323,7 +323,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("Attributes");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.Category", b =>
+            modelBuilder.Entity("homehq.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -361,7 +361,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.WarrantyType", b =>
+            modelBuilder.Entity("homehq.Entities.WarrantyType", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -408,7 +408,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("WarrantyTypes");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Identity.ApplicationRole", b =>
+            modelBuilder.Entity("homehq.Identity.ApplicationRole", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -434,7 +434,7 @@ namespace HomeHQ.data.migrations
                     b.ToTable("Roles", (string)null);
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Identity.ApplicationUser", b =>
+            modelBuilder.Entity("homehq.Identity.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
@@ -488,7 +488,7 @@ namespace HomeHQ.data.migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Identity.ApplicationRole", null)
+                    b.HasOne("homehq.Identity.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.SetNull)
@@ -497,7 +497,7 @@ namespace HomeHQ.data.migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Identity.ApplicationUser", null)
+                    b.HasOne("homehq.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull)
@@ -506,7 +506,7 @@ namespace HomeHQ.data.migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Identity.ApplicationUser", null)
+                    b.HasOne("homehq.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull)
@@ -515,13 +515,13 @@ namespace HomeHQ.data.migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Identity.ApplicationRole", null)
+                    b.HasOne("homehq.Identity.ApplicationRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
-                    b.HasOne("projectaardvarkx2.Identity.ApplicationUser", null)
+                    b.HasOne("homehq.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull)
@@ -530,21 +530,21 @@ namespace HomeHQ.data.migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Identity.ApplicationUser", null)
+                    b.HasOne("homehq.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.Asset", b =>
+            modelBuilder.Entity("homehq.Entities.Asset", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Entities.Category", "Category")
+                    b.HasOne("homehq.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("projectaardvarkx2.Entities.WarrantyType", "WarrantyType")
+                    b.HasOne("homehq.Entities.WarrantyType", "WarrantyType")
                         .WithMany()
                         .HasForeignKey("WarrantyTypeId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -554,14 +554,14 @@ namespace HomeHQ.data.migrations
                     b.Navigation("WarrantyType");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.Attachment", b =>
+            modelBuilder.Entity("homehq.Entities.Attachment", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Entities.AttachmentType", "AttachmentType")
+                    b.HasOne("homehq.Entities.AttachmentType", "AttachmentType")
                         .WithMany()
                         .HasForeignKey("AttachmentTypeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("projectaardvarkx2.Entities.Asset", "Parent")
+                    b.HasOne("homehq.Entities.Asset", "Parent")
                         .WithMany()
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -571,15 +571,15 @@ namespace HomeHQ.data.migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.AttributeValue", b =>
+            modelBuilder.Entity("homehq.Entities.AttributeValue", b =>
                 {
-                    b.HasOne("projectaardvarkx2.Entities.Asset", null)
+                    b.HasOne("homehq.Entities.Asset", null)
                         .WithMany("Attributes")
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("projectaardvarkx2.Entities.Asset", b =>
+            modelBuilder.Entity("homehq.Entities.Asset", b =>
                 {
                     b.Navigation("Attributes");
                 });
