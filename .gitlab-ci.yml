@@ -1,5 +1,5 @@
 default:
-    tags: [projectaardvarkx2]
+    tags: [homehq]
 
 stages:
     - debug
