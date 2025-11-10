@@ -46,7 +46,7 @@ jobs:
 
   docker:
     name: Build and Push Docker Image
-    runs-on: [self-hosted, HomeVault]
+    runs-on: [self-hosted, HomeHQ]
     needs: build
     if: |
       github.event_name == 'push' && (
