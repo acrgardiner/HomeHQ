@@ -3,10 +3,8 @@
 <!-- PROJECT LOGO -->
 <h1 align="center">
     <a href="https://github.com/acrgardiner/homehq">
-        <img width="180" src="images/logo.png">
+        <img width="180" src="docs/logo-transparent.png">
     </a>
-    <br/>
-    HomeHQ
 </h1>
 
 Track your home assets, receipts, and warranties in one secure place. Built with .NET and Blazor, HomeHQ helps you organize purchased assets and make receipts readily available.
@@ -75,7 +73,7 @@ To get a local copy up and running follow these simple example steps.
 docker run -d \
   --name homehq \
   -p 8080:8080 \
-  --mount type=bind,source="/path/to/config/dir",target=/www/assets \
+  --mount type=bind,source="/path/to/appdata",target=/www/assets \
   --restart=unless-stopped \
   acrgardiner/homehq:latest
 ```
@@ -88,7 +86,7 @@ services:
     image: acrgardiner/homehq:latest
     container_name: homehq
     volumes:
-      - /path/to/config/dir:/www/assets
+      - /path/to/appdata:/appdata
     ports:
       - 8080:8080
     restart: unless-stopped

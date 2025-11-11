@@ -12,22 +12,24 @@
 @inject ILogger<Home> Logger
 @inject ISnackbar Snackbar
 
-<PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
+
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <div class="d-flex align-center justify-space-between mb-6">
-        <div>
-            <MudText Typo="Typo.h4" Color="Color.Primary">
-                Dashboard
-            </MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                
-            </MudText>
-        </div>
-    </div>
-
     <AuthorizeView>
         <Authorized>
+            <PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
+
+            <div class="d-flex align-center justify-space-between mb-6">
+                <div>
+                    <MudText Typo="Typo.h4" Color="Color.Primary">
+                        Dashboard
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+
+                    </MudText>
+                </div>
+            </div>
+
             <!-- Statistics Cards -->
             <MudGrid Spacing="3" Class="mb-6">
                 <MudItem xs="12" sm="6" md="4">
@@ -200,21 +202,23 @@
             <!-- Welcome screen for non-authenticated users -->
             <MudContainer MaxWidth="MaxWidth.Medium" Class="text-center">
                 <MudCard Elevation="2" Class="pa-8">
-                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" Class="mb-4" />
-                    <MudText Typo="Typo.h3" Class="mb-4">Welcome to @Constants.Application.Name</MudText>
-                    <MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary">
-                        Streamline your asset management by easily uploading and organizing receipt attachments 
-                        while tracking assets in a centralized system. With intuitive tools for uploading receipts 
-                        and monitoring asset details, the app helps ensure accurate record-keeping and simplifies 
-                        the process of managing both financial documents and physical assets.
-                    </MudText>
-                    <MudStack Row="true" Justify="Justify.Center" Spacing="3">
-                        <MudButton Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large"
-                                  StartIcon="@Icons.Material.Filled.Login"
-                                  OnClick="@(() => Navigation.NavigateTo("/account/login"))">
-                            Sign In
-                        </MudButton>
-                    </MudStack>
+                    <div class="d-flex flex-column align-center">
+                        <MudImage Src="homehq-welcome.png" Alt="Welcome Image" Width="200" Class="mb-4" />
+                        <MudText Typo="Typo.h3" Class="mb-4">Welcome to @Constants.Application.Name</MudText>
+                        <MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary" Style="text-align: center;">
+                            Streamline your asset management by easily uploading and organizing receipt attachments 
+                            while tracking assets in a centralized system. With intuitive tools for uploading receipts 
+                            and monitoring asset details, the app helps ensure accurate record-keeping and simplifies 
+                            the process of managing both financial documents and physical assets.
+                        </MudText>
+                        <MudStack Row="true" Justify="Justify.Center" Spacing="3">
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large"
+                                      StartIcon="@Icons.Material.Filled.Login"
+                                      OnClick="@(() => Navigation.NavigateTo("/account/login"))">
+                                Sign In
+                            </MudButton>
+                        </MudStack>
+                    </div>
                 </MudCard>
             </MudContainer>
         </NotAuthorized>

@@ -107,8 +107,9 @@
                                               AdornmentIcon="@Icons.Material.Filled.Store" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudDatePicker @bind-Date="asset.PurchaseDate" 
-                                             Label="Purchase Date" 
+                                <MudDatePicker Date="asset.PurchaseDate"
+                                             DateChanged="OnPurchaseDateChanged"
+                                             Label="Purchase Date"
                                              Required="true"
                                              Variant="Variant.Outlined"
                                              HelperText="When was this asset purchased?"
@@ -137,7 +138,7 @@
                             <MudItem xs="12" md="6">
                                 <MudSelect @bind-Value="asset.WarrantyTypeId"
                                          Label="Warranty Type"
-                                         @bind-Value:after="OnChangeWarrantyType"
+                                         @bind-Value:after="SetWarrantyExpiration"
                                          Variant="Variant.Outlined"
                                          AnchorOrigin="Origin.BottomCenter"
                                          HelperText="Select warranty type if applicable">
@@ -444,7 +445,13 @@
         Navigation.GoBack(ReturnState, "/assets");
     }
 
-    private void OnChangeWarrantyType()
+    private void OnPurchaseDateChanged(DateTime? date)
+    {
+        asset.PurchaseDate = date;
+        SetWarrantyExpiration();
+    }
+
+    private void SetWarrantyExpiration()
     {
         if (asset.WarrantyTypeId == nullGuid)
         {
