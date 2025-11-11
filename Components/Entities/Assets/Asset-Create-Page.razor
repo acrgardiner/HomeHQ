@@ -100,7 +100,8 @@
                                               AdornmentIcon="@Icons.Material.Filled.Store" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudDatePicker @bind-Date="asset.PurchaseDate"
+                                <MudDatePicker Date="asset.PurchaseDate"
+                                    DateChanged="OnPurchaseDateChanged"
                                     Label="Purchase Date"
                                     Required="true"
                                     Variant="Variant.Outlined"
@@ -109,7 +110,8 @@
                                     AdornmentIcon="@Icons.Material.Filled.CalendarToday"
                                     ShowToolbar="false"
                                     Editable="true"
-                                    />
+                                    
+                            />
                             </MudItem>
                         </MudGrid>
                     </MudCardContent>
@@ -131,7 +133,7 @@
                             <MudItem xs="12" md="6">
                                 <MudSelect @bind-Value="asset.WarrantyTypeId"
                                          Label="Warranty Type"
-                                         @bind-Value:after="OnChangeWarrantyType"
+                                           @bind-Value:after="SetWarrantyExpiration"
                                          Variant="Variant.Outlined"
                                          AnchorOrigin="Origin.BottomCenter"
                                          HelperText="Select warranty type if applicable">
@@ -363,7 +365,7 @@
                 asset.PurchaseDate = DateTime.Today;
 
             asset.WarrantyTypeId = defaultWarrantyTypeId;
-            OnChangeWarrantyType();
+            SetWarrantyExpiration();
 
             _attributes.Add(new AttributeValue()); // Add initial empty attribute
             _notes.Add(new Note()); // Add initial empty note
@@ -452,7 +454,13 @@
         Navigation.GoBack(ReturnState, "/assets");
     }
 
-    private void OnChangeWarrantyType()
+    private void OnPurchaseDateChanged(DateTime? date)
+    {
+        asset.PurchaseDate = date;
+        SetWarrantyExpiration();
+    }
+
+    private void SetWarrantyExpiration()
     {
         if (asset.WarrantyTypeId == nullGuid)
         {
