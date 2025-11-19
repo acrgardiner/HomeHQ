@@ -55,11 +55,11 @@ Yes there are other solutions out there, but I wanted something lightweight, sel
 - Inbuilt basic image editing for attachments
 
 
-[![HomeHQ - Dashboard][dashboard-screenshot]]()
+![Dashboard](docs/Dashboard.png)
 
-[![HomeHQ - Asset][asset-list-screenshot]]()
+![Asset](docs/Asset-list.png)
 
-[![HomeHQ - Asset][asset-detail-screenshot]]()
+![Asset](docs/Asset-detail.png)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
