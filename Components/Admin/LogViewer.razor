@@ -18,7 +18,7 @@
             </MudText>
         </div>
     </div>
-    <MudDataGrid T="LogEntry" Items="@filteredEntries" Hover="true" Dense="true" Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1" QuickFilter="@_quickFilter">
+    <MudDataGrid T="LogEntry" RowsPerPage="@rowsPerPage" Items="@filteredEntries" Hover="true" Dense="true" Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1" QuickFilter="@_quickFilter">
         <ToolBarContent>
             <MudText >Select Log:  </MudText>
             <MudSelect T="string" @bind-Value="selectedLogFile" @bind-Value:after="OnLogFileChange" Class="mt-2 pa-2">
@@ -66,6 +66,8 @@
 
     private string _searchString = string.Empty;
 
+    private const int rowsPerPage = 100;
+
     class LogEntry
     {
         public string Timestamp { get; set; } = "";
@@ -81,7 +83,7 @@
 
         LogFiles = Directory.GetFiles(logDirectory, "log-*.json").OrderByDescending(f => f).Select(s => Path.GetFileName(s)).ToList();
 
-        selectedLogFile = LogFiles.FirstOrDefault();
+        selectedLogFile = LogFiles.FirstOrDefault()!;
 
         await OnLogFileChange();
 

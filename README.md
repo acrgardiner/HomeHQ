@@ -7,9 +7,13 @@
     </a>
 </h1>
 
-Track your home assets, receipts, and warranties in one secure place. Built with .NET and Blazor, HomeHQ helps you organize purchased assets and make receipts readily available.
+<p align="center">
+Track your key household information in one secure location. Built with .NET and Blazor, HomeHQ helps you organize purchased assets and make receipts readily available.
+</p>
 
-<a href="https://github.com/acrgardiner/homehq">Explore the docs</a> | <a href="https://github.com/acrgardiner/homehq/issues/new?labels=bug&template=bug-report---.md">Report Bug</a> | <a href="https://github.com/acrgardiner/homehq/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+<p align="center">
+    <a href="https://github.com/acrgardiner/homehq/issues/new?labels=bug&template=bug-report---.md">Report Bug</a> | <a href="https://github.com/acrgardiner/homehq/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+</p>
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -35,16 +39,20 @@ Track your home assets, receipts, and warranties in one secure place. Built with
 <!-- ABOUT THE PROJECT -->
 ## ❔ About The Project
 
-HomeHQ is a locally hostable home management solution designed to keep track of household/family information readily accessible in one secure location.
+This project was started as a way for me to hone my software development skills while solving a personal need. 
+
+I wanted a way to track my household assets, their warranties, and associated documents in one secure location that I controlled. 
+
+Yes there are other solutions out there, but I wanted something lightweight, self-hosted, and extendable for my purpose.
 
 ### Key Features
 
-- Asset Management
-- Warranty Tracking
+- Asset details
+- Warranty tracking
 - Attachments
 - Attributes
 - Notes
-- Inbuilt image editing for attachments
+- Inbuilt basic image editing for attachments
 
 
 [![HomeHQ - Dashboard][dashboard-screenshot]]()
@@ -73,9 +81,9 @@ To get a local copy up and running follow these simple example steps.
 docker run -d \
   --name homehq \
   -p 8080:8080 \
-  --mount type=bind,source="/path/to/appdata",target=/www/assets \
+  -v /path/to/appdata:/app/appdata \
   --restart=unless-stopped \
-  acrgardiner/homehq:latest
+  ghcr.io/acrgardiner/homehq:latest
 ```
 
 **or `docker-compose`**
@@ -83,10 +91,10 @@ docker run -d \
 ```yaml
 services:
   homehq:
-    image: acrgardiner/homehq:latest
+    image: ghcr.io/acrgardiner/homehq:latest
     container_name: homehq
     volumes:
-      - /path/to/appdata:/appdata
+      - /path/to/appdata:/app/appdata
     ports:
       - 8080:8080
     restart: unless-stopped
@@ -103,6 +111,27 @@ services:
 |appdata/db|Program database for SQLite|
 |appdata/logs|Log files|
 |appdata/thumbs|Storing compressed thumbnails of attachments|
+|appdata/imports|Directory for bulk importing|
+
+### Configuration
+
+Access the web interface via `http://localhost:8080` (or the relevant host/port)
+
+Login with the default system admin user:
+   - Username: `sysadmin`
+   - Password: `Password123!`
+
+Configure your desired Categories, Warranty Types, and Attachment Types via the setup pages.
+
+Configure your user accounts via the Users page.
+
+### Bulk Import
+
+To bulk import assets, load the files into the `appdata/imports` directory with the filenames matching your desired asset names.
+
+Then from within the Admin > Maintenance page, run the Manual Load.
+
+Assets will be created for each file found in the imports directory and the source file will be moved.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -131,20 +160,3 @@ Or for developers looking to contribute code, please check and follow our [contr
 Distributed under the GPL-3.0 license. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/acrgardiner/homehq.svg?style=for-the-badge
-[contributors-url]: https://github.com/acrgardiner/homehq/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/acrgardiner/homehq.svg?style=for-the-badge
-[forks-url]: https://github.com/acrgardiner/homehq/network/members
-[stars-shield]: https://img.shields.io/github/stars/acrgardiner/homehq.svg?style=for-the-badge
-[stars-url]: https://github.com/acrgardiner/homehq/stargazers
-[issues-shield]: https://img.shields.io/github/issues/acrgardiner/homehq.svg?style=for-the-badge
-[issues-url]: https://github.com/acrgardiner/homehq/issues
-[license-shield]: https://img.shields.io/github/license/acrgardiner/homehq.svg?style=for-the-badge
-[license-url]: https://github.com/acrgardiner/homehq/blob/master/LICENSE.txt
-[dashboard-screenshot]: docs/dashboard.png
-[asset-list-screenshot]: docs/asset-list.png
-[asset-detail-screenshot]: docs/asset-detail.png
