@@ -35,8 +35,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include=".github\workflows" />
     <Folder Include="wwwroot" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".github\workflows\ci.yml" />
   </ItemGroup>
 
 </Project>
