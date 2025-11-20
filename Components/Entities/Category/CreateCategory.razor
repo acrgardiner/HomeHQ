@@ -1,0 +1,54 @@
+﻿@using HomeHQ.Identity
+@using HomeHQ.Services;
+@using HomeHQ.Entities;
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
+@inject IEntityService<Category> CategoryService;
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ILogger<CreateCategory> Logger
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model">
+            <MudTextField T="string" @bind-Value="model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
+            <MudTextField T="string" @bind-Value="model.Icon" Label="Icon" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    private MudForm form = default!;
+    private Category model = new();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            try
+            {
+                await CategoryService.AddAsync(model);
+                Snackbar.Add("Category created successfully", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error creating Category");
+                Snackbar.Add("Error creating Category", Severity.Error);
+            }
+        }
+    }
+}

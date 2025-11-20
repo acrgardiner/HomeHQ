@@ -1,0 +1,521 @@
+﻿@page "/assets/edit/{Id:guid}"
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Helpers
+@using HomeHQ.FileStorage
+@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Authorization
+@using HomeHQ.Components.Entities.Common
+
+@attribute [Authorize()]
+
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<Category> CategoryService
+@inject IEntityService<WarrantyType> WarrantyTypeService
+@inject IEntityService<AttributeValue> AttributeService
+@inject IEntityService<Note> NoteService
+
+@inject ICurrentUserService CurrentUser
+
+@inject ISnackbar Snackbar
+@inject ILogger<Asset_Edit_Page> Logger
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+
+        <!-- Header -->
+        <div class="d-flex align-center mb-6">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                          Size="Size.Medium"
+                          OnClick="GoBack"
+                          Class="mr-3" />
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.h4" Color="Color.Primary">Edit Asset</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Update asset information and manage attachments
+                </MudText>
+            </div>
+
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudFab Color="Color.Primary"
+                    ButtonType="ButtonType.Submit"
+                    StartIcon="@Icons.Material.Filled.Save"
+                    Class="asset-action-btn" />
+            </MudStack>
+        </div>
+
+        <MudGrid Spacing="4">
+            <MudItem xs="12" lg="8">
+                <!-- Basic Information Card -->
+                <MudCard Elevation="2" Class="form-card">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">Basic Information</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="asset.Name"
+                                    Label="Name"
+                                    Required="true"
+                                    Variant="Variant.Outlined"
+                                    HelperText="Enter a descriptive name for your asset"
+                                    Adornment="Adornment.Start"
+                                    AdornmentIcon="@Icons.Material.Filled.Label" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="asset.CategoryId"
+                                           T="Guid?"
+                                           Label="Category"
+                                           Required="true"
+                                           Variant="Variant.Outlined"
+                                           AnchorOrigin="Origin.BottomCenter"
+                                           HelperText="Select the category that best describes this asset">
+                                    <MudSelectItem Value="@(null as Guid?)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Category" Class="mr-2" Size="Size.Small" />
+                                            -- Select Category --
+                                        </div>
+                                    </MudSelectItem>
+                                    @foreach (var cat in categories)
+                                    {
+                                        <MudSelectItem Value="@(cat.Id as Guid?)">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@cat.Icon" Class="mr-2" Size="Size.Small" />
+                                                @cat.Title
+                                            </div>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="asset.PurchasedFrom"
+                                              Label="Purchased From"
+                                              Required="true"
+                                              Variant="Variant.Outlined"
+                                              HelperText="Where did you buy this asset"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.Store" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker Date="asset.PurchaseDate"
+                                             DateChanged="OnPurchaseDateChanged"
+                                             Label="Purchase Date"
+                                             Required="true"
+                                             Variant="Variant.Outlined"
+                                             HelperText="When was this asset purchased?"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="@Icons.Material.Filled.CalendarToday"
+                                             ShowToolbar="false"
+                                             Editable="true"/>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Warranty Information Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Verified" Class="mr-2" Color="Color.Success" />
+                                <MudText Typo="Typo.h6">Warranty Information</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="asset.WarrantyTypeId"
+                                         Label="Warranty Type"
+                                         @bind-Value:after="SetWarrantyExpiration"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         HelperText="Select warranty type if applicable">
+                                    <MudSelectItem Value="@(null as Guid?)">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Block" Class="mr-2" Size="Size.Small" />
+                                            -- No Warranty --
+                                        </div>
+                                    </MudSelectItem>
+                                    @foreach (var wt in warrantyTypes)
+                                    {
+                                        <MudSelectItem Value="@(wt.Id as Guid?)">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@Icons.Material.Filled.Verified" Class="mr-2" Size="Size.Small" />
+                                                @wt.Name
+                                            </div>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="asset.WarrantyExpiration"
+                                             Label="Warranty Expiration"
+                                             Variant="Variant.Outlined"
+                                             HelperText="When does the warranty expire?"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="@Icons.Material.Filled.Event"
+                                             Disabled="asset.WarrantyTypeId == null"
+                                             ShowToolbar="false"
+                                             Editable="true"
+                                               />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Attributes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2" Color="Color.Info" />
+                                <MudText Typo="Typo.h6">Attributes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudTooltip Text="Add attribute">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                             Color="Color.Primary"
+                                             Size="Size.Medium"
+                                             OnClick="AddAttribute" />
+                            </MudTooltip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent Class="pa-0">
+                        @if (_attributes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var attr in _attributes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="12" sm="5">
+                                                    <MudTextField @bind-Value="attr.Attribute"
+                                                                Label="Attribute"
+                                                                Variant="Variant.Outlined"
+                                                                Margin="Margin.Dense" />
+                                                </MudItem>
+                                                <MudItem xs="10" sm="5">
+                                                    <MudTextField @bind-Value="attr.Value"
+                                                        Label="Value"
+                                                        Variant="Variant.Outlined"
+                                                        Margin="Margin.Dense"
+                                                        Required="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
+                                                        Error="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
+                                                        ErrorText="Value is required if Attribute is set." />
+                                                </MudItem>
+                                                <MudItem xs="2" sm="2" Class="d-flex justify-end">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                 Color="Color.Error"
+                                                                 Size="Size.Small"
+                                                                 OnClick="@(() => Remove(attr))" />
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No attributes added</MudText>
+                                <MudButton Color="Color.Primary"
+                                         Variant="Variant.Text"
+                                         StartIcon="@Icons.Material.Filled.Add"
+                                         OnClick="AddAttribute">
+                                    Add First Attribute
+                                </MudButton>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Notes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" Color="Color.Warning" />
+                                <MudText Typo="Typo.h6">Notes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudTooltip Text="Add note">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                               Color="Color.Primary"
+                                               Size="Size.Medium"
+                                               OnClick="AddNote" />
+                            </MudTooltip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent Class="pa-0">
+                        @if (_notes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var note in _notes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="11" sm="11">
+                                                    <MudTextField @bind-Value="note.Title"
+                                                                  Label="Title"
+                                                                  Variant="Variant.Outlined"
+                                                                  Margin="Margin.Dense" />
+                                                </MudItem>
+                                                <MudItem xs="1" sm="1" Class="d-flex justify-end">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Color="Color.Error"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => _notes.Remove(note))" />
+                                                </MudItem>
+                                            </MudGrid>
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="11" sm="11">
+                                                    <MudTextField @bind-Value="note.Content"
+                                                                  Label="Content"
+                                                                  Variant="Variant.Outlined"
+                                                                  Margin="Margin.Dense"
+                                                                  Lines="4"
+                                                                  MaxLines="20"
+                                                                  AutoGrow="true" />
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.StickyNote2" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">No notes added</MudText>
+                                <MudButton Color="Color.Primary"
+                                           Variant="Variant.Text"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="AddNote">
+                                    Add First Note
+                                </MudButton>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <!-- Attachments Sidebar -->
+            <MudItem xs="12" lg="4">
+                <Attachment_Sidebar @ref="attachmentSidebar" ParentId="@asset.Id" IsMobile="@IsMobile" ParentType="@typeof(Asset).Name" Readonly="@false" />
+            </MudItem>
+        </MudGrid>
+
+        <!-- Validation Summary (if needed) -->
+        <MudCollapse Expanded="@(_validationErrors.Any())">
+            <MudAlert Severity="Severity.Error" Class="mt-4">
+                <ValidationSummary />
+            </MudAlert>
+        </MudCollapse>
+    </EditForm>
+</MudContainer>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
+
+    private Asset asset = new();
+    private List<Category> categories = new();
+    private List<WarrantyType> warrantyTypes = new();
+    private static readonly Guid? nullGuid = null;
+
+    private List<AttributeValue> _attributes = new();
+    private List<Note> _notes = new();
+    private List<string> _validationErrors = new();
+
+    private Guid defaultWarrantyTypeId;
+
+    private Attachment_Sidebar attachmentSidebar;
+    private bool IsMobile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            IsMobile = CurrentUser.IsMobile;
+
+            categories = (await CategoryService.GetAllAsync()).ToList();
+            warrantyTypes = ((await WarrantyTypeService.GetAllAsync()).OrderBy(x => x.SortOrder)).ToList();
+
+            defaultWarrantyTypeId = warrantyTypes.Where(wt => wt.Default).First().Id;
+
+            var loadedAsset = await AssetService.GetByIdAsync(Id);
+            if (loadedAsset == null)
+            {
+                Snackbar.Add("Asset not found.", Severity.Error);
+                GoBack();
+                return;
+            }
+            asset = loadedAsset;
+
+            _attributes = (await AttributeService.GetAsync(
+                filter: x => x.ParentId == Id && x.ParentType == nameof(Asset)
+            )).ToList();
+
+            _notes = (await NoteService.GetAsync(
+                filter: x => x.ParentId == Id && x.ParentType == nameof(Asset)
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
+            Logger.LogError(ex, "Error initializing EditAsset components");
+        }
+    }
+
+    private async Task Remove(AttributeValue item)
+    {
+        _attributes.Remove(item);
+        if (item.Id != Guid.Empty)
+        {
+            await AttributeService.DeleteAsync(item.Id);
+        }
+    }
+
+    private async Task Remove(Note item)
+    {
+        _notes.Remove(item);
+        if (item.Id != Guid.Empty)
+        {
+            await NoteService.DeleteAsync(item.Id);
+        }
+    }
+
+    private void AddAttribute()
+    {
+        _attributes.Add(new AttributeValue());
+    }
+
+    private void AddNote()
+    {
+        _notes.Add(new Note());
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            Snackbar.Add($"Saving...", Severity.Info);
+
+            if (asset.CategoryId == Guid.Empty) asset.CategoryId = null;
+            if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
+
+            await AssetService.UpdateAsync(asset);
+            await SaveAttributes(asset.Id);
+            await SaveNotes(asset.Id);
+            await attachmentSidebar.SaveAttachments(asset.Id);
+
+            Snackbar.Add("Asset updated successfully.", Severity.Success);
+            GoBack(); // Use GoBack to preserve navigation state
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.GoBack(ReturnState, "/assets");
+    }
+
+    private void OnPurchaseDateChanged(DateTime? date)
+    {
+        asset.PurchaseDate = date;
+        SetWarrantyExpiration();
+    }
+
+    private void SetWarrantyExpiration()
+    {
+        if (asset.WarrantyTypeId == nullGuid)
+        {
+            asset.WarrantyExpiration = null;
+        }
+        else
+        {
+            if (asset.PurchaseDate.HasValue)
+            {
+                var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
+                if (warrantyType != null)
+                {
+                    if (warrantyType.Years is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddYears(warrantyType.Years.Value);
+                    if (warrantyType.Months is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddMonths(warrantyType.Months.Value);
+                    if (warrantyType.Days is not null)
+                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddDays(warrantyType.Days.Value);
+
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private async Task SaveAttributes(Guid Id)
+    {
+        try
+        {
+            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
+            {
+                if (attr.Id == Guid.Empty)
+                {
+                    attr.ParentId = Id;
+                    attr.ParentType = nameof(Asset);
+                    await AttributeService.AddAsync(attr);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save attributes");
+            Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SaveNotes(Guid Id)
+    {
+        try
+        {
+            foreach (var note in _notes.Where(a => !string.IsNullOrWhiteSpace(a.Title) || !string.IsNullOrWhiteSpace(a.Content)))
+            {
+                if (note.Id == Guid.Empty)
+                {
+                    note.ParentId = Id;
+                    note.ParentType = nameof(Asset);
+                    await NoteService.AddAsync(note);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save notes");
+            Snackbar.Add($"Failed to save notes: {ex.Message}", Severity.Error);
+        }
+    }
+}

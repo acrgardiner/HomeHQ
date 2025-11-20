@@ -1,0 +1,66 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using HomeHQ.Identity
+@using HomeHQ.Services
+@using HomeHQ.Entities
+@using HomeHQ.Helpers
+@using System.Linq.Expressions
+
+@attribute [Authorize()]
+
+@inject ISnackbar Snackbar
+@inject IEntityService<AttributeValue> AttributeService
+@inject IDialogService DialogService
+@inject ILogger<AttributeList_view> Logger
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6" Gutters="false">
+    <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4">Attributes</MudText>
+    @if (_attributes.Any())
+    {
+        foreach (var attr in _attributes)
+        {
+            <MudStack Row="true" Spacing="2" Class="mb-2">
+                <MudTextField @bind-Value="attr.Attribute" Label="Attribute" Required="true" ReadOnly=true/>
+                <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" ReadOnly=true  />
+            </MudStack>
+        }
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public Guid? ParentId { get; set; }
+
+    private List<AttributeValue> _attributes { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAttributes();
+    }
+
+    private async Task ReloadData()
+    {
+        await LoadAttributes();
+    }
+
+
+    private async Task LoadAttributes()
+    {
+        try
+        {
+            _attributes = (await AttributeService.GetAsync(
+                filter: x => x.ParentId == ParentId,
+                orderby: x => x.CreatedOn,
+                descending: true,
+                take: 10
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load attributes");
+            Snackbar.Add("Failed to load", Severity.Error);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+}

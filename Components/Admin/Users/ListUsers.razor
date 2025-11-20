@@ -1,0 +1,302 @@
+﻿@page "/admin/users"
+@using Microsoft.AspNetCore.Authorization
+@using HomeHQ.Identity
+@using System.Text
+@using Microsoft.JSInterop
+@using HomeHQ.Helpers
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IUserService UserService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<ListUsers> Logger
+@inject IJSRuntime JS
+
+<PageTitle>Assets - @Constants.Application.Title</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <!-- Header and actions -->
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-3" Size="Size.Large" />
+                Users
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Manage your users, assign roles, and control access to various features of the application.
+            </MudText>
+        </div>
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenCreateDialog"
+                       Class="entity-action-btn">
+                New User
+            </MudButton>
+        </MudStack>
+    </div>
+
+    <!-- Main Content Card -->
+    <MudCard Elevation="2" Class="entity-list-card">
+        <MudCard Elevation="1" Class="entity-list-card">
+            <MudCardHeader Class="pb-2">
+                <CardHeaderContent>
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@GetEntityIcon()" Class="mr-2" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6">Users</MudText>
+                        @if (!_loading)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="ml-2">
+                                @(_users.Count) items
+                            </MudChip>
+                        }
+                    </div>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                        <MudTooltip Text="Refresh data">
+                            <MudIconButton Color="Color.Default"
+                                           Icon="@Icons.Material.Filled.Refresh"
+                                           Size="Size.Medium"
+                                           OnClick="ReloadData"
+                                           Disabled="_loading" />
+                        </MudTooltip>
+
+                        @if (_users.Any())
+                        {
+                            <MudTooltip Text="Export to CSV">
+                                <MudIconButton Color="Color.Default"
+                                               Icon="@Icons.Material.Filled.Download"
+                                               Size="Size.Medium"
+                                               OnClick="ExportToCsv"
+                                               Variant="Variant.Outlined" />
+                            </MudTooltip>
+                        }
+                    </MudStack>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudDivider />
+
+            <MudDataGrid T="ApplicationUser" Items="@_users" Loading="@_loading" QuickFilter="@_quickFilter"
+                Hideable="true" Hover="true" Dense="true"
+                Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
+                <ToolBarContent>
+                    <MudTextField @bind-Value="SearchString" Placeholder="Search..." Adornment="Adornment.Start"
+                                    Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mx-2" />
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn Property="x => x.UserName" />
+                    <PropertyColumn Property="x => x.LastLogin.HasValue ? Formatter.FormatDateTime(x.LastLogin.Value.ToLocalTime(), null) : String.Empty" Title="Last Login" />
+                    <TemplateColumn Title="Actions">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="0" Class="pa-2">
+                                <div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                    Size="Size.Small" Class="mx-1"
+                                    OnClick="@(() => OpenEditDialog(context.Item))" />
+                                </div>
+                                <div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Lock" Color="Color.Warning"
+                                    Size="Size.Small" Class="mx-1"
+                                    OnClick="@(() => OpenPasswordResetDialog(context.Item))"
+                                    />
+                                </div>
+                                <div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                    Size="Size.Small" Class="mx-1"
+                                    OnClick="@(() => OpenDeleteDialog(context.Item.Id))" />
+                                </div>
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="ApplicationUser" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudCard>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private List<ApplicationUser> _users = new();
+    private bool _loading = true;
+    private string _searchString = string.Empty;
+
+    private string SearchString
+    {
+        get => _searchString;
+        set
+        {
+            if (_searchString != value)
+            {
+                _searchString = value;
+                StateHasChanged();
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task ReloadData()
+    {
+        await LoadUsers();
+    }
+
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            _loading = true;
+            _users = await UserService.GetUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load users");
+            Snackbar.Add("Failed to load users", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private Func<ApplicationUser, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (
+            x.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+        )
+            return true;
+
+        return false;
+    };
+
+    @*  Create Dialog *@
+
+    private async Task OpenCreateDialog()
+    {
+        var dialog = await DialogService.ShowAsync<CreateUser>("Add New User");
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            await LoadUsers();
+            Snackbar.Add("User created successfully", Severity.Success);
+        }
+    }
+
+    @*  Edit Dialog *@
+    private async Task OpenEditDialog(ApplicationUser user)
+    {
+        var parameters = new DialogParameters
+        {
+            ["User"] = user,
+            ["Title"] = $"Edit User: {user.UserName}"
+        };
+
+        var dialog = await DialogService.ShowAsync<EditUser>("Edit User", parameters);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            await LoadUsers();
+            Snackbar.Add("User updated successfully", Severity.Success);
+        }
+    }
+
+    @* Password Reset Dialog *@
+    private async Task OpenPasswordResetDialog(ApplicationUser user)
+    {
+        var parameters = new DialogParameters
+        {
+            ["User"] = user
+        };
+
+        var dialog = await DialogService.ShowAsync<ResetPasswordDialog>("Reset Password", parameters);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            // Password was reset successfully, no need to reload users
+            // The success message is already shown in the dialog
+        }
+    }
+
+    @* Delete Dialog  *@
+    private async Task OpenDeleteDialog(string userId)
+    {
+        var parameters = new DialogParameters
+        {
+            ["Id"] = userId,
+            ["Message"] = "Are you sure you want to delete this user? This action cannot be undone."
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            try
+            {
+                //await UserService.DeleteAsync(userId);
+                await LoadUsers();
+                Snackbar.Add("User deleted successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete user");
+                Snackbar.Add("Failed to delete user", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ExportToCsv()
+    {
+        try
+        {
+            var csv = new StringBuilder("\uFEFF");
+            csv.AppendLine(string.Join(",", ["Id", "UserName"]));
+            // Rows
+            foreach (var item in _users)
+            {
+                csv.AppendLine(string.Join(",", ["Id", "UserName"]));
+            }
+
+            var now = DateTime.UtcNow.ToString("yyyyMMddHHmm");
+            await JS.InvokeVoidAsync("downloadFileFromBase64", $"user_list_{now}.csv", csv.ToString());
+
+            Snackbar.Add($"Users exported successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to export Users to CSV");
+            Snackbar.Add($"Failed to export Users", Severity.Error);
+        }
+    }
+
+    private string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+        if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        return value;
+    }
+
+    private string GetEntityIcon()
+    {
+        return Icons.Material.Filled.Person;
+    }
+}

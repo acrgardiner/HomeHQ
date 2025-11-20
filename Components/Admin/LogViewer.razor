@@ -1,0 +1,178 @@
+﻿@using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@page "/admin/logs"
+@inject IWebHostEnvironment Env
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                Log Viewer
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            </MudText>
+        </div>
+    </div>
+    <MudDataGrid T="LogEntry" RowsPerPage="@rowsPerPage" Items="@filteredEntries" Hover="true" Dense="true" Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1" QuickFilter="@_quickFilter">
+        <ToolBarContent>
+            <MudText >Select Log:  </MudText>
+            <MudSelect T="string" @bind-Value="selectedLogFile" @bind-Value:after="OnLogFileChange" Class="mt-2 pa-2">
+                @foreach (var logFile in LogFiles)
+                {
+                    <MudSelectItem T="string" Value="@logFile">@logFile</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Class="mt-2 pa-2">Filter by Level:  </MudText>
+            <MudSelect T="string" @bind-Value="selectedLevel" @bind-Value:after="OnLevelChanged" Class="mt-2 pa-2">
+                @foreach (var level in availableLevels)
+                {
+                    <MudSelectItem T="string" Value="@level">@level</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-2 pa-2" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Timestamp" Title="TimeStamp" />
+            <PropertyColumn Property="x => x.Level" Title="Level" />
+            <PropertyColumn Property="x => x.SourceContext" Title="SourceContext" />
+            <PropertyColumn Property="x => x.Message" Title="Message" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="LogEntry" PageSizeOptions="new int[] { 10, 25, 50, 100, 1000 }" />
+        </PagerContent>
+    </MudDataGrid>
+</MudContainer>
+
+@code {
+    private List<string> LogFiles = new();
+    private List<LogEntry> allEntries = new();
+    private List<LogEntry> filteredEntries = new();
+    private List<string> availableLevels = new List<string>() {
+            "All",
+            Serilog.Events.LogEventLevel.Verbose.ToString(),
+            Serilog.Events.LogEventLevel.Debug.ToString(),
+            Serilog.Events.LogEventLevel.Information.ToString(),
+            Serilog.Events.LogEventLevel.Warning.ToString(),
+            Serilog.Events.LogEventLevel.Error.ToString(),
+            Serilog.Events.LogEventLevel.Fatal.ToString()
+        };
+    private string selectedLevel = "All";
+    private string selectedLogFile = string.Empty;
+
+    private string _searchString = string.Empty;
+
+    private const int rowsPerPage = 100;
+
+    class LogEntry
+    {
+        public string Timestamp { get; set; } = "";
+        public string Level { get; set; } = "";
+        public string SourceContext { get; set; } = "";
+        public string Message { get; set; } = "";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the latest log file
+        var logDirectory = Path.Combine("appdata", "logs");
+
+        LogFiles = Directory.GetFiles(logDirectory, "log-*.json").OrderByDescending(f => f).Select(s => Path.GetFileName(s)).ToList();
+
+        selectedLogFile = LogFiles.FirstOrDefault()!;
+
+        await OnLogFileChange();
+
+    }
+
+    private async Task OnLevelChanged()
+    {
+        ApplyFilter();
+    }
+
+    private async Task OnLogFileChange()
+    {
+        //Get Data from selected log file
+        if (selectedLogFile != null)
+        {
+            try
+            {
+                allEntries.Clear();
+
+                var file = Path.Combine("appdata", "logs", selectedLogFile);
+                using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(fs);
+
+                while (!reader.EndOfStream)
+                {
+                    var line = await reader.ReadLineAsync();
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    using var doc = JsonDocument.Parse(line);
+                    var root = doc.RootElement;
+
+                    var entry = new LogEntry
+                    {
+                        Timestamp = root.GetProperty("Timestamp").GetString() ?? "",
+                        Level = root.GetProperty("Level").GetString() ?? "",
+                        SourceContext = root.GetProperty("SourceContext").GetString() ?? "",
+                        Message = root.GetProperty("Message").GetString() ?? ""
+                    };
+
+                    allEntries.Add(entry);
+                }
+
+                //reverse to show latest first
+                allEntries.Reverse();
+
+                ApplyFilter();
+            }
+            catch (Exception ex)
+            {
+                allEntries.Add(new LogEntry
+                {
+                    Timestamp = "",
+                    Level = "Error",
+                    SourceContext = "",
+                    Message = $"Failed to read or parse log file: {ex.Message}"
+                });
+                ApplyFilter();
+            }
+        }
+    }
+
+    private void ApplyFilter()
+    {
+        filteredEntries = selectedLevel == "All"
+            ? allEntries
+            : allEntries.Where(e => e.Level == selectedLevel).ToList();
+    }
+
+    private string GetRowClass(string level) => level switch
+    {
+        "Information" => "table-info",
+        "Warning" => "table-warning",
+        "Error" => "table-danger",
+        "Debug" => "table-secondary",
+        "Fatal" => "table-dark",
+        _ => ""
+    };
+
+    private Func<LogEntry, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Message.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.SourceContext.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+}

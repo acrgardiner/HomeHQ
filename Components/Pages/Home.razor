@@ -1,0 +1,351 @@
+﻿@page "/"
+@using HomeHQ.Services
+@using HomeHQ.Entities
+@using Microsoft.AspNetCore.Authorization
+@using System.Linq.Expressions
+@using HomeHQ.Helpers
+@using HomeHQ.Components.Entities.Common
+
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<Category> CategoryService
+@inject NavigationManager Navigation
+@inject ILogger<Home> Logger
+@inject ISnackbar Snackbar
+
+
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <AuthorizeView>
+        <Authorized>
+            <PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
+
+            <div class="d-flex align-center justify-space-between mb-6">
+                <div>
+                    <MudText Typo="Typo.h4" Color="Color.Primary">
+                        Dashboard
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+
+                    </MudText>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <MudGrid Spacing="3" Class="mb-6">
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="2" Class="dashboard-card">
+                        <MudCardContent Class="pb-0">
+                            <div class="d-flex justify-space-between">
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Total Assets</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Primary">@_totalAssets</MudText>
+                                </div>
+                                <MudAvatar Color="Color.Primary" Class="dashboard-avatar">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBox" />
+                                </MudAvatar>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="2" Class="dashboard-card">
+                        <MudCardContent Class="pb-0">
+                            <div class="d-flex justify-space-between">
+                                <div>
+                                    <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Warranties Expiring</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Warning">@_expiringWarranties</MudText>
+                                </div>
+                                <MudAvatar Color="Color.Warning" Class="dashboard-avatar">
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" />
+                                </MudAvatar>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Spacing="3" Style="align-items: stretch;">
+                <MudItem xs="12" lg="6">
+                    <MudCard Elevation="2" Class="dashboard-card" Style="height:100%;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Recent Assets</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" 
+                                          OnClick="@(() => Navigation.NavigateTo("/assets"))">
+                                    View All
+                                </MudButton>
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudDivider />
+                        <MudCardContent>
+                            @if (_loading)
+                            {
+                                <MudSkeleton Animation="Animation.Wave" Height="40px" Class="mb-2" />
+                                <MudSkeleton Animation="Animation.Wave" Height="40px" Class="mb-2" />
+                                <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                            }
+                            else if (_recentAssets.Any())
+                            {
+                                <MudList T="string" Dense="true">
+                                    @foreach (var asset in _recentAssets)
+                                    {
+                                        <MudListItem T="string" Class="px-2" OnClick="() => OpenDetails(asset)">
+                                            <div class="d-flex justify-space-between align-center">
+                                                <div class="d-flex align-center">
+                                                    <MudIcon Icon="@Icons.Material.Filled.AccountBox" Class="mr-3" Color="Color.Primary" Size="Size.Small" />
+                                                    <div>
+                                                        <MudText Typo="Typo.body1">@asset.Name</MudText>
+                                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                            @asset.Category?.Name • @asset.CreatedOn.ToString("MMM dd, yyyy")
+                                                        </MudText>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </MudListItem>
+                                        <MudDivider />
+                                    }
+                                </MudList>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-center justify-center py-8">
+                                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" Size="Size.Large" Class="mud-text-secondary mb-4" />
+                                    <MudText Typo="Typo.h6" Class="mud-text-secondary mb-2">No assets yet</MudText>
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">Start by creating your first asset</MudText>
+                                    <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"
+                                              OnClick="@(() => Navigation.NavigateTo("/assets/create"))">
+                                        Create Asset
+                                    </MudButton>
+                                </div>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" lg="6">
+                    <MudCard Elevation="2" Class="dashboard-card" Style="height:100%;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.ShowChart" Class="mr-2" Color="Color.Primary" />
+                                    Activity
+                                </MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudDivider />
+                        <MudCardContent>
+                            <MudChart ChartType="ChartType.Line"
+                                      XAxisLabels="@_activityChartLabels"
+                                      ChartOptions="@_activityChartOptions"
+                                      ChartSeries="@_activityChartData"
+                                      Width="100%"
+                                      AxisChartOptions="_activityAxisChartOptions" />
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" lg="12">
+                    <MudCard Elevation="2" Class="dashboard-card" Style="height:100%;">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" Color="Color.Primary" />
+                                    Warranties Expiring Soon
+                                </MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudDivider />
+                        <MudCardContent Class="pt-4 pb-2">
+                            <MudDataGrid T="Asset" Items="@_warrantyExpiringSoon" Loading="@_loading"
+                                         Hideable="true" Hover="true" Dense="true"
+                                         Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
+                                <ToolBarContent>
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                                               Size="Size.Medium" Class="mx-1">
+                                        Export CSV
+                                    </MudButton>
+                                </ToolBarContent>
+                                <Columns>
+                                    <PropertyColumn Property="x => x.Name" Title="Asset" />
+                                    <PropertyColumn Property="x => x.Category!.Title" Title="Category" />
+                                    <PropertyColumn Property="x => Formatter.FormatDate(x.PurchaseDate)" Title="Purchase Date" />
+                                    <TemplateColumn T="Asset" Title="Warranty">
+                                        <CellTemplate Context="asset">
+                                            @Formatter.RenderWarrantyInfo(asset.Item)
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn T="Asset" Title="Actions" Sortable="false">
+                                        <CellTemplate Context="asset">
+                                            <MudStack Row="true" Spacing="0" Justify="Justify.FlexEnd" Class="entity-actions">
+                                                <MudTooltip Text="View Details">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                          Color="Color.Primary"
+                                                          Size="Size.Small"
+                                                                   OnClick="() => OpenDetails(asset.Item)"
+                                                          Class="entity-action-btn" />
+                                                </MudTooltip>
+                                            </MudStack>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </Authorized>
+        
+        <NotAuthorized>
+            <!-- Welcome screen for non-authenticated users -->
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="text-center">
+                <MudCard Elevation="2" Class="pa-8">
+                    <div class="d-flex flex-column align-center">
+                        <MudImage Src="homehq-welcome.png" Alt="Welcome Image" Width="200" Class="mb-4" />
+                        <MudText Typo="Typo.h3" Class="mb-4">Welcome to @Constants.Application.Name</MudText>
+                        <MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary" Style="text-align: center;">
+                            Streamline your asset management by easily uploading and organizing receipt attachments 
+                            while tracking assets in a centralized system. With intuitive tools for uploading receipts 
+                            and monitoring asset details, the app helps ensure accurate record-keeping and simplifies 
+                            the process of managing both financial documents and physical assets.
+                        </MudText>
+                        <MudStack Row="true" Justify="Justify.Center" Spacing="3">
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large"
+                                      StartIcon="@Icons.Material.Filled.Login"
+                                      OnClick="@(() => Navigation.NavigateTo("/account/login"))">
+                                Sign In
+                            </MudButton>
+                        </MudStack>
+                    </div>
+                </MudCard>
+            </MudContainer>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudContainer>
+
+@code {
+    private bool _loading = true;
+    private int _totalAssets = 0;
+    //private int _totalCategories = 0;
+    private int _expiringWarranties = 0;
+    private List<Asset> _warrantyExpiringSoon = new();
+    private List<Asset> _recentAssets = new();
+
+    //Activity Chart
+    private string[] _activityChartLabels = Array.Empty<string>();
+    private List<ChartSeries> _activityChartData = new();
+    private ChartOptions _activityChartOptions = new() { YAxisTicks = 5, LineStrokeWidth = 4 };
+    private AxisChartOptions _activityAxisChartOptions = new() { XAxisLabelRotation = 15 };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            _loading = true;
+
+            var tasks = new List<Task>
+            {
+                LoadAssets(),
+                LoadHistoryChartDataAsync(),
+                GetWarrantiesExpiringSoon()
+            };
+
+
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            // Handle error silently for dashboard - could add logging here
+            Logger.LogError(ex, "Failed to load dashboard data");
+            Snackbar.Add("Failed to load dashboard data.", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAssets()
+    {
+        // Load assets
+        _totalAssets = await AssetService.CountAsync();
+
+        // Get recent assets (last 5)
+        _recentAssets = (await AssetService.GetAsync(includes: new List<System.Linq.Expressions.Expression<Func<Asset, object>>>
+            {
+                x => x.Category,
+                x => x.WarrantyType
+            },
+        take: 5,
+        orderby: asset => asset.CreatedOn,
+        descending: true
+        )).ToList();
+    }
+
+    private async Task GetWarrantiesExpiringSoon()
+    {
+        var dateFrom = DateTime.UtcNow;
+        var dateTo = DateTime.UtcNow.AddYears(1); //TODO: Set to realistic value
+        _warrantyExpiringSoon = (await AssetService.GetAsync(filter: x => x.WarrantyExpiration.HasValue && x.WarrantyExpiration >= dateFrom && x.WarrantyExpiration <= dateTo,
+                orderby: asset => asset.WarrantyExpiration,
+                descending: true,
+                take: 10,
+                includes: new List<Expression<Func<Asset, object>>> { x => x.Category, x => x.WarrantyType }
+        )).ToList();
+
+        _expiringWarranties = _warrantyExpiringSoon.Count;
+    }
+
+    private async Task LoadHistoryChartDataAsync()
+    {
+        try
+        {
+            // Get all attachments created in the last 12 months
+            var now = DateTime.UtcNow;
+            var firstOfMonth = new DateTime(now.Year, now.Month, 1);
+            var fromDate = firstOfMonth.AddMonths(-11);
+
+            // Prepare labels for the last 12 months
+            var months = Enumerable.Range(0, 12)
+                .Select(i => DateTime.UtcNow.AddMonths(-11 + i))
+                .ToArray();
+
+            _activityChartLabels = months
+                .Select(m => Formatter.FormatDate(m, "MMM yyyy"))
+                .ToArray();
+
+            //Prepare data for the chart
+            var attachGrouped = await AssetService.GetCountByPropertyAsync(a => a.CreatedOn.Year.ToString() + "-" + a.CreatedOn.Month.ToString(), a => a.CreatedOn >= fromDate);
+
+            var attachmentSeriesData = months
+                .Select(m => attachGrouped.TryGetValue($"{m.Year}-{m.Month}", out var count) ? count : 0)
+                .Select(i => (double)i)
+                .ToArray();
+
+            _activityChartData.Clear();
+            _activityChartData.Add(new ChartSeries() { Name = "Assets", Data = attachmentSeriesData, ShowDataMarkers = true });
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error loading history chart data", Severity.Error);
+            Logger.LogError(ex, $"Error loading history chart data");
+        }
+    }
+
+    private void OpenDetails(Asset asset)
+    {
+        var state = NavigationStateHelper.CreateState("/");
+        var encodedState = NavigationStateHelper.Encode(state);
+        var queryString = !string.IsNullOrWhiteSpace(encodedState) ? $"?returnState={Uri.EscapeDataString(encodedState)}" : "";
+        Navigation.NavigateTo($"/assets/{asset.Id}{queryString}");
+    }
+}

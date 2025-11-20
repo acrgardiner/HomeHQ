@@ -1,0 +1,160 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Identity
+@using HomeHQ.Identity
+@using HomeHQ.Services
+
+@inject ISnackbar Snackbar
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ICurrentUserService CurrentUserService
+
+<MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3 d-flex align-center">
+            <img src="logo-transparent.png" alt="Logo" style="height: 32px; width: auto; margin-right: 8px;" />
+            @Constants.Application.Title
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" Edge="Edge.End" />
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu Dense="true" Class="mt-1 ml-4">
+                    <ActivatorContent>
+                        <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudCard Elevation="0" Square="true" Class="mt-n2">
+                            <MudCardHeader>
+                                <CardHeaderAvatar>
+                                    <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body2">@Name</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudDivider />
+                        </MudCard>
+                        <MudDivider Class="mb-2" />
+                        <MudList T="string">
+                            <MudListItem Text="Account" Href="/account/manage" Icon="@Icons.Material.Outlined.Person" />
+                            <MudListItem Text="Logout" Href="/account/logout" Icon="@Icons.Material.Filled.Logout" />
+                        </MudList>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="mt-16 pa-2">
+                @Body
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    private MudTheme? _theme = null;
+    private MudThemeProvider _mudThemeProvider;
+
+    private bool initialized = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _theme = new()
+            {
+                PaletteLight = _lightPalette,
+                PaletteDark = _darkPalette,
+                LayoutProperties = new LayoutProperties()
+            };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !initialized)
+        {
+            initialized = true;
+
+            await _mudThemeProvider.WatchSystemDarkModeAsync(OnSystemPreferenceChanged);
+            _isDarkMode = await _mudThemeProvider.GetSystemDarkModeAsync();
+
+            StateHasChanged();
+        }
+    }
+
+
+    private Task OnSystemPreferenceChanged(bool newValue)
+    {
+        _isDarkMode = newValue;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+    private readonly PaletteLight _lightPalette = new()
+        {
+            Black = "#110e2d",
+            AppbarText = "#424242",
+            AppbarBackground = "rgba(255,255,255,0.8)",
+            DrawerBackground = "#ffffff",
+            GrayLight = "#e8e8e8",
+            GrayLighter = "#f9f9f9",
+        };
+
+    private readonly PaletteDark _darkPalette = new()
+        {
+            Primary = "#7e6fff",
+            Surface = "#1e1e2d",
+            Background = "#1a1a27",
+            BackgroundGray = "#151521",
+            AppbarText = "#92929f",
+            AppbarBackground = "rgba(26,26,39,0.8)",
+            DrawerBackground = "#1a1a27",
+            ActionDefault = "#74718e",
+            ActionDisabled = "#9999994d",
+            ActionDisabledBackground = "#605f6d4d",
+            TextPrimary = "#b2b0bf",
+            TextSecondary = "#92929f",
+            TextDisabled = "#ffffff33",
+            DrawerIcon = "#92929f",
+            DrawerText = "#92929f",
+            GrayLight = "#2a2833",
+            GrayLighter = "#1e1e2d",
+            Info = "#4a86ff",
+            Success = "#3dcb6c",
+            Warning = "#ffb545",
+            Error = "#ff3f5f",
+            LinesDefault = "#33323e",
+            TableLines = "#33323e",
+            Divider = "#292838",
+            OverlayLight = "#1e1e2d80",
+
+        };
+
+    public string DarkLightModeButtonIcon => _isDarkMode ? Icons.Material.Outlined.LightMode : Icons.Material.Outlined.DarkMode;
+
+    private string? Name => CurrentUserService?.UserName;
+    private char? FirstLetterOfName => CurrentUserService?.UserName?.FirstOrDefault();
+}

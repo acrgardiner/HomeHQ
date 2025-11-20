@@ -1,0 +1,141 @@
+﻿@using HomeHQ.Identity
+@using HomeHQ.Services
+@using HomeHQ.Entities
+@implements IDisposable
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject IEntityService<Asset> AssetService
+
+<div class="nav-menu-container">
+    <MudNavMenu Class="custom-nav-menu">
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Class="nav-item-home">
+            <MudText Typo="Typo.body2">Dashboard</MudText>
+        </MudNavLink>
+
+        <AuthorizeView>
+            <Authorized>
+                <!-- Assets Section -->
+                <div class="nav-section">
+                    <MudNavLink Href="/assets" Icon="@Icons.Material.Filled.AccountBox" Class="nav-item">
+                        <div class="d-flex align-center justify-space-between">
+                            <MudText Typo="Typo.body2">Assets</MudText>
+                            <MudChip T="int" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="nav-badge">
+                                @_assetsCount
+                            </MudChip>
+                        </div>
+                    </MudNavLink>
+                </div>
+
+                <!-- Configuration Section -->
+                <div class="nav-section">
+                    <MudNavGroup Title="Setup" Icon="@Icons.Material.Filled.Settings" Expanded="false" Class="nav-group">
+                        <MudNavLink Href="/categories" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Category" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Categories</MudText>
+                        </MudNavLink>
+                        <MudNavLink Href="/warrantytypes" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Verified" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Warranty Types</MudText>
+                        </MudNavLink>
+                        <MudNavLink Href="/attachmenttypes" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AttachFile" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Attachment Types</MudText>
+                        </MudNavLink>
+                    </MudNavGroup>
+                </div>
+            </Authorized>
+
+            <NotAuthorized>
+                <div class="nav-section">
+                    <MudNavLink Href="/account/login" Icon="@Icons.Material.Filled.Login" Class="nav-item">
+                        <MudText Typo="Typo.body2">Sign In</MudText>
+                    </MudNavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="@Roles.Admin.ToString()">
+            <Authorized>
+                <!-- Administration Section -->
+                <div class="nav-section">
+                    <MudNavGroup Title="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true" Class="nav-group">
+                        <MudNavLink Href="/admin/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Analytics" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Admin Dashboard</MudText>
+                        </MudNavLink>
+                        <MudNavLink Href="/admin/users" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.People" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Users</MudText>
+                        </MudNavLink>
+                        <MudNavLink Href="/admin/maintenance" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Build" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Maintenance</MudText>
+                        </MudNavLink>
+                        <MudNavLink Href="/admin/logs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Article" Class="nav-sub-item">
+                            <MudText Typo="Typo.body2">Logs</MudText>
+                        </MudNavLink>
+                    </MudNavGroup>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        <!-- Quick Actions at Bottom -->
+        @*
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-quick-actions mt-auto">
+                    <MudDivider Class="my-2" />
+                    <MudText Typo="Typo.caption" Class="nav-section-header px-4 py-2 mud-text-secondary">
+                        QUICK ACTIONS
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              StartIcon="@Icons.Material.Filled.Add" 
+                              FullWidth="true"
+                              Class="nav-quick-action-btn ma-2"
+                              Size="Size.Small"
+                              OnClick="@(() => NavigationManager.NavigateTo("/assets/create"))">
+                        New Asset
+                    </MudButton>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+        *@
+    </MudNavMenu>
+</div>
+
+@code {
+    private string? currentUrl;
+    private int _assetsCount = 0;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+        // Load assets count for badge
+        _ = LoadAssetCount();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    private async Task LoadAssetCount()
+    {
+        try
+        {
+            // This would ideally come from a service injection
+            // For now, we'll use a placeholder
+            _assetsCount = await AssetService.CountAsync();
+            StateHasChanged();
+        }
+        catch
+        {
+            // Handle silently
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
+

@@ -1,0 +1,62 @@
+﻿@using HomeHQ.Identity
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
+@inject IEntityService<Category> CategoryService
+@inject ISnackbar Snackbar
+@inject ILogger<EditCategory> Logger
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit Category</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model">
+            <MudTextField T="string" @bind-Value="model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
+            <MudTextField T="string" @bind-Value="model.Icon" Label="Icon" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Update</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public required IMudDialogInstance Dialog { get; set; }
+
+    [Parameter] public required Category Entity { get; set; }
+    [Parameter] public required string Title { get; set; }
+
+    private MudForm form;
+    private Category model = new();
+
+    protected override void OnInitialized()
+    {
+        model = Entity;
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (form.IsValid)
+        {
+            try
+            {
+                await CategoryService.UpdateAsync(model);
+                Snackbar.Add("updated successfully", Severity.Success);
+                Dialog.Close(DialogResult.Ok(true));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating");
+                Snackbar.Add("Error updating", Severity.Error);
+            }
+        }
+    }
+}

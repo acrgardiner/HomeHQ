@@ -1,0 +1,93 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using HomeHQ.Identity
+@using HomeHQ.Services
+@using HomeHQ.Entities
+@using HomeHQ.Helpers
+@using System.Linq.Expressions
+
+@attribute [Authorize()]
+
+@inject ISnackbar Snackbar
+@inject IEntityService<Attachment> AttachmentService
+@inject IDialogService DialogService
+@inject ILogger<AttachmentList_view> Logger
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6" Gutters="false">
+    <MudText Typo="Typo.h6" Color="Color.Primary" Class="mb-4">Attachments</MudText>
+    <MudPaper Class="p-4">
+        <MudDataGrid T="Attachment" Items="@_attachments"
+        Hideable="true" Hover="true" Dense="true"
+        Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1" Loading="_loading">
+            <Columns>
+                <PropertyColumn Property="x => x.Extension" />
+                <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" />
+                <PropertyColumn Property="x => x.AttachmentType.Name" />
+                <TemplateColumn T="Attachment" Title="Actions">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="0" Class="pa-2">
+                            <div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Image" Color="Color.Primary" Size="Size.Small" Class="mx-1"
+                                OnClick="@(() => ShowGalleryAsync(context.Item))" />
+                            </div>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="Attachment" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Parameter] public Guid? ParentId { get; set; }
+
+    private List<Attachment> _attachments { get; set; } = new();
+
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAttachments();
+    }
+
+    private async Task ReloadData()
+    {
+        await LoadAttachments();
+    }
+
+    private async Task LoadAttachments()
+    {
+        try
+        {
+            _loading = true;
+            _attachments = (await AttachmentService.GetAsync(
+                filter: x => x.ParentId == ParentId,
+                orderby: x => x.CreatedOn,
+                descending: true,
+                take: 10,
+                includes: new List<Expression<Func<Attachment, object>>> { x => x.AttachmentType }
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading attachments for ParentId {ParentId}", ParentId);
+            Snackbar.Add("Failed to load", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task ShowGalleryAsync(Attachment attachment)
+    {
+        var param = new DialogParameters<ViewImage>()
+        {
+            { x => x.Attachment, attachment }
+        };
+        return DialogService.ShowAsync<ViewImage>("View Attachment", param);
+    }
+}
