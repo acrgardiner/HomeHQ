@@ -55,6 +55,7 @@ try
         .AddHubOptions(options =>
         {
             options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+            options.KeepAliveInterval = TimeSpan.FromMinutes(5);
         });
 
     builder.Services.AddCascadingAuthenticationState();
