@@ -60,14 +60,14 @@ try
             options.KeepAliveInterval = TimeSpan.FromSeconds(15);
         });
 
-    // Configure circuit options for better handling of disconnections
-    builder.Services.AddServerSideBlazor()
-        .AddCircuitOptions(options =>
-        {
-            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
-            options.DisconnectedCircuitMaxRetained = 100;
-            options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
-        });
+    //// Configure circuit options for better handling of disconnections
+    //builder.Services.AddServerSideBlazor()
+    //    .AddCircuitOptions(options =>
+    //    {
+    //        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+    //        options.DisconnectedCircuitMaxRetained = 100;
+    //        options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
+    //    });
 
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<IdentityUserAccessor>();

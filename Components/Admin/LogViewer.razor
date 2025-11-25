@@ -41,6 +41,7 @@
             <PropertyColumn Property="x => x.Level" Title="Level" />
             <PropertyColumn Property="x => x.SourceContext" Title="SourceContext" />
             <PropertyColumn Property="x => x.Message" Title="Message" />
+            <PropertyColumn Property="x => x.Exception" Title="Exception" />
         </Columns>
         <PagerContent>
             <MudDataGridPager T="LogEntry" PageSizeOptions="new int[] { 10, 25, 50, 100, 1000 }" />
@@ -74,6 +75,7 @@
         public string Level { get; set; } = "";
         public string SourceContext { get; set; } = "";
         public string Message { get; set; } = "";
+        public string Exception { get; set; } = "";
     }
 
     protected override async Task OnInitializedAsync()
@@ -120,7 +122,8 @@
                         Timestamp = root.GetProperty("Timestamp").GetString() ?? "",
                         Level = root.GetProperty("Level").GetString() ?? "",
                         SourceContext = root.GetProperty("SourceContext").GetString() ?? "",
-                        Message = root.GetProperty("Message").GetString() ?? ""
+                        Message = root.GetProperty("Message").GetString() ?? "",
+                        Exception = root.TryGetProperty("Exception", out var exProp) ? exProp.GetString() ?? "" : ""
                     };
 
                     allEntries.Add(entry);
@@ -138,7 +141,8 @@
                     Timestamp = "",
                     Level = "Error",
                     SourceContext = "",
-                    Message = $"Failed to read or parse log file: {ex.Message}"
+                    Message = $"Failed to read or parse log file: {ex.Message}",
+                    Exception = ex.ToString()
                 });
                 ApplyFilter();
             }

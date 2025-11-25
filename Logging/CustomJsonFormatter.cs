@@ -21,7 +21,8 @@ namespace HomeHQ.Logging
                 Timestamp = logEvent.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"),
                 Level = logEvent.Level.ToString(),
                 SourceContext = GetPropertyValue(logEvent, "SourceContext"),
-                Message = logEvent.RenderMessage()
+                Message = logEvent.RenderMessage(),
+                Exception = logEvent.Exception
             };
             output.WriteLine(JsonSerializer.Serialize(logObject, _options));
         }
