@@ -54,7 +54,8 @@ try
         .AddInteractiveServerComponents()
         .AddHubOptions(options =>
         {
-            options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+            options.MaximumReceiveMessageSize = 15 * 1024 * 1024;
+            options.KeepAliveInterval = TimeSpan.FromMinutes(2);
         });
 
     builder.Services.AddCascadingAuthenticationState();
