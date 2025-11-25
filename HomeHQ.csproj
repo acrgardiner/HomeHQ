@@ -35,8 +35,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include=".github\workflows" />
     <Folder Include="wwwroot" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".github\workflows\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="@(Content)">
+      <Visible Condition="'%(NuGetItemType)' == 'Content'">false</Visible>
+    </Content>
   </ItemGroup>
 
 </Project>
