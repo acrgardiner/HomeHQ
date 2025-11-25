@@ -61,12 +61,12 @@ try
         });
 
     // Configure circuit options for better handling of disconnections and long-running JS operations
-    builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
-    {
-        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
-        options.DisconnectedCircuitMaxRetained = 100;
-        options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
-    });
+    //builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
+    //{
+    //    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+    //    options.DisconnectedCircuitMaxRetained = 100;
+    //    options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
+    //});
 
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<IdentityUserAccessor>();
