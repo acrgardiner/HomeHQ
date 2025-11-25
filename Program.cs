@@ -55,7 +55,18 @@ try
         .AddHubOptions(options =>
         {
             options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
-            options.KeepAliveInterval = TimeSpan.FromMinutes(5);
+            // Keep connection alive during long operations like camera capture
+            options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+            options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        });
+
+    // Configure circuit options for better handling of disconnections
+    builder.Services.AddServerSideBlazor()
+        .AddCircuitOptions(options =>
+        {
+            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+            options.DisconnectedCircuitMaxRetained = 100;
+            options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
         });
 
     builder.Services.AddCascadingAuthenticationState();
