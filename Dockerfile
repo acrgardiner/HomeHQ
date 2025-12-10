@@ -18,12 +18,12 @@ COPY ["HomeHQ.csproj", "."]
 RUN dotnet restore "./HomeHQ.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "./HomeHQ.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/build
+RUN dotnet build "./HomeHQ.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./HomeHQ.csproj" -c $BUILD_CONFIGURATION --no-restore -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./HomeHQ.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final runtime image
 FROM base AS final
