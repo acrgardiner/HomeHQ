@@ -55,19 +55,27 @@ try
         .AddHubOptions(options =>
         {
             options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
-            // Extended timeouts for camera operations - give users plenty of time
-            options.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
-            options.HandshakeTimeout = TimeSpan.FromSeconds(30);
-            options.KeepAliveInterval = TimeSpan.FromSeconds(10);
         });
 
-    // Configure circuit options for better handling of disconnections and long-running JS operations
-    builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
-    {
-        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(5);
-        options.DisconnectedCircuitMaxRetained = 100;
-        options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(2);
-    });
+    // Add services to the container.
+    //builder.Services.AddRazorComponents()
+    //    .AddInteractiveServerComponents()
+    //    .AddHubOptions(options =>
+    //    {
+    //        options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
+    //        // Extended timeouts for camera operations - give users plenty of time
+    //        options.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
+    //        options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+    //        options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+    //    });
+    //
+    //// Configure circuit options for better handling of disconnections and long-running JS operations
+    //builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
+    //{
+    //    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(5);
+    //    options.DisconnectedCircuitMaxRetained = 100;
+    //    options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(2);
+    //});
 
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddScoped<IdentityUserAccessor>();
