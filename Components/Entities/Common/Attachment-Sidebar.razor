@@ -25,6 +25,13 @@
             <div class="d-flex align-center">
                 <MudIcon Icon="@Icons.Material.Filled.AttachFile" Class="mr-2" Color="Color.Warning" />
                 <MudText Typo="Typo.h6">Attachments</MudText>
+                @if (_connectionLost)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">
+                        <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Small" Class="mr-1" />
+                        Offline - Data Safe
+                    </MudChip>
+                }
             </div>
         </CardHeaderContent>
         <CardHeaderActions>
@@ -56,7 +63,7 @@
                 @if (IsMobile)
                 {
                     <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                   FilesChanged="AddAttachment"
+                                   FilesChanged="AddAttachmentClientSide"
                                    accept="image/*"
                                    Capture="environment">
                         <ActivatorContent>
@@ -64,21 +71,31 @@
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Camera"
                                        FullWidth="true"
-                                       Class="upload-btn">
-                                Take Photo
+                                       Class="upload-btn"
+                                       Disabled="_uploading">
+                                @if (_uploading)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                    <span>Loading...</span>
+                                }
+                                else
+                                {
+                                    <span>Take Photo</span>
+                                }
                             </MudButton>
                         </ActivatorContent>
                     </MudFileUpload>
 
                     <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                   FilesChanged="AddAttachment"
+                                   FilesChanged="AddAttachmentClientSide"
                                    accept="image/*">
                         <ActivatorContent>
                             <MudButton Variant="Variant.Outlined"
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Image"
                                        FullWidth="true"
-                                       Class="upload-btn">
+                                       Class="upload-btn"
+                                       Disabled="_uploading">
                                 From Gallery
                             </MudButton>
                         </ActivatorContent>
@@ -87,7 +104,7 @@
                 else
                 {
                     <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                   FilesChanged="AddAttachment"
+                                   FilesChanged="AddAttachmentClientSide"
                                    accept="image/*,application/pdf">
                         <ActivatorContent>
                             <MudButton Variant="Variant.Filled"
@@ -99,7 +116,7 @@
                                 @if (_uploading)
                                 {
                                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                                    <span>Uploading...</span>
+                                    <span>Loading...</span>
                                 }
                                 else
                                 {
@@ -326,8 +343,9 @@
 
 
     private List<Attachment_wfile> _attachments = new();
-    private const long MaxPreviewSize = 5 * 1024 * 1024;
+    private const long MaxPreviewSize = 30 * 1024 * 1024;
     private bool _uploading = false;
+    private bool _connectionLost = false;
 
     private List<AttachmentType> AttachmentTypes = new();
     private Guid DefaultAttachmentTypeId;
@@ -340,6 +358,10 @@
     private const string EditorContainerId = "image-editor-container";
     private bool _editorInitialized = false;
     private bool _cropModeEnabled = false;
+
+    // Session ID for IndexedDB storage - persists across reconnections via browser
+    private string _sessionId = string.Empty;
+    private bool _storageInitialized = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -374,11 +396,101 @@
 
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeClientStorage();
+        }
+    }
+
+    private async Task InitializeClientStorage()
+    {
+        try
+        {
+            // Generate session ID based on ParentId + ParentType for recovery
+            _sessionId = $"{ParentType}_{ParentId?.ToString() ?? "new"}";
+            
+            // Initialize IndexedDB
+            await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.init");
+            _storageInitialized = true;
+
+            // Check for pending attachments from previous session (recovery after disconnect)
+            await RecoverPendingAttachments();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to initialize client storage - falling back to server-side");
+            _storageInitialized = false;
+        }
+    }
+
+    private async Task RecoverPendingAttachments()
+    {
+        try
+        {
+            var hasPending = await JSRuntime.InvokeAsync<bool>("AttachmentStorageInterop.hasPendingAttachments", _sessionId);
+            
+            if (hasPending)
+            {
+                var pendingItems = await JSRuntime.InvokeAsync<List<ClientStorageItem>>("AttachmentStorageInterop.getSessionAttachments", _sessionId);
+                
+                if (pendingItems?.Any() == true)
+                {
+                    foreach (var item in pendingItems)
+                    {
+                        // Check if we already have this attachment in our list
+                        if (_attachments.Any(a => a.ClientStorageId == item.Id))
+                            continue;
+
+                        var attachment = new Attachment
+                        {
+                            OriginFileName = item.Metadata?.FileName ?? "recovered",
+                            Extension = item.Metadata?.Extension ?? "",
+                            ContentType = item.Metadata?.ContentType ?? "image/jpeg",
+                            FileSize = item.Metadata?.Size ?? 0,
+                            AttachmentTypeId = DefaultAttachmentTypeId,
+                            AttachmentType = DefaultAttachmentType
+                        };
+
+                        var recovered = new Attachment_wfile
+                        {
+                            Attachment = attachment,
+                            IsNew = true,
+                            ClientStorageId = item.Id,
+                            DataUrl = item.DataUrl
+                        };
+
+                        _attachments.Add(recovered);
+                    }
+
+                    if (pendingItems.Count > 0)
+                    {
+                        _connectionLost = false; // We recovered successfully
+                        Snackbar.Add($"Recovered {pendingItems.Count} pending attachment(s)", Severity.Success);
+                        StateHasChanged();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to recover pending attachments");
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_editorInitialized)
         {
-            await JSRuntime.InvokeVoidAsync("ImageEditorInterop.destroy", EditorContainerId);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("ImageEditorInterop.destroy", EditorContainerId);
+            }
+            catch
+            {
+                // Circuit may already be disposed
+            }
         }
     }
 
@@ -406,46 +518,81 @@
         }
     }
 
-    private async Task AddAttachment(IReadOnlyList<IBrowserFile> files)
+    /// <summary>
+    /// New method that stores files client-side in IndexedDB first
+    /// This prevents data loss on SignalR disconnection
+    /// </summary>
+    private async Task AddAttachmentClientSide(IReadOnlyList<IBrowserFile> files)
     {
         _uploading = true;
+        StateHasChanged();
 
         try
         {
-            Snackbar.Add($"Adding attachments...", Severity.Info);
             foreach (var file in files)
             {
                 try
                 {
-                    var fileExtension = Path.GetExtension(file.Name);
-
-                    // Save Attachment entity
-                    var attachment = new Attachment
+                    var clientId = Guid.NewGuid().ToString();
+                    
+                    if (_storageInitialized)
                     {
-                        OriginFileName = file.Name,
-                        Extension = fileExtension,
-                        ContentType = file.ContentType,
-                        FileSize = file.Size,
-                        AttachmentTypeId = DefaultAttachmentTypeId,
-                        AttachmentType = DefaultAttachmentType
-                    };
+                        // Read file and store in IndexedDB client-side
+                        using var stream = file.OpenReadStream(MaxPreviewSize);
+                        using var ms = new MemoryStream();
+                        await stream.CopyToAsync(ms);
+                        var bytes = ms.ToArray();
 
-                    using var stream = file.OpenReadStream(MaxPreviewSize);
-                    using var ms = new MemoryStream();
-                    await stream.CopyToAsync(ms);
+                        // Store in IndexedDB via JS interop
+                        var metadata = new
+                        {
+                            fileName = file.Name,
+                            contentType = file.ContentType,
+                            size = file.Size,
+                            extension = Path.GetExtension(file.Name)
+                        };
 
-                    var bytes = ms.ToArray();
+                        await JSRuntime.InvokeVoidAsync("attachmentStorage.store", 
+                            clientId, 
+                            _sessionId, 
+                            metadata, 
+                            bytes);
 
-                    Attachment_wfile attachmentWithFile = new Attachment_wfile(attachment, bytes) { IsNew = true };
+                        // Get data URL for display
+                        var dataUrl = await JSRuntime.InvokeAsync<string>("AttachmentStorageInterop.getDataUrl", clientId);
 
-                    _attachments.Add(attachmentWithFile);
+                        var attachment = new Attachment
+                        {
+                            OriginFileName = file.Name,
+                            Extension = Path.GetExtension(file.Name),
+                            ContentType = file.ContentType,
+                            FileSize = file.Size,
+                            AttachmentTypeId = DefaultAttachmentTypeId,
+                            AttachmentType = DefaultAttachmentType
+                        };
+
+                        var attachmentWithFile = new Attachment_wfile
+                        {
+                            Attachment = attachment,
+                            IsNew = true,
+                            ClientStorageId = clientId,
+                            DataUrl = dataUrl
+                        };
+
+                        _attachments.Add(attachmentWithFile);
+                        Snackbar.Add($"Photo loaded (stored locally)", Severity.Success);
+                    }
+                    else
+                    {
+                        // Fallback: store in server memory (original behavior)
+                        await AddAttachmentServerSide(file);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Snackbar.Add($"Failed to upload {file.Name}: {ex.Message}", Severity.Error);
+                    Logger.LogError(ex, "Failed to add attachment {FileName}", file.Name);
+                    Snackbar.Add($"Failed to load {file.Name}: {ex.Message}", Severity.Error);
                 }
-
-                Snackbar.Add($"Attachments loaded", Severity.Success);
             }
         }
         finally
@@ -455,32 +602,97 @@
         }
     }
 
+    /// <summary>
+    /// Fallback method for when IndexedDB is not available
+    /// </summary>
+    private async Task AddAttachmentServerSide(IBrowserFile file)
+    {
+        var fileExtension = Path.GetExtension(file.Name);
+
+        var attachment = new Attachment
+        {
+            OriginFileName = file.Name,
+            Extension = fileExtension,
+            ContentType = file.ContentType,
+            FileSize = file.Size,
+            AttachmentTypeId = DefaultAttachmentTypeId,
+            AttachmentType = DefaultAttachmentType
+        };
+
+        using var stream = file.OpenReadStream(MaxPreviewSize);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        var bytes = ms.ToArray();
+
+        var attachmentWithFile = new Attachment_wfile(attachment, bytes) { IsNew = true };
+        _attachments.Add(attachmentWithFile);
+        
+        Snackbar.Add($"Photo loaded", Severity.Success);
+    }
+
     public async Task<bool> SaveAttachments(Guid Id)
     {
         try
         {
             foreach (var item in _attachments)
             {
-                if (item.IsNew && item.FileBytes is not null)
+                byte[]? bytes = null;
+
+                // Get bytes from appropriate source
+                if (item.ClientStorageId != null && _storageInitialized)
+                {
+                    // Get bytes from IndexedDB
+                    var byteArray = await JSRuntime.InvokeAsync<int[]?>("AttachmentStorageInterop.getImageBytes", item.ClientStorageId);
+                    if (byteArray != null)
+                    {
+                        bytes = byteArray.Select(i => (byte)i).ToArray();
+                    }
+                }
+                else if (item.FileBytes != null)
+                {
+                    // Fallback to server-side bytes
+                    bytes = item.FileBytes;
+                }
+
+                if (item.IsNew && bytes != null)
                 {
                     item.Attachment.ParentId = Id;
                     item.Attachment.ParentType = ParentType!;
-                    await FileStorageService.UploadAsync<Asset>(item.FileBytes, item.Attachment);
+                    await FileStorageService.UploadAsync<Asset>(bytes, item.Attachment);
 
                     var uploadedAttachment = await AttachmentService.AddAsync(item.Attachment);
+
+                    // Clear from IndexedDB after successful save
+                    if (item.ClientStorageId != null && _storageInitialized)
+                    {
+                        await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.remove", item.ClientStorageId);
+                    }
                 }
 
-                if (!item.IsNew && item.FileBytes is not null)
+                if (!item.IsNew && bytes != null)
                 {
-                    //if edited, flag old attachment for deletion and re-upload
+                    // If edited, flag old attachment for deletion and re-upload
                     var newAttachment = new Attachment(item.Attachment);
                     await AttachmentService.DeleteAsync(item.Attachment.Id);
 
-                    await FileStorageService.UploadAsync<Asset>(item.FileBytes, newAttachment);
+                    await FileStorageService.UploadAsync<Asset>(bytes, newAttachment);
 
                     var uploadedAttachment = await AttachmentService.AddAsync(newAttachment);
+
+                    // Clear from IndexedDB after successful save
+                    if (item.ClientStorageId != null && _storageInitialized)
+                    {
+                        await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.remove", item.ClientStorageId);
+                    }
                 }
             }
+
+            // Clear entire session from IndexedDB
+            if (_storageInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.clearSession", _sessionId);
+            }
+
             _attachments.Clear();
             return true;
         }
@@ -496,14 +708,45 @@
         }
     }
 
-    private void Remove(Attachment_wfile item)
+    private async Task Remove(Attachment_wfile item)
     {
-        if (item.FileBytes == null)
+        if (item.ClientStorageId != null && _storageInitialized)
+        {
+            // Remove from IndexedDB
+            await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.remove", item.ClientStorageId);
+        }
+        
+        if (item.FileBytes == null && item.ClientStorageId == null)
         {
             // Attachment is on server, remove from database
-            AttachmentService.DeleteAsync(item.Attachment.Id);
-        };
+            await AttachmentService.DeleteAsync(item.Attachment.Id);
+        }
+        
         _attachments.Remove(item);
+        
+        // Adjust index if needed
+        if (_currentAttachmentIndex >= _attachments.Count && _attachments.Count > 0)
+        {
+            _currentAttachmentIndex = _attachments.Count - 1;
+        }
+    }
+
+    /// <summary>
+    /// DTO for receiving data from IndexedDB
+    /// </summary>
+    class ClientStorageItem
+    {
+        public string Id { get; set; } = "";
+        public ClientStorageMetadata? Metadata { get; set; }
+        public string? DataUrl { get; set; }
+    }
+
+    class ClientStorageMetadata
+    {
+        public string? FileName { get; set; }
+        public string? ContentType { get; set; }
+        public long Size { get; set; }
+        public string? Extension { get; set; }
     }
 
     class Attachment_wfile
@@ -511,6 +754,10 @@
         public Attachment Attachment;
         public byte[]? FileBytes;
         public bool IsNew = false;
+        
+        // Client-side storage support
+        public string? ClientStorageId;
+        public string? DataUrl;
 
         public Attachment_wfile()
         {
@@ -526,30 +773,38 @@
 
         public string GetImageUrl()
         {
-            if (FileBytes == null)
+            // Priority: DataUrl (from IndexedDB) -> FileBytes (server memory) -> Server URL
+            if (!string.IsNullOrEmpty(DataUrl))
             {
-                //Attachment is on server use URL
-                return $"/api/uploads/{Attachment!.Id}";
+                return DataUrl;
             }
-            else
+            
+            if (FileBytes != null)
             {
                 var base64 = Convert.ToBase64String(FileBytes);
                 return $"data:{Attachment.ContentType};base64,{base64}";
             }
+            
+            // Attachment is on server, use URL
+            return $"/api/uploads/{Attachment!.Id}";
         }
 
         public string GetImagePreviewUrl()
         {
-            if (FileBytes == null)
+            // For new attachments, use the same URL as full image
+            if (!string.IsNullOrEmpty(DataUrl))
             {
-                //Attachment is on server use URL
-                return $"/api/uploads/{Attachment!.Id}/preview";
+                return DataUrl;
             }
-            else
+            
+            if (FileBytes != null)
             {
                 var base64 = Convert.ToBase64String(FileBytes);
                 return $"data:{Attachment!.ContentType};base64,{base64}";
             }
+            
+            // Attachment is on server, use preview URL
+            return $"/api/uploads/{Attachment!.Id}/preview";
         }
     }
 
@@ -638,9 +893,26 @@
                 
                 if (imageDataArray != null)
                 {
-                    var croppedCanvasData = imageDataArray.Select(i => (byte)i).ToArray();
                     var attachment = _attachments[_currentAttachmentIndex];
-                    attachment.FileBytes = croppedCanvasData;
+                    
+                    if (attachment.ClientStorageId != null && _storageInitialized)
+                    {
+                        // Update in IndexedDB and get new data URL
+                        var newDataUrl = await JSRuntime.InvokeAsync<string>("AttachmentStorageInterop.updateImageData", 
+                            attachment.ClientStorageId, 
+                            imageDataArray);
+                        
+                        attachment.DataUrl = newDataUrl;
+                        
+                        // Update file size
+                        attachment.Attachment.FileSize = imageDataArray.Length;
+                    }
+                    else
+                    {
+                        // Fallback: store in server memory
+                        var croppedCanvasData = imageDataArray.Select(i => (byte)i).ToArray();
+                        attachment.FileBytes = croppedCanvasData;
+                    }
                     
                     Snackbar.Add("Image saved successfully", Severity.Success);
                 }
