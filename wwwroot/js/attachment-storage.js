@@ -195,6 +195,127 @@ class AttachmentStorage {
 // Global instance
 window.attachmentStorage = new AttachmentStorage();
 
+// Camera capture that bypasses Blazor's file handling entirely
+window.CameraCapture = {
+    // Hidden file input element
+    _input: null,
+    _resolveCapture: null,
+    _sessionId: null,
+
+    // Initialize hidden input element
+    init: function() {
+        if (this._input) return;
+
+        this._input = document.createElement('input');
+        this._input.type = 'file';
+        this._input.accept = 'image/*';
+        this._input.style.display = 'none';
+        this._input.id = 'camera-capture-input';
+        document.body.appendChild(this._input);
+
+        this._input.addEventListener('change', async (e) => {
+            if (this._resolveCapture && e.target.files && e.target.files.length > 0) {
+                try {
+                    const results = [];
+                    for (const file of e.target.files) {
+                        const result = await this._processFile(file);
+                        results.push(result);
+                    }
+                    this._resolveCapture(results);
+                } catch (error) {
+                    console.error('Camera capture error:', error);
+                    this._resolveCapture(null);
+                }
+            } else {
+                // User cancelled
+                this._resolveCapture(null);
+            }
+            // Reset input for next use
+            this._input.value = '';
+        });
+    },
+
+    // Process a single file - read and store in IndexedDB
+    _processFile: async function(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = async () => {
+                try {
+                    const arrayBuffer = reader.result;
+                    const bytes = new Uint8Array(arrayBuffer);
+                    const id = crypto.randomUUID();
+
+                    const metadata = {
+                        fileName: file.name,
+                        contentType: file.type || 'image/jpeg',
+                        size: file.size,
+                        extension: file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '.jpg'
+                    };
+
+                    // Store in IndexedDB
+                    await window.attachmentStorage.store(id, this._sessionId, metadata, Array.from(bytes));
+
+                    // Get data URL for display
+                    const record = await window.attachmentStorage.get(id);
+                    const dataUrl = window.attachmentStorage.getDataUrl(record);
+
+                    resolve({
+                        id: id,
+                        metadata: metadata,
+                        dataUrl: dataUrl
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(file);
+        });
+    },
+
+    // Open camera (with capture attribute)
+    openCamera: function(sessionId) {
+        this.init();
+        this._sessionId = sessionId;
+        this._input.capture = 'environment'; // Use back camera
+        this._input.multiple = false;
+
+        return new Promise((resolve) => {
+            this._resolveCapture = resolve;
+            this._input.click();
+        });
+    },
+
+    // Open gallery (no capture attribute)
+    openGallery: function(sessionId, multiple = false) {
+        this.init();
+        this._sessionId = sessionId;
+        this._input.removeAttribute('capture');
+        this._input.multiple = multiple;
+
+        return new Promise((resolve) => {
+            this._resolveCapture = resolve;
+            this._input.click();
+        });
+    },
+
+    // Open file picker for any file type
+    openFilePicker: function(sessionId, accept = 'image/*,application/pdf', multiple = true) {
+        this.init();
+        this._sessionId = sessionId;
+        this._input.accept = accept;
+        this._input.removeAttribute('capture');
+        this._input.multiple = multiple;
+
+        return new Promise((resolve) => {
+            this._resolveCapture = resolve;
+            this._input.click();
+        });
+    }
+};
+
 // Interop functions for .NET
 window.AttachmentStorageInterop = {
     // Initialize and cleanup old entries

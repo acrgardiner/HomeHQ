@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
 @using HomeHQ.Services
 @using HomeHQ.Entities
 @using HomeHQ.Components.Entities.Common
@@ -57,74 +58,59 @@
     </MudCardHeader>
     <MudDivider />
     <MudCardContent>
-        <!-- Upload Buttons -->
+        <!-- Upload Buttons - Using JavaScript-based capture to avoid SignalR dependency -->
         <MudStack Spacing="2" Class="mb-4">
             @if(!ReadOnly){
                 @if (IsMobile)
                 {
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                   FilesChanged="AddAttachmentClientSide"
-                                   accept="image/*"
-                                   Capture="environment">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Camera"
-                                       FullWidth="true"
-                                       Class="upload-btn"
-                                       Disabled="_uploading">
-                                @if (_uploading)
-                                {
-                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                                    <span>Loading...</span>
-                                }
-                                else
-                                {
-                                    <span>Take Photo</span>
-                                }
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
+                    <!-- Pure JS camera capture - no SignalR needed during photo taking -->
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Camera"
+                               FullWidth="true"
+                               Class="upload-btn"
+                               Disabled="_uploading"
+                               OnClick="OpenCameraJS">
+                        @if (_uploading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Loading...</span>
+                        }
+                        else
+                        {
+                            <span>Take Photo</span>
+                        }
+                    </MudButton>
 
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                   FilesChanged="AddAttachmentClientSide"
-                                   accept="image/*">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Outlined"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.Image"
-                                       FullWidth="true"
-                                       Class="upload-btn"
-                                       Disabled="_uploading">
-                                From Gallery
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Image"
+                               FullWidth="true"
+                               Class="upload-btn"
+                               Disabled="_uploading"
+                               OnClick="OpenGalleryJS">
+                        From Gallery
+                    </MudButton>
                 }
                 else
                 {
-                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
-                                   FilesChanged="AddAttachmentClientSide"
-                                   accept="image/*,application/pdf">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.CloudUpload"
-                                       FullWidth="true"
-                                       Class="upload-btn"
-                                       Disabled="_uploading">
-                                @if (_uploading)
-                                {
-                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                                    <span>Loading...</span>
-                                }
-                                else
-                                {
-                                    <span>Upload Files</span>
-                                }
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               FullWidth="true"
+                               Class="upload-btn"
+                               Disabled="_uploading"
+                               OnClick="OpenFilePickerJS">
+                        @if (_uploading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Loading...</span>
+                        }
+                        else
+                        {
+                            <span>Upload Files</span>
+                        }
+                    </MudButton>
                 }
             }
         </MudStack>
@@ -519,8 +505,107 @@
     }
 
     /// <summary>
-    /// New method that stores files client-side in IndexedDB first
-    /// This prevents data loss on SignalR disconnection
+    /// Opens camera using pure JavaScript - no SignalR connection needed during capture
+    /// The entire flow (camera -> file read -> IndexedDB storage) happens client-side
+    /// </summary>
+    private async Task OpenCameraJS()
+    {
+        await CaptureViaJavaScript("camera");
+    }
+
+    /// <summary>
+    /// Opens gallery using pure JavaScript - no SignalR connection needed
+    /// </summary>
+    private async Task OpenGalleryJS()
+    {
+        await CaptureViaJavaScript("gallery");
+    }
+
+    /// <summary>
+    /// Opens file picker using pure JavaScript - no SignalR connection needed
+    /// </summary>
+    private async Task OpenFilePickerJS()
+    {
+        await CaptureViaJavaScript("file");
+    }
+
+    /// <summary>
+    /// Unified JavaScript capture method - bypasses Blazor file handling entirely
+    /// </summary>
+    private async Task CaptureViaJavaScript(string mode)
+    {
+        if (!_storageInitialized)
+        {
+            Snackbar.Add("Storage not ready, please try again", Severity.Warning);
+            return;
+        }
+
+        _uploading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Call JavaScript to handle camera/gallery/file picker
+            // The entire file read and IndexedDB storage happens in JS
+            // Only the result metadata comes back through SignalR
+            List<ClientStorageItem>? results = mode switch
+            {
+                "camera" => await JSRuntime.InvokeAsync<List<ClientStorageItem>?>("CameraCapture.openCamera", _sessionId),
+                "gallery" => await JSRuntime.InvokeAsync<List<ClientStorageItem>?>("CameraCapture.openGallery", _sessionId, false),
+                "file" => await JSRuntime.InvokeAsync<List<ClientStorageItem>?>("CameraCapture.openFilePicker", _sessionId, "image/*,application/pdf", true),
+                _ => null
+            };
+
+            if (results != null && results.Any())
+            {
+                foreach (var result in results)
+                {
+                    var attachment = new Attachment
+                    {
+                        OriginFileName = result.Metadata?.FileName ?? "photo.jpg",
+                        Extension = result.Metadata?.Extension ?? ".jpg",
+                        ContentType = result.Metadata?.ContentType ?? "image/jpeg",
+                        FileSize = result.Metadata?.Size ?? 0,
+                        AttachmentTypeId = DefaultAttachmentTypeId,
+                        AttachmentType = DefaultAttachmentType
+                    };
+
+                    var attachmentWithFile = new Attachment_wfile
+                    {
+                        Attachment = attachment,
+                        IsNew = true,
+                        ClientStorageId = result.Id,
+                        DataUrl = result.DataUrl
+                    };
+
+                    _attachments.Add(attachmentWithFile);
+                }
+
+                Snackbar.Add($"{results.Count} photo(s) captured", Severity.Success);
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit disconnected during capture, but that's OK!
+            // The photo is already in IndexedDB, will be recovered on reconnect
+            _connectionLost = true;
+            Logger.LogWarning("Circuit disconnected during capture - data is safe in IndexedDB");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to capture via JavaScript");
+            Snackbar.Add($"Failed to capture: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Legacy method that stores files client-side in IndexedDB first
+    /// Kept for backwards compatibility but new code uses CaptureViaJavaScript
     /// </summary>
     private async Task AddAttachmentClientSide(IReadOnlyList<IBrowserFile> files)
     {
