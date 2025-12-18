@@ -28,9 +28,9 @@
                 <MudText Typo="Typo.h6">Attachments</MudText>
                 @if (_connectionLost)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-2" OnClick="ManualReconnect" title="Click to retry">
                         <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Small" Class="mr-1" />
-                        Offline - Data Safe
+                        Tap to Reconnect
                     </MudChip>
                 }
             </div>
@@ -348,6 +348,9 @@
     // Session ID for IndexedDB storage - persists across reconnections via browser
     private string _sessionId = string.Empty;
     private bool _storageInitialized = false;
+    
+    // Reference for JS callbacks
+    private DotNetObjectReference<Attachment_Sidebar>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -401,6 +404,10 @@
             await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.init");
             _storageInitialized = true;
 
+            // Register for reconnection notifications
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("BlazorReconnect.register", _dotNetRef);
+
             // Check for pending attachments from previous session (recovery after disconnect)
             await RecoverPendingAttachments();
         }
@@ -409,6 +416,56 @@
             Logger.LogWarning(ex, "Failed to initialize client storage - falling back to server-side");
             _storageInitialized = false;
         }
+    }
+
+    /// <summary>
+    /// Called from JavaScript when the Blazor circuit reconnects
+    /// </summary>
+    [JSInvokable]
+    public async Task OnCircuitReconnected()
+    {
+        Logger.LogInformation("Circuit reconnected - recovering state");
+        await PerformRecovery();
+    }
+
+    /// <summary>
+    /// Manual reconnection trigger - user can tap to force recovery
+    /// </summary>
+    private async Task ManualReconnect()
+    {
+        Logger.LogInformation("Manual reconnection triggered by user");
+        Snackbar.Add("Reconnecting...", Severity.Info);
+        await PerformRecovery();
+    }
+
+    /// <summary>
+    /// Shared recovery logic for both automatic and manual reconnection
+    /// </summary>
+    private async Task PerformRecovery()
+    {
+        // Reset UI state
+        _uploading = false;
+        _connectionLost = false;
+        
+        // Re-initialize storage if needed
+        if (!_storageInitialized)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("AttachmentStorageInterop.init");
+                _storageInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to reinitialize storage on reconnect");
+            }
+        }
+
+        // Recover any pending attachments from IndexedDB
+        await RecoverPendingAttachments();
+        
+        // Force UI update
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task RecoverPendingAttachments()
@@ -423,16 +480,25 @@
                 
                 if (pendingItems?.Any() == true)
                 {
+                    int recoveredCount = 0;
+                    
                     foreach (var item in pendingItems)
                     {
                         // Check if we already have this attachment in our list
                         if (_attachments.Any(a => a.ClientStorageId == item.Id))
                             continue;
 
+                        // Skip if no valid data URL (corrupted entry)
+                        if (string.IsNullOrEmpty(item.DataUrl))
+                        {
+                            Logger.LogWarning("Skipping corrupted entry {Id}", item.Id);
+                            continue;
+                        }
+
                         var attachment = new Attachment
                         {
-                            OriginFileName = item.Metadata?.FileName ?? "recovered",
-                            Extension = item.Metadata?.Extension ?? "",
+                            OriginFileName = item.Metadata?.FileName ?? "recovered.jpg",
+                            Extension = item.Metadata?.Extension ?? ".jpg",
                             ContentType = item.Metadata?.ContentType ?? "image/jpeg",
                             FileSize = item.Metadata?.Size ?? 0,
                             AttachmentTypeId = DefaultAttachmentTypeId,
@@ -448,25 +514,41 @@
                         };
 
                         _attachments.Add(recovered);
+                        recoveredCount++;
                     }
 
-                    if (pendingItems.Count > 0)
+                    if (recoveredCount > 0)
                     {
-                        _connectionLost = false; // We recovered successfully
-                        Snackbar.Add($"Recovered {pendingItems.Count} pending attachment(s)", Severity.Success);
-                        StateHasChanged();
+                        Snackbar.Add($"Recovered {recoveredCount} pending photo(s)", Severity.Success);
                     }
                 }
             }
+            
+            // Always reset these states after recovery attempt
+            _connectionLost = false;
+            _uploading = false;
         }
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Failed to recover pending attachments");
+            // Still reset states even on error
+            _connectionLost = false;
+            _uploading = false;
         }
     }
 
     public async ValueTask DisposeAsync()
     {
+        try
+        {
+            // Unregister from reconnection notifications
+            await JSRuntime.InvokeVoidAsync("BlazorReconnect.unregister");
+        }
+        catch
+        {
+            // Circuit may already be disposed
+        }
+
         if (_editorInitialized)
         {
             try
@@ -478,6 +560,8 @@
                 // Circuit may already be disposed
             }
         }
+        
+        _dotNetRef?.Dispose();
     }
 
     private void NextAttachment()

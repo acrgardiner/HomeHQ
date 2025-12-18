@@ -195,6 +195,126 @@ class AttachmentStorage {
 // Global instance
 window.attachmentStorage = new AttachmentStorage();
 
+// Blazor reconnection handler
+window.BlazorReconnect = {
+    _dotNetRef: null,
+    _isConnected: true,
+    _monitorInterval: null,
+    _reconnectAttempts: 0,
+
+    // Register a .NET component to receive reconnection notifications
+    register: function(dotNetRef) {
+        this._dotNetRef = dotNetRef;
+        this._isConnected = true;
+        this._reconnectAttempts = 0;
+        
+        // Start monitoring for disconnection/reconnection
+        this._startConnectionMonitor();
+        
+        // Also observe the reconnect modal for changes
+        this._observeReconnectModal();
+    },
+
+    unregister: function() {
+        this._dotNetRef = null;
+        if (this._monitorInterval) {
+            clearInterval(this._monitorInterval);
+            this._monitorInterval = null;
+        }
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
+    },
+
+    _observeReconnectModal: function() {
+        // Use MutationObserver to detect when reconnect modal appears/disappears
+        const targetNode = document.body;
+        const config = { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] };
+
+        this._observer = new MutationObserver((mutations) => {
+            this._checkConnectionState();
+        });
+
+        this._observer.observe(targetNode, config);
+    },
+
+    _startConnectionMonitor: function() {
+        // Check connection status periodically as backup
+        if (this._monitorInterval) {
+            clearInterval(this._monitorInterval);
+        }
+        
+        this._monitorInterval = setInterval(() => {
+            this._checkConnectionState();
+        }, 500); // Check every 500ms for faster detection
+    },
+
+    _checkConnectionState: function() {
+        const wasConnected = this._isConnected;
+        
+        // Check multiple indicators of disconnection
+        const reconnectModal = document.getElementById('components-reconnect-modal');
+        const reconnectShow = reconnectModal && 
+            (reconnectModal.classList.contains('components-reconnect-show') ||
+             getComputedStyle(reconnectModal).display !== 'none');
+        
+        // Also check for the "Attempting to reconnect" text
+        const reconnectingText = document.querySelector('.components-reconnect-show');
+        
+        const isDisconnected = reconnectShow || !!reconnectingText;
+        this._isConnected = !isDisconnected;
+
+        // Detect state changes
+        if (wasConnected && !this._isConnected) {
+            console.log('Blazor connection lost');
+            this._reconnectAttempts = 0;
+        } else if (!wasConnected && this._isConnected) {
+            console.log('Blazor connection restored');
+            this._onReconnected();
+        }
+    },
+
+    _onReconnected: async function() {
+        this._reconnectAttempts++;
+        console.log('Blazor reconnected (attempt ' + this._reconnectAttempts + ') - notifying components');
+        
+        // Small delay to ensure Blazor is fully ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (this._dotNetRef) {
+            try {
+                await this._dotNetRef.invokeMethodAsync('OnCircuitReconnected');
+            } catch (e) {
+                console.warn('Failed to notify .NET of reconnection:', e);
+                // Retry after a short delay
+                setTimeout(() => this._retryNotification(), 500);
+            }
+        }
+    },
+
+    _retryNotification: async function() {
+        if (this._dotNetRef && this._isConnected) {
+            try {
+                await this._dotNetRef.invokeMethodAsync('OnCircuitReconnected');
+                console.log('Retry notification succeeded');
+            } catch (e) {
+                console.warn('Retry notification failed:', e);
+            }
+        }
+    },
+
+    // Check if we're currently connected
+    isConnected: function() {
+        return this._isConnected;
+    },
+
+    // Manual trigger for testing
+    triggerReconnected: async function() {
+        await this._onReconnected();
+    }
+};
+
 // Camera capture that bypasses Blazor's file handling entirely
 window.CameraCapture = {
     // Hidden file input element
