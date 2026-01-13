@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 
 namespace HomeHQ.Services;
 
-public interface IEntityService<T> where T : AuditableEntity, IEntity
+public interface IEntityService<T> where T : IAuditableEntity, IEntity
 {
     Task<IEnumerable<T>> GetAllAsync();
     Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null);

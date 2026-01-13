@@ -236,29 +236,34 @@
 <MudDialog style="width: 100%; height: 100%" @bind-Visible="_dialogVisible" Options="_maxWidthOptions">
     <TitleContent>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachment</MudText>
-            <div class="d-flex align-center gap-2">
-                @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment) && !ReadOnly/* && _attachments[_currentAttachmentIndex].FileBytes != null*/)
-                {
-                    <MudIconButton Icon="@Icons.Material.Filled.RotateLeft" OnClick="@(() => Rotate(-90))" title="Rotate Left" />
-                    <MudIconButton Icon="@Icons.Material.Filled.RotateRight" OnClick="@(() => Rotate(90))" title="Rotate Right" />
-                    <MudIconButton Icon="@(_cropModeEnabled ? Icons.Material.Filled.Crop : Icons.Material.Filled.CropFree)" 
-                                   Color="@(_cropModeEnabled ? Color.Success : Color.Default)"
-                                   OnClick="@ToggleCropMode"
-                                   title="@(_cropModeEnabled ? "Disable Crop" : "Enable Crop")" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Primary" OnClick="@(async () => await AcceptCrop())" title="Save" />
-                }
-                @if (ReadOnly)
-                {
-                    <MudIconButton Icon="@(_imageFitMode == ImageFitMode.Width ? Icons.Material.Filled.PhotoSizeSelectLarge : Icons.Material.Filled.PhotoSizeSelectSmall)"
-                                   Color="Color.Primary"
-                                   OnClick="@ToggleImageFitMode"
-                                   title="Switch Fill Mode" />
-                }
-                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Primary" OnClick="@(async () => await ImageDialogClose())" title="Close" />
-            </div>
+            <MudGrid Spacing="3">
+                <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachment</MudText>
+                
+            </MudGrid>
         </div>
     </TitleContent>
+    <DialogActions>
+        <div class="d-flex align-center gap-2">
+            @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment) && !ReadOnly/* && _attachments[_currentAttachmentIndex].FileBytes != null*/)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.RotateLeft" OnClick="@(() => Rotate(-90))" title="Rotate Left" />
+                <MudIconButton Icon="@Icons.Material.Filled.RotateRight" OnClick="@(() => Rotate(90))" title="Rotate Right" />
+                <MudIconButton Icon="@(_cropModeEnabled? Icons.Material.Filled.Crop : Icons.Material.Filled.CropFree)"
+                               Color="@(_cropModeEnabled ? Color.Success : Color.Default)"
+                               OnClick="@ToggleCropMode"
+                               title="@(_cropModeEnabled ? "Disable Crop" : "Enable Crop")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Primary" OnClick="@(async () => await AcceptCrop())" title="Save" />
+            }
+            @if (ReadOnly)
+            {
+                <MudIconButton Icon="@(_imageFitMode == ImageFitMode.Width ? Icons.Material.Filled.PhotoSizeSelectLarge : Icons.Material.Filled.PhotoSizeSelectSmall)"
+                               Color="Color.Primary"
+                               OnClick="@ToggleImageFitMode"
+                               title="Switch Fill Mode" />
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Primary" OnClick="@(async () => await ImageDialogClose())" title="Close" />
+        </div>
+    </DialogActions>
     <DialogContent>
         <MudContainer Fixed="true" style="height: 90%;">
             @if (IsImageAttachment(_attachments[_currentAttachmentIndex].Attachment))
@@ -955,7 +960,7 @@
             }
             
             // Attachment is on server, use URL
-            return $"/api/uploads/{Attachment!.Id}";
+            return $"/api/attachments/{Attachment!.Id}/data";
         }
 
         public string GetImagePreviewUrl()
@@ -973,18 +978,18 @@
             }
             
             // Attachment is on server, use preview URL
-            return $"/api/uploads/{Attachment!.Id}/preview";
+            return $"/api/attachments/{Attachment!.Id}/previewdata";
         }
     }
 
-    private bool IsImageAttachment(Attachment attachment)
+    private bool IsImageAttachment(Attachment attachment) //TODO: Make common
     {
         return !string.IsNullOrEmpty(attachment.ContentType) && attachment.ContentType.StartsWith("image/");
     }
 
     private async Task NavigateToAttachment(Attachment attachment)
     {
-        await JSRuntime.InvokeVoidAsync("open", $"/api/uploads/{attachment.Id}", "_blank");
+        await JSRuntime.InvokeVoidAsync("open", $"/api/attachments/{attachment.Id}/data", "_blank");
     }
 
     private string GetAttachmentIcon(Attachment attachment)

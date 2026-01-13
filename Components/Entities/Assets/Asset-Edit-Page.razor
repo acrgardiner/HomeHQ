@@ -1,4 +1,4 @@
-﻿@page "/assets/edit/{Id:guid}"
+﻿@page "/assets/{Id:guid}/edit"
 @using HomeHQ.Entities
 @using HomeHQ.Services
 @using HomeHQ.Helpers
@@ -44,7 +44,7 @@
                 <MudFab Color="Color.Primary"
                     ButtonType="ButtonType.Submit"
                     StartIcon="@Icons.Material.Filled.Save"
-                    Class="asset-action-btn" />
+                    Size="Size.Small"/>
             </MudStack>
         </div>
 

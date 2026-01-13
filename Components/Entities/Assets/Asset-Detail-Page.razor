@@ -39,11 +39,11 @@
             <MudFab Color="Color.Primary"
                       StartIcon="@Icons.Material.Filled.Edit"
                       OnClick="OpenEdit"
-                      Class="entity-action-btn" />
+                      Size="Size.Small" />
             <MudFab Color="Color.Error"
                       StartIcon="@Icons.Material.Filled.Delete"
                       OnClick="OpenDeleteDialog"
-                      Class="entity-action-btn" />
+                    Size="Size.Small" />
         </MudStack>
     </div>
 
@@ -385,7 +385,7 @@
         {
             // Pass along the return state to the edit page
             var queryString = !string.IsNullOrWhiteSpace(ReturnState) ? $"?returnState={Uri.EscapeDataString(ReturnState)}" : "";
-            Navigation.NavigateTo($"/assets/edit/{asset.Id}{queryString}");
+            Navigation.NavigateTo($"/assets/{asset.Id}/edit{queryString}");
         }
     }
 

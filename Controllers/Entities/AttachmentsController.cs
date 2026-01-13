@@ -3,25 +3,24 @@ using Microsoft.AspNetCore.Mvc;
 using HomeHQ.Entities;
 using HomeHQ.Services;
 
-namespace HomeHQ.Controllers;
+namespace HomeHQ.Api.Controllers;
 
 [ApiController]
-[Route("api/uploads")]
-public class AttachmentFileController : ControllerBase
+[Route("api/[controller]")]
+[Authorize]
+public class AttachmentsController : PolymorphicEntitiesController<Attachment>
 {
     private readonly IWebHostEnvironment _env;
-    private readonly IEntityService<Attachment> _attachmentService;
-    public AttachmentFileController(IWebHostEnvironment env, IEntityService<Entities.Attachment> attachmentService)
+    public AttachmentsController(IWebHostEnvironment env, IEntityService<Attachment> attachmentService) : base(attachmentService)
     {
         _env = env;
-        _attachmentService = attachmentService;
     }
 
-    [HttpGet("{attachmentId}")]
+    [HttpGet("{attachmentId}/data")]
     [Authorize]
     public async Task<IActionResult> GetFile(string attachmentId)
     {
-        var attachment = await _attachmentService.GetByIdAsync(Guid.Parse(attachmentId));
+        var attachment = await _entityService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
             return NotFound();
@@ -36,11 +35,11 @@ public class AttachmentFileController : ControllerBase
         return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
     }
 
-    [HttpGet("{attachmentId}/preview")]
+    [HttpGet("{attachmentId}/previewdata")]
     [Authorize]
     public async Task<IActionResult> GetFilePreview(string attachmentId)
     {
-        var attachment = await _attachmentService.GetByIdAsync(Guid.Parse(attachmentId));
+        var attachment = await _entityService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
             return NotFound();

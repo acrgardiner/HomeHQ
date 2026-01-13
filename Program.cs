@@ -125,7 +125,10 @@ try
     Directory.CreateDirectory(Path.Combine("appdata", "thumbs"));
     Directory.CreateDirectory(Path.Combine("appdata", "db"));
 
-    builder.Services.AddControllers();
+    builder.Services.AddControllers(options =>
+    {
+        options.ModelBinderProviders.Insert(0, new ModelBinderProvider());
+    });
 
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {

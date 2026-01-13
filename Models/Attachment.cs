@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HomeHQ.Entities;
 
-public class Attachment : AuditableEntity, IEntity
+public class Attachment : AuditableEntity, IEntity, IPolymorphicEntity
 {
     public Guid? ParentId { get; set; }
     public string ParentType { get; set; } = string.Empty;

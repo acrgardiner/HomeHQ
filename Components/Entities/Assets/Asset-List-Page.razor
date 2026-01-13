@@ -31,7 +31,7 @@
             <MudFab Color="Color.Primary"
                 StartIcon="@Icons.Material.Filled.Add"
                 OnClick="OpenCreate"
-                Class="entity-action-btn">
+                Size="Size.Small">
             </MudFab>
         </MudStack>
     </div>
@@ -232,7 +232,7 @@
     {
         var encodedState = EncodeNavigationState();
         var queryString = !string.IsNullOrWhiteSpace(encodedState) ? $"?returnState={Uri.EscapeDataString(encodedState)}" : "";
-        NavigationManager.NavigateTo($"/assets/edit/{asset.Id}{queryString}");
+        NavigationManager.NavigateTo($"/assets/{asset.Id}/edit{queryString}");
     }
 
     // Helper methods for encoding/decoding navigation state
