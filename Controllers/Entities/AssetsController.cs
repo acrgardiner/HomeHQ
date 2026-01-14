@@ -1,5 +1,6 @@
 ﻿using HomeHQ.Entities;
 using HomeHQ.Services;
+using HomeHQ.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,16 @@ namespace HomeHQ.Api.Controllers;
 [Authorize]
 public class AssetsController : EntitiesController<Asset>
 {
-    public AssetsController(IEntityService<Asset> entityService) : base(entityService)
+    private readonly IAssetImportService _assetImportService;
+    public AssetsController(IEntityService<Asset> entityService, IAssetImportService assetImportService) : base(entityService)
     {
+        _assetImportService = assetImportService;
+    }
+
+    [HttpGet("import")]
+    public async Task<ActionResult<ApiResponse<int>>> ImportAssets()
+    {
+        var importedCount = await _assetImportService.ImportAssets();
+        return Ok(ApiResponse<int>.Ok(importedCount, $"{importedCount} assets imported successfully"));
     }
 }
