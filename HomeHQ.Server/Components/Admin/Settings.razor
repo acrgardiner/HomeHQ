@@ -1,0 +1,79 @@
+﻿@page "/admin/settings"
+@using Microsoft.EntityFrameworkCore
+@using HomeHQ.Server.Components.Entities.Common
+@using HomeHQ.Server.Components.Entities.Category
+@using HomeHQ.Server.Components.Entities.Attachments
+@using HomeHQ.Server.Components.Entities.WarrantyType
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<Attachment> AttachmentService
+@inject IEntityService<AttachmentType> AttachmentTypeService
+@inject IEntityService<Category> CategoryService
+@inject IEntityService<WarrantyType> WarrantyTypeService
+
+@inject ILogger<Settings> Logger
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="@MaxWidth.Medium" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="ma-4">Settings</MudText>
+
+    <MudText Typo="Typo.h6" Class="ma-4">Categories</MudText>
+
+    <EntityList TEntityType="Category" Plural="Categories" Singular="Category" EntityService="CategoryService"
+        MaxWidth="MaxWidth.Small"
+        CreateDialog="@( () => DialogService.ShowAsync<CreateCategory>("New Category") )"
+        EditDialog="@(parameters => DialogService.ShowAsync<EditCategory>("Edit Category", parameters))"
+        Logger="Logger"
+        Columns="@(
+            new List<(Func<Category, object?>, string)>
+            {
+                (x => x.Icon, "Icon"),
+                (x => x.Name, "Name")
+            })">
+    </EntityList>
+
+    <MudDivider />
+
+    <MudText Typo="Typo.h6" Class="ma-4">Attachment Types</MudText>
+
+    <EntityList TEntityType="AttachmentType" Plural="Attachment Types" Singular="Attachment Type" EntityService="AttachmentTypeService"
+        MaxWidth="MaxWidth.Small"
+        CreateDialog="@( () => DialogService.ShowAsync<CreateAttachmentType>("New Attachment Type") )"
+        EditDialog="@(parameters => DialogService.ShowAsync<EditAttachmentType>("Edit Attachment Type", parameters))"
+        Logger="Logger"
+        Columns="@(
+            new List<(Func<AttachmentType, object?>, string)>
+            {
+                (new Func<AttachmentType, object?>(x => x.Name), "Name"),
+            })"
+        >
+    </EntityList>
+
+    <MudDivider />
+
+    <MudText Typo="Typo.h6" Class="ma-4">Warranty Types</MudText>
+
+    <EntityList TEntityType="WarrantyType" Plural="Warranty Types" Singular="Warranty Type" EntityService="WarrantyTypeService"
+        MaxWidth="MaxWidth.Small"
+        CreateDialog="@( () => DialogService.ShowAsync<CreateWarrantyType>("New Warranty Type") )"
+        EditDialog="@(parameters => DialogService.ShowAsync<EditWarrantyType>("Edit Warranty Type", parameters))"
+        Logger="Logger"
+        Columns="@(
+            new List<(Func<WarrantyType, object?>, string)>
+            {
+                (x => x.Name, "Name"),
+                (x => $"{x.Years ?? 0} Years {x.Months ?? 0} Months {x.Days ?? 0} Days", "Length")
+            }
+        )"
+    >
+    </EntityList>
+
+</MudContainer>
+
+@code {
+
+}

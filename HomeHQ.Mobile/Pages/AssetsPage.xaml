@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             x:Class="HomeHQ.Mobile.Pages.AssetsPage"
+             x:DataType="vm:AssetsViewModel"
+             Title="My Assets">
+
+    <Shell.TitleView>
+        <Grid ColumnDefinitions="*, Auto" Padding="0,0,8,0">
+            <Label Text="My Assets" 
+                   FontSize="20" 
+                   FontAttributes="Bold" 
+                   TextColor="White"
+                   VerticalOptions="Center"/>
+            <ImageButton Grid.Column="1"
+                         Source="logout.png"
+                         Command="{Binding LogoutCommand}"
+                         BackgroundColor="Transparent"
+                         HeightRequest="24"
+                         WidthRequest="24">
+                <ImageButton.Source>
+                    <FontImageSource Glyph="⏻" 
+                                     Color="White" 
+                                     Size="20"/>
+                </ImageButton.Source>
+            </ImageButton>
+        </Grid>
+    </Shell.TitleView>
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Search Bar -->
+        <SearchBar Grid.Row="0"
+                   Placeholder="Search assets..."
+                   Text="{Binding SearchText}"
+                   SearchCommand="{Binding SearchCommand}"
+                   BackgroundColor="{StaticResource Gray100}"
+                   Margin="16,8"/>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
+                           HeightRequest="48"
+                           WidthRequest="48"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+
+        <!-- Empty State -->
+        <VerticalStackLayout Grid.Row="1"
+                             IsVisible="{Binding ShowEmptyState}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="16"
+                             Padding="32">
+            <Label Text="📦" FontSize="64" HorizontalOptions="Center"/>
+            <Label Text="No assets found"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Gray600}"
+                   HorizontalOptions="Center"/>
+            <Label Text="Pull down to refresh or add your first asset"
+                   FontSize="14"
+                   TextColor="{StaticResource Gray400}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"/>
+            <Button Text="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    WidthRequest="120"/>
+        </VerticalStackLayout>
+
+        <!-- Error State -->
+        <VerticalStackLayout Grid.Row="1"
+                             IsVisible="{Binding HasError}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="16"
+                             Padding="32">
+            <Label Text="⚠️" FontSize="64" HorizontalOptions="Center"/>
+            <Label Text="Something went wrong"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource Gray600}"
+                   HorizontalOptions="Center"/>
+            <Label Text="{Binding ErrorMessage}"
+                   FontSize="14"
+                   TextColor="{StaticResource Gray400}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"/>
+            <Button Text="Try Again"
+                    Command="{Binding RefreshCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    WidthRequest="120"/>
+        </VerticalStackLayout>
+
+        <!-- Assets List -->
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}"
+                     IsVisible="{Binding ShowList}">
+            <CollectionView ItemsSource="{Binding Assets}"
+                            SelectionMode="Single"
+                            SelectionChangedCommand="{Binding AssetSelectedCommand}"
+                            SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AssetItemViewModel">
+                        <Frame Margin="16,8" 
+                               Padding="16" 
+                               CornerRadius="12"
+                               BackgroundColor="White"
+                               HasShadow="True">
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
+                                
+                                <!-- Category Icon -->
+                                <Frame Grid.Column="0"
+                                       BackgroundColor="{StaticResource Primary}"
+                                       CornerRadius="8"
+                                       Padding="12"
+                                       HasShadow="False"
+                                       HeightRequest="48"
+                                       WidthRequest="48">
+                                    <Label Text="{Binding CategoryIcon}"
+                                           FontSize="20"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Frame>
+
+                                <!-- Asset Info -->
+                                <VerticalStackLayout Grid.Column="1" 
+                                                     VerticalOptions="Center"
+                                                     Spacing="4">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Gray900}"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Text="{Binding CategoryName}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource Gray500}"/>
+                                    <Label Text="{Binding Location}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource Gray400}"
+                                           IsVisible="{Binding HasLocation}"/>
+                                </VerticalStackLayout>
+
+                                <!-- Chevron -->
+                                <Label Grid.Column="2"
+                                       Text="›"
+                                       FontSize="24"
+                                       TextColor="{StaticResource Gray300}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

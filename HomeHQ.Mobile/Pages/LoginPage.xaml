@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:local="clr-namespace:HomeHQ.Mobile.Converters"
+             x:Class="HomeHQ.Mobile.Pages.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Title="Login"
+             Shell.NavBarIsVisible="False">
+
+    <Grid BackgroundColor="{StaticResource Primary}"
+          RowDefinitions="*, Auto, *"
+          Padding="24">
+
+        <!-- Logo/Header -->
+        <VerticalStackLayout Grid.Row="0" 
+                             VerticalOptions="End"
+                             Spacing="8"
+                             Margin="0,0,0,32">
+            <Label Text="🏠" 
+                   FontSize="64" 
+                   HorizontalOptions="Center"/>
+            <Label Text="HomeHQ" 
+                   FontSize="32" 
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center"/>
+            <Label Text="Manage your home inventory"
+                   FontSize="14"
+                   TextColor="#CCFFFFFF"
+                   HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+
+        <!-- Login Form -->
+        <Frame Grid.Row="1" 
+               BackgroundColor="White" 
+               CornerRadius="16"
+               Padding="24"
+               HasShadow="True">
+            <VerticalStackLayout Spacing="16">
+                
+                <Label Text="Sign In" 
+                       FontSize="24" 
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       HorizontalOptions="Center"
+                       Margin="0,0,0,8"/>
+
+                <!-- Error Message -->
+                <Frame BackgroundColor="#FFEBEE" 
+                       CornerRadius="8" 
+                       Padding="12"
+                       IsVisible="{Binding HasError}"
+                       HasShadow="False">
+                    <Label Text="{Binding ErrorMessage}" 
+                           TextColor="#C62828"
+                           FontSize="13"/>
+                </Frame>
+
+                <!-- Server URL (collapsible) -->
+                <VerticalStackLayout Spacing="4">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Server URL" 
+                               FontSize="13" 
+                               TextColor="#666"
+                               VerticalOptions="Center"/>
+                        <Button Grid.Column="1"
+                                Text="{Binding ShowServerUrl, Converter={StaticResource BoolToExpandText}}"
+                                Command="{Binding ToggleServerUrlCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource Primary}"
+                                FontSize="12"
+                                Padding="0"
+                                HeightRequest="24"/>
+                    </Grid>
+                    <Entry Placeholder="https://your-server.com"
+                           Text="{Binding ServerUrl}"
+                           Keyboard="Url"
+                           ReturnType="Next"
+                           IsVisible="{Binding ShowServerUrl}"/>
+                    <Label Text="{Binding ServerUrl}"
+                           FontSize="12"
+                           TextColor="{StaticResource Gray400}"
+                           LineBreakMode="TailTruncation"
+                           IsVisible="{Binding ShowServerUrl, Converter={StaticResource InvertedBoolConverter}}"/>
+                </VerticalStackLayout>
+
+                <!-- Username -->
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Username" 
+                           FontSize="13" 
+                           TextColor="#666"/>
+                    <Entry Placeholder="Enter username"
+                           Text="{Binding Username}"
+                           Keyboard="Default"
+                           ReturnType="Next"/>
+                </VerticalStackLayout>
+
+                <!-- Password -->
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Password" 
+                           FontSize="13" 
+                           TextColor="#666"/>
+                    <Entry Placeholder="Enter password"
+                           Text="{Binding Password}"
+                           IsPassword="True"
+                           ReturnType="Done"
+                           ReturnCommand="{Binding LoginCommand}"/>
+                </VerticalStackLayout>
+
+                <!-- Login Button -->
+                <Button Text="{Binding LoginButtonText}"
+                        Command="{Binding LoginCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="48"
+                        CornerRadius="8"
+                        Margin="0,8,0,0"/>
+
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Footer -->
+        <Label Grid.Row="2" 
+               Text="© 2026 HomeHQ"
+               TextColor="#99FFFFFF"
+               FontSize="12"
+               HorizontalOptions="Center"
+               VerticalOptions="End"
+               Margin="0,0,0,16"/>
+
+    </Grid>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <local:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
+            <local:BoolToExpandTextConverter x:Key="BoolToExpandText"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>

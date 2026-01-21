@@ -1,0 +1,463 @@
+﻿@typeparam TEntityType where TEntityType : AuditableEntity
+
+@using System.Text
+@using HomeHQ.Components.Entities.Common
+@using Microsoft.JSInterop
+@using System.Reflection
+@using System.ComponentModel.DataAnnotations
+@using System.Linq.Expressions
+@using HomeHQ.Services
+@using HomeHQ.Entities
+@using HomeHQ.Contracts
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudCard Elevation="1" Class="entity-list-card">
+    <MudCardHeader Class="pb-2">
+        <CardHeaderContent>
+            <div class="d-flex align-center">
+                <MudIcon Icon="@GetEntityIcon()" Class="mr-2" Color="Color.Primary" />
+                <MudText Typo="Typo.h6">@Plural</MudText>
+                @if (!_loading)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="ml-2">
+                        @(_entities.Count) items
+                    </MudChip>
+                }
+            </div>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                @if (ToolbarActions != null)
+                {
+                    @ToolbarActions
+                }
+
+                @if (CreateDialog != null)
+                {
+                    <MudTooltip Text="@($"Create new {Singular}")">
+                        <MudIconButton Color="Color.Primary" 
+                                      Icon="@Icons.Material.Filled.Add" 
+                                      Size="Size.Medium" 
+                                      OnClick="OpenCreateDialog"
+                                      Variant="Variant.Filled" />
+                    </MudTooltip>
+                }
+
+                <MudTooltip Text="Refresh data">
+                    <MudIconButton Color="Color.Default" 
+                                  Icon="@Icons.Material.Filled.Refresh" 
+                                  Size="Size.Medium" 
+                                  OnClick="ReloadData"
+                                  Disabled="_loading" />
+                </MudTooltip>
+
+                @if (EnableExport && (_entities?.Any() ?? false))
+                {
+                    <MudTooltip Text="Export to CSV">
+                        <MudIconButton Color="Color.Default" 
+                                      Icon="@Icons.Material.Filled.Download" 
+                                      Size="Size.Medium" 
+                                      OnClick="ExportToCsv"
+                                      Variant="Variant.Outlined" />
+                    </MudTooltip>
+                }
+            </MudStack>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudDivider />
+
+    <MudCardContent Class="pa-0">
+        @if (_loading)
+        {
+            <div class="pa-4">
+                <MudStack Spacing="2">
+                    <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                    <MudSkeleton Animation="Animation.Wave" Height="40px" />
+                </MudStack>
+            </div>
+        }
+        else if (!_entities.Any())
+        {
+            <div class="d-flex flex-column align-center justify-center pa-8">
+                <MudIcon Icon="@GetEmptyStateIcon()" Size="Size.Large" Class="mud-text-secondary mb-4" />
+                <MudText Typo="Typo.h6" Class="mud-text-secondary mb-2">No @Plural.ToLower() found</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4 text-center">
+                    @if (!string.IsNullOrWhiteSpace(SearchString))
+                    {
+                        <span>No results match your search criteria. Try adjusting your filters.</span>
+                    }
+                    else
+                    {
+                        <span>Get started by creating your first @Singular.ToLower().</span>
+                    }
+                </MudText>
+                @if (CreateDialog != null && string.IsNullOrWhiteSpace(SearchString))
+                {
+                    <MudButton Color="Color.Primary" 
+                              Variant="Variant.Filled" 
+                              StartIcon="@Icons.Material.Filled.Add"
+                              OnClick="OpenCreateDialog">
+                        Create @Singular
+                    </MudButton>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="pa-3 pb-0">
+                <MudTextField @bind-Value="SearchString"
+                             Placeholder="@($"Search {Plural.ToLower()}...")"
+                             Adornment="Adornment.Start"
+                             Immediate="true"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             IconSize="Size.Medium"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             FullWidth="true"
+                             Clearable="true" />
+            </div>
+            <MudDataGrid T="TEntityType"
+                        Items="@_entities"
+                        Loading="@_loading"
+                        QuickFilter="@_quickFilter"
+                        Hideable="true"
+                        Hover="true"
+                        Dense="true"
+                        Striped="false"
+                        Bordered="false"
+                        ReadOnly="true"
+                        RowClick="@RowClicked"
+                        Class="entity-data-grid"
+                        @bind-CurrentPage="@CurrentPage" @bind-RowsPerPage="@RowsPerPage">
+                <Columns>
+                    @if (Columns != null)
+                    {
+                        @foreach (var column in Columns)
+                        {
+                            <TemplateColumn T="TEntityType" Title="@column.Title" Sortable="true">
+                                <CellTemplate>
+                                    @{
+                                        var value = column.Selector(context.Item);
+                                        if (value is RenderFragment fragment)
+                                        {
+                                            @fragment
+                                        }
+                                        else
+                                        {
+                                            <span class="entity-cell-content">@value</span>
+                                        }
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                        }
+                    }
+
+                    @if ((ItemActions != null) || EditDialog != null || EnableItemDelete)
+                    {
+                        <TemplateColumn T="TEntityType" Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="0" Justify="Justify.FlexEnd" Class="entity-actions">
+                                    @if (ItemActions != null)
+                                    {
+                                        @foreach (var action in ItemActions)
+                                        {
+                                            <MudTooltip Text="@action.Tooltip">
+                                                <MudIconButton Icon="@action.Icon" 
+                                                Color="Color.Primary" 
+                                                Size="Size.Small" 
+                                                OnClick="() => action.Action(context.Item)"
+                                                Class="entity-action-btn" />
+                                            </MudTooltip>
+                                        }
+                                    }
+
+                                    @if (EditDialog != null)
+                                    {
+                                        <MudTooltip Text="@($"Edit {Singular}")">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                            Color="Color.Primary" 
+                                            Size="Size.Small" 
+                                            OnClick="@(() => OpenEditDialog(context.Item))"
+                                            Class="entity-action-btn" />
+                                        </MudTooltip>
+                                    }
+
+                                    @if (EnableItemDelete)
+                                    {
+                                        <MudTooltip Text="@($"Delete {Singular}")">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                            Color="Color.Error"
+                                            Size="Size.Small" 
+                                            OnClick="@(() => OpenDeleteDialog(context.Item))"
+                                            Class="entity-action-btn" />
+                                        </MudTooltip>
+                                    }
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    }
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="TEntityType"
+                                     PageSizeOptions="new int[] { 10, 25, 50, 100 }"
+                                     InfoFormat="{first_item}-{last_item} of {all_items}" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public required ILogger Logger { get; set; }
+
+    [Parameter] public MaxWidth MaxWidth { get; set; } = MaxWidth.Large;
+
+    [Parameter] public string Plural { get; set; } = "Entities";
+    [Parameter] public string Singular { get; set; } = "Entity";
+
+    [Parameter] public required IEntityService<TEntityType> EntityService { get; set; }
+
+    [Parameter] public List<(Func<TEntityType, object?> Selector, string Title)>? Columns { get; set; } = null;
+    [Parameter] public RenderFragment? ToolbarActions { get; set; }
+
+    [Parameter] public Func<TEntityType, bool>? QuickFilter { get; set; }
+    [Parameter] public List<Expression<Func<TEntityType, object>>>? Includes { get; set; }
+    //[Parameter] public string? InitialSearchString { get; set; }
+
+    [Parameter] public Func<Task<IDialogReference>>? CreateDialog { get; set; } = null;
+    [Parameter] public Func<DialogParameters, Task<IDialogReference>>? EditDialog { get; set; } = null;
+
+    [Parameter] public Func<TEntityType, Task>? OnRowClicked { get; set; }
+    [Parameter] public List<EntityAction<TEntityType>>? ItemActions { get; set; } = null;
+    [Parameter] public bool EnableItemDelete { get; set; } = true;
+    [Parameter] public bool EnableExport { get; set; } = true;
+    public int CurrentPage { get; set; } = 0;
+    public int RowsPerPage { get; set; } = 10;
+
+    public void SetRowsPerPage(int rowsPerPage)
+    {
+        RowsPerPage = rowsPerPage;
+    }
+
+    public void SetPage(int page)
+    {
+        CurrentPage = page;
+    }
+
+    public void SetSearchString(string searchString)
+    {
+        _searchString = searchString;
+    }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private List<TEntityType>? _entities;
+    private bool _loading = true;
+    private string _searchString = string.Empty;
+    public string SearchString
+    {
+        get => _searchString;
+        set
+        {
+            if (_searchString != value)
+            {
+                _searchString = value;
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (_entities is null )
+        // {
+        //     await LoadData();
+        // }
+    }
+
+    public async Task ReloadData() => await LoadData();
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _loading = true;
+            if (Includes == null)
+                _entities = (await EntityService.GetAllAsync()).ToList();
+            else
+                _entities = (await EntityService.GetAllAsync(Includes)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError(ex, "Failed to load {EntityType} data", typeof(TEntityType).Name);
+            Snackbar.Add($"Failed to load {Plural.ToLower()}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Func<TEntityType, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        // Check if any property contains the search string
+        return Columns?.Any(c =>
+            c.Selector(x)?.ToString()?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true) ?? false;
+    };
+
+    private async Task ExportToCsv()
+    {
+        try
+        {
+            var csv = new StringBuilder("\uFEFF");
+            csv.AppendLine(string.Join(",", Columns?.Select(c => c.Title) ?? Enumerable.Empty<string>()));
+            // Rows
+            foreach (var item in _entities)
+            {
+                csv.AppendLine(string.Join(",", Columns?.Select(c => EscapeCsv(c.Selector(item)?.ToString() ?? "")) ?? Enumerable.Empty<string>()));
+            }
+
+            var now = DateTime.UtcNow.ToString("yyyyMMddHHmm");
+            await JS.InvokeVoidAsync("downloadFileFromBase64", $"{typeof(TEntityType).Name.ToLowerInvariant()}_list_{now}.csv", csv.ToString());
+
+            Snackbar.Add($"{Plural} exported successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError(ex, "Failed to export {EntityType} to CSV", typeof(TEntityType).Name);
+            Snackbar.Add($"Failed to export {Plural.ToLower()}", Severity.Error);
+        }
+    }
+
+    private string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "";
+        if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        return value;
+    }
+
+    private string GetEntityIcon()
+    {
+        return typeof(TEntityType).Name.ToLower() switch
+        {
+            "asset" => Icons.Material.Filled.AccountBox,
+            "category" => Icons.Material.Filled.Category,
+            "warrantytype" => Icons.Material.Filled.Newspaper,
+            "attachmenttype" => Icons.Material.Filled.Attachment,
+            "attachment" => Icons.Material.Filled.AttachFile,
+            "applicationuser" => Icons.Material.Filled.Person,
+            _ => Icons.Material.Filled.List
+        };
+    }
+
+    private string GetEmptyStateIcon()
+    {
+        return typeof(TEntityType).Name.ToLower() switch
+        {
+            "asset" => Icons.Material.Filled.Inventory2,
+            "category" => Icons.Material.Outlined.Category,
+            "warrantytype" => Icons.Material.Outlined.Newspaper,
+            "attachmenttype" => Icons.Material.Outlined.AttachFile,
+            "attachment" => Icons.Material.Outlined.AttachFile,
+            "applicationuser" => Icons.Material.Outlined.Person,
+            _ => Icons.Material.Outlined.List
+        };
+    }
+
+    @*  Create Dialog *@
+    private async Task OpenCreateDialog()
+    {
+        try
+        {
+            if (CreateDialog != null)
+            {
+                var dialog = await CreateDialog();
+                var result = await dialog.Result;
+
+                if (!result!.Canceled)
+                {
+                    await LoadData();
+                    Snackbar.Add($"{Singular} created successfully", Severity.Success);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError(ex, "Failed to open create dialog for {EntityType}", typeof(TEntityType).Name);
+            Snackbar.Add($"Failed to open create dialog for {Singular}", Severity.Error);
+        }
+    }
+
+    @*  Edit Dialog *@
+    private async Task OpenEditDialog(TEntityType entity)
+    {
+        try
+        {
+            var parameters = new DialogParameters
+                {
+                    ["Entity"] = entity,
+                    ["Title"] = $"Edit {Singular}: {entity.Id}"
+                };
+
+            var dialog = await EditDialog!(parameters);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await LoadData();
+                Snackbar.Add($"{Singular} updated successfully", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogError(ex, "Failed to open edit dialog for {EntityType}", typeof(TEntityType).Name);
+            Snackbar.Add($"Failed to open edit dialog for {Singular}", Severity.Error);
+        }
+    }
+
+    @* Delete Dialog  *@
+    public async Task OpenDeleteDialog(TEntityType entity)
+    {
+        var parameters = new DialogParameters
+            {
+                ["Id"] = entity.Id,
+                ["Message"] = $"Are you sure you want to delete this {Singular}? This action cannot be undone."
+            };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            try
+            {
+                await EntityService.DeleteAsync(entity.Id);
+                await LoadData();
+                Snackbar.Add($"{Singular} deleted successfully", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "Failed to delete {EntityType}", typeof(TEntityType).Name);
+                Snackbar.Add($"Failed to delete {Singular}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task RowClicked(DataGridRowClickEventArgs<TEntityType> args)
+    {
+        if (OnRowClicked is not null)
+            await OnRowClicked(args.Item);
+    }
+}

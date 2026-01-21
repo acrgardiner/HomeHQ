@@ -1,0 +1,79 @@
+﻿@page "/attachmenttypes"
+
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Server.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
+@inject IEntityService<AttachmentType> AttachmentTypeService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<ListAttachmentTypes> Logger
+
+<PageTitle>Attachment Types - @Constants.Application.Title</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <!-- Header and actions -->
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                <MudIcon Icon="@Icons.Material.Filled.AttachFile" Class="mr-3" Size="Size.Large" />
+                Attachment Types
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Configure Attachment Types
+            </MudText>
+        </div>
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            @* <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       StartIcon="@Icons.Material.Filled.Upload"
+                       OnClick="@(() => { /* TODO: Import functionality */ })"
+                       Class="entity-action-btn">
+                Import
+            </MudButton> *@
+
+            <MudFab Color="Color.Primary"
+                    StartIcon="@Icons.Material.Filled.Add"
+                    OnClick="OpenCreate"
+                    Size="Size.Small">
+            </MudFab>
+        </MudStack>
+    </div>
+
+    <!-- Main Content Card -->
+    <MudCard Elevation="2" Class="entity-list-card">
+        <EntityList @ref="@entityList" TEntityType="AttachmentType" Plural="Attachment Types" Singular="Attachment Type" EntityService="AttachmentTypeService"
+                    EditDialog="@(parameters => DialogService.ShowAsync<EditAttachmentType>("Edit Attachment Type", parameters))"
+            Logger="Logger"
+            Columns="@(
+                new List<(Func<AttachmentType, object?>, string)>
+                {
+                    (new Func<AttachmentType, object?>(x => x.Name), "Name"),
+                })"
+            >
+        </EntityList>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private EntityList<AttachmentType>? entityList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Yield();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await entityList?.ReloadData();
+    }
+
+    private async Task OpenCreate()
+    {
+        await DialogService.ShowAsync<CreateAttachmentType>("Add New Attachment Type");
+    }
+}
