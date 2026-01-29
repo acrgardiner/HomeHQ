@@ -39,7 +39,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore HomeHQ.Server/HomeHQ.Server.csproj
 
       - name: Build project
         run: dotnet build HomeHQ.Server/HomeHQ.Server.csproj --configuration Release --no-restore
