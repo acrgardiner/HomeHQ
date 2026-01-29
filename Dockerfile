@@ -14,7 +14,7 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["HomeHQ.csproj", "."]
+COPY ["HomeHQ.Server/HomeHQ.Server.csproj", "."]
 RUN dotnet restore "./HomeHQ.Server/HomeHQ.Server.csproj"
 COPY . .
 WORKDIR "/src/."
