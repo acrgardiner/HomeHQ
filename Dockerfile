@@ -1,9 +1,7 @@
 # Base image for runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 
-# Install ICU and timezone data for globalization
 RUN apk add --no-cache icu-libs tzdata
-
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 WORKDIR /app
@@ -14,16 +12,30 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["HomeHQ.Server/HomeHQ.Server.csproj", "."]
-RUN dotnet restore "./HomeHQ.Server/HomeHQ.Server.csproj"
-COPY . .
-WORKDIR "/src/."
-RUN dotnet build "./HomeHQ.Server/HomeHQ.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# Copy only project files for restore
+COPY ["HomeHQ.Server/HomeHQ.Server.csproj", "HomeHQ.Server/"]
+
+# If you have a solution file, copy it here as well:
+# COPY ["HomeHQ.sln", "."]
+
+# Restore dependencies
+WORKDIR /src/HomeHQ.Server
+RUN dotnet restore "HomeHQ.Server.csproj"
+
+# Copy the rest of the source code
+WORKDIR /src
+COPY . .
+
+# Build
+WORKDIR /src/HomeHQ.Server
+RUN dotnet build "HomeHQ.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# Publish
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./HomeHQ.Server/HomeHQ.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+WORKDIR /src/HomeHQ.Server
+RUN dotnet publish "HomeHQ.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Final runtime image
 FROM base AS final
@@ -32,8 +44,5 @@ ENV COMMIT_SHA=$COMMIT_SHA
 
 WORKDIR /app
 COPY --from=publish /app/publish ./
-
-# If using non-root user
-# USER app
 
 ENTRYPOINT ["dotnet", "HomeHQ.Server.dll"]
