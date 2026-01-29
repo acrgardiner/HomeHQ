@@ -4,21 +4,92 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:HomeHQ.Mobile.Pages"
+    xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
     Title="HomeHQ"
-    Shell.FlyoutBehavior="Disabled">
+    Shell.FlyoutBehavior="Flyout"
+    Shell.FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
 
-    <!-- Login Page (no tabs/navigation) -->
+    <!-- Flyout Header -->
+    <Shell.FlyoutHeader>
+        <controls:FlyoutHeader />
+    </Shell.FlyoutHeader>
+
+    <!-- Flyout Footer -->
+    <Shell.FlyoutFooter>
+        <controls:FlyoutFooter x:Name="FlyoutFooterControl" />
+    </Shell.FlyoutFooter>
+
+    <!-- Login Page (no flyout/navigation) -->
     <ShellContent
         Route="Login"
         ContentTemplate="{DataTemplate pages:LoginPage}"
+        Shell.FlyoutBehavior="Disabled"
         Shell.TabBarIsVisible="False"
-        Shell.NavBarIsVisible="False"/>
+        Shell.NavBarIsVisible="False"
+        FlyoutItemIsVisible="False"/>
 
-    <!-- Main App Pages -->
-    <ShellContent
-        Title="Assets"
-        Route="Assets"
-        ContentTemplate="{DataTemplate pages:AssetsPage}"
-        Icon="{FontImage Glyph='📦', Color=White, Size=20}"/>
+    <!-- Main Navigation Items -->
+    <FlyoutItem Title="Dashboard" 
+                Icon="{FontImage Glyph='🏠', Color={StaticResource Primary}, Size=22}">
+        <ShellContent
+            Route="Dashboard"
+            ContentTemplate="{DataTemplate pages:DashboardPage}"
+            Title="Dashboard"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Assets" 
+                Icon="{FontImage Glyph='📦', Color={StaticResource Primary}, Size=22}">
+        <ShellContent
+            Route="Assets"
+            ContentTemplate="{DataTemplate pages:AssetsPage}"
+            Title="Assets"/>
+    </FlyoutItem>
+
+    <!-- Separator -->
+    <MenuItem Text="──────────────────" IsEnabled="False" />
+
+    <!-- Settings/Configuration Section -->
+    <FlyoutItem Title="Settings"
+                Icon="{FontImage Glyph='⚙️', Color={StaticResource Gray500}, Size=22}">
+        <ShellContent
+            Route="Settings"
+            ContentTemplate="{DataTemplate pages:SettingsPage}"
+            Title="Settings"/>
+    </FlyoutItem>
+
+    <!-- Shell Styling -->
+    <Shell.ItemTemplate>
+        <DataTemplate>
+            <Grid Padding="16,12" ColumnDefinitions="Auto, *">
+                <Image Source="{Binding FlyoutIcon}"
+                       HeightRequest="24"
+                       WidthRequest="24"
+                       VerticalOptions="Center"/>
+                <Label Grid.Column="1"
+                       Text="{Binding Title}"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                       VerticalOptions="Center"
+                       Margin="16,0,0,0"/>
+            </Grid>
+        </DataTemplate>
+    </Shell.ItemTemplate>
+
+    <Shell.MenuItemTemplate>
+        <DataTemplate>
+            <Grid Padding="16,8" ColumnDefinitions="Auto, *">
+                <Image Source="{Binding Icon}"
+                       HeightRequest="24"
+                       WidthRequest="24"
+                       VerticalOptions="Center"/>
+                <Label Grid.Column="1"
+                       Text="{Binding Text}"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                       VerticalOptions="Center"
+                       Margin="16,0,0,0"/>
+            </Grid>
+        </DataTemplate>
+    </Shell.MenuItemTemplate>
 
 </Shell>

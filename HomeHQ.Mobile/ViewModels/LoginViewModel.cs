@@ -121,8 +121,8 @@ public class LoginViewModel : BaseViewModel
                 // Clear sensitive data
                 Password = string.Empty;
 
-                // Navigate to main app
-                await Shell.Current.GoToAsync("//Assets");
+                // Navigate to dashboard
+                await Shell.Current.GoToAsync("//Dashboard");
             }
             else
             {

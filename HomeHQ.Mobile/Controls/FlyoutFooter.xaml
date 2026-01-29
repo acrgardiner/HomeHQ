@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HomeHQ.Mobile.Controls.FlyoutFooter">
+    
+    <Grid BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+          Padding="16,12"
+          ColumnDefinitions="Auto, *, Auto">
+        
+        <!-- User Avatar -->
+        <Frame Grid.Column="0"
+               BackgroundColor="{StaticResource Primary}"
+               CornerRadius="20"
+               Padding="0"
+               HasShadow="False"
+               HeightRequest="40"
+               WidthRequest="40"
+               VerticalOptions="Center">
+            <Label x:Name="UserInitialLabel"
+                   Text="U"
+                   FontSize="18"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+        </Frame>
+        
+        <!-- User Info -->
+        <VerticalStackLayout Grid.Column="1"
+                             VerticalOptions="Center"
+                             Margin="12,0,0,0"
+                             Spacing="2">
+            <Label x:Name="UsernameLabel"
+                   Text="User"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+            <Label Text="Logged in"
+                   FontSize="11"
+                   TextColor="{StaticResource Gray500}"/>
+        </VerticalStackLayout>
+        
+        <!-- Logout Button -->
+        <ImageButton Grid.Column="2"
+                     x:Name="LogoutButton"
+                     BackgroundColor="Transparent"
+                     HeightRequest="40"
+                     WidthRequest="40"
+                     VerticalOptions="Center"
+                     Clicked="OnLogoutClicked">
+            <ImageButton.Source>
+                <FontImageSource Glyph="⏻" 
+                                 Color="{StaticResource Gray500}" 
+                                 Size="20"/>
+            </ImageButton.Source>
+        </ImageButton>
+        
+    </Grid>
+    
+</ContentView>

@@ -6,28 +6,6 @@
              x:DataType="vm:AssetsViewModel"
              Title="My Assets">
 
-    <Shell.TitleView>
-        <Grid ColumnDefinitions="*, Auto" Padding="0,0,8,0">
-            <Label Text="My Assets" 
-                   FontSize="20" 
-                   FontAttributes="Bold" 
-                   TextColor="White"
-                   VerticalOptions="Center"/>
-            <ImageButton Grid.Column="1"
-                         Source="logout.png"
-                         Command="{Binding LogoutCommand}"
-                         BackgroundColor="Transparent"
-                         HeightRequest="24"
-                         WidthRequest="24">
-                <ImageButton.Source>
-                    <FontImageSource Glyph="⏻" 
-                                     Color="White" 
-                                     Size="20"/>
-                </ImageButton.Source>
-            </ImageButton>
-        </Grid>
-    </Shell.TitleView>
-
     <Grid RowDefinitions="Auto, *">
 
         <!-- Search Bar -->

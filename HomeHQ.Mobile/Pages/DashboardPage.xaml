@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
+             x:Class="HomeHQ.Mobile.Pages.DashboardPage"
+             x:DataType="vm:DashboardViewModel"
+             Title="Dashboard">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <Grid RowDefinitions="Auto, Auto, Auto, *" Padding="16" RowSpacing="16">
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator Grid.Row="0"
+                                   Grid.RowSpan="4"
+                                   IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HeightRequest="48"
+                                   WidthRequest="48"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center"/>
+
+                <!-- Error State -->
+                <VerticalStackLayout Grid.Row="0"
+                                     Grid.RowSpan="4"
+                                     IsVisible="{Binding HasError}"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="16"
+                                     Padding="32">
+                    <Label Text="⚠️" FontSize="64" HorizontalOptions="Center"/>
+                    <Label Text="Something went wrong"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Gray600}"
+                           HorizontalOptions="Center"/>
+                    <Label Text="{Binding ErrorMessage}"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray400}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"/>
+                    <Button Text="Try Again"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"/>
+                </VerticalStackLayout>
+
+                <!-- Welcome Header -->
+                <VerticalStackLayout Grid.Row="0" 
+                                     IsVisible="{Binding ShowContent}"
+                                     Spacing="4">
+                    <Label Text="Welcome back!"
+                           FontSize="28"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                    <Label Text="Here's your home inventory overview"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray500}"/>
+                </VerticalStackLayout>
+
+                <!-- Statistics Cards -->
+                <Grid Grid.Row="1" 
+                      IsVisible="{Binding ShowContent}"
+                      ColumnDefinitions="*, *" 
+                      ColumnSpacing="12">
+                    
+                    <!-- Total Assets Card -->
+                    <Frame Grid.Column="0"
+                           BackgroundColor="{StaticResource Primary}"
+                           CornerRadius="16"
+                           Padding="16"
+                           HasShadow="True">
+                        <VerticalStackLayout Spacing="8">
+                            <Frame BackgroundColor="#FFFFFF30"
+                                   CornerRadius="8"
+                                   Padding="8"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start">
+                                <Label Text="📦" FontSize="20"/>
+                            </Frame>
+                            <Label Text="{Binding TotalAssets}"
+                                   FontSize="32"
+                                   FontAttributes="Bold"
+                                   TextColor="White"/>
+                            <Label Text="Total Assets"
+                                   FontSize="13"
+                                   TextColor="#CCFFFFFF"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Expiring Warranties Card -->
+                    <Frame Grid.Column="1"
+                           BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#4A3728}"
+                           CornerRadius="16"
+                           Padding="16"
+                           HasShadow="True">
+                        <VerticalStackLayout Spacing="8">
+                            <Frame BackgroundColor="{AppThemeBinding Light=#FFE0B2, Dark=#5D4A3A}"
+                                   CornerRadius="8"
+                                   Padding="8"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start">
+                                <Label Text="⚠️" FontSize="20"/>
+                            </Frame>
+                            <Label Text="{Binding ExpiringWarranties}"
+                                   FontSize="32"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"/>
+                            <Label Text="Expiring Soon"
+                                   FontSize="13"
+                                   TextColor="{AppThemeBinding Light=#FF8A65, Dark=#FFCC80}"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <!-- Quick Actions -->
+                <Frame Grid.Row="2"
+                       IsVisible="{Binding ShowContent}"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                       CornerRadius="16"
+                       Padding="16"
+                       HasShadow="True">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Quick Actions"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                        
+                        <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                            <Button Grid.Column="0"
+                                    Text="📦 View Assets"
+                                    Command="{Binding NavigateToAssetsCommand}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                    CornerRadius="12"
+                                    HeightRequest="48"
+                                    FontSize="13"/>
+                            <Button Grid.Column="1"
+                                    Text="⚙️ Settings"
+                                    Clicked="OnSettingsClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                    CornerRadius="12"
+                                    HeightRequest="48"
+                                    FontSize="13"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Recent Assets -->
+                <Frame Grid.Row="3"
+                       IsVisible="{Binding ShowContent}"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                       CornerRadius="16"
+                       Padding="16"
+                       HasShadow="True">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Recent Assets"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                            <Button Grid.Column="1"
+                                    Text="View All"
+                                    Command="{Binding NavigateToAssetsCommand}"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{StaticResource Primary}"
+                                    FontSize="13"
+                                    Padding="0"/>
+                        </Grid>
+
+                        <!-- Empty State -->
+                        <VerticalStackLayout IsVisible="{Binding HasRecentAssets, Converter={StaticResource InvertedBoolConverter}}"
+                                             Spacing="8"
+                                             Padding="16"
+                                             HorizontalOptions="Center">
+                            <Label Text="📦" FontSize="40" HorizontalOptions="Center"/>
+                            <Label Text="No assets yet"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Gray500}"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Start by adding your first asset"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Gray400}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+
+                        <!-- Assets List -->
+                        <CollectionView ItemsSource="{Binding RecentAssets}"
+                                        IsVisible="{Binding HasRecentAssets}"
+                                        SelectionMode="Single"
+                                        SelectionChangedCommand="{Binding AssetSelectedCommand}"
+                                        SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="entities:Asset">
+                                    <Frame Margin="0,4" 
+                                           Padding="12" 
+                                           CornerRadius="12"
+                                           BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                                           HasShadow="False">
+                                        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                                            
+                                            <!-- Icon -->
+                                            <Frame Grid.Column="0"
+                                                   BackgroundColor="{StaticResource Primary}"
+                                                   CornerRadius="8"
+                                                   Padding="10"
+                                                   HasShadow="False"
+                                                   HeightRequest="40"
+                                                   WidthRequest="40">
+                                                <Label Text="📦"
+                                                       FontSize="16"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center"/>
+                                            </Frame>
+
+                                            <!-- Info -->
+                                            <VerticalStackLayout Grid.Column="1" 
+                                                                 VerticalOptions="Center"
+                                                                 Spacing="2">
+                                                <Label Text="{Binding Name}"
+                                                       FontSize="15"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                       LineBreakMode="TailTruncation"/>
+                                                <Label Text="{Binding Category.Name}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource Gray500}"/>
+                                            </VerticalStackLayout>
+
+                                            <!-- Chevron -->
+                                            <Label Grid.Column="2"
+                                                   Text="›"
+                                                   FontSize="20"
+                                                   TextColor="{StaticResource Gray400}"
+                                                   VerticalOptions="Center"/>
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </Grid>
+        </ScrollView>
+    </RefreshView>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <local:InvertedBoolConverter x:Key="InvertedBoolConverter"
+                                         xmlns:local="clr-namespace:HomeHQ.Mobile.Converters"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>
