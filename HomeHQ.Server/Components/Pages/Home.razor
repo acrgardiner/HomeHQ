@@ -174,7 +174,7 @@
                                     <PropertyColumn Property="x => Formatter.FormatDate(x.PurchaseDate)" Title="Purchase Date" />
                                     <TemplateColumn T="Asset" Title="Warranty">
                                         <CellTemplate Context="asset">
-                                            @Formatter.RenderWarrantyInfo(asset.Item)
+                                            @WarrantyFormatter.RenderWarrantyInfo(asset.Item)
                                         </CellTemplate>
                                     </TemplateColumn>
                                     <TemplateColumn T="Asset" Title="Actions" Sortable="false">

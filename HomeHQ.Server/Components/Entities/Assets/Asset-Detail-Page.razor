@@ -1,8 +1,10 @@
 ﻿@page "/assets/{id}"
+@using HomeHQ.Components.Entities.Common
 @using HomeHQ.Entities
+@using HomeHQ.Server.Components.Dialogs
 @using HomeHQ.Services
 @using HomeHQ.Helpers
-@using HomeHQ.Components.Entities.Common
+@using HomeHQ.Server.Components.Entities.Common
 @using Microsoft.AspNetCore.Authorization
 @using System.Linq.Expressions
 
@@ -265,7 +267,7 @@
     }
 </MudContainer>
 
-@code{
+    @code{
     [Parameter] public string Id { get; set; } = string.Empty;
     [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
 
@@ -273,7 +275,7 @@
     private List<AttributeValue> _attributes = new();
     private List<Note> _notes = new();
     private bool _loading = true;
-
+    
     private Attachment_Sidebar attachmentSidebar;
 
     private bool IsMobile;

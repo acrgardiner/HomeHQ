@@ -7,7 +7,7 @@ namespace HomeHQ.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "BearerAndCookies")]
 public class CategoriesController : EntitiesController<Category>
 {
     public CategoriesController(IEntityService<Category> entityService) : base(entityService)

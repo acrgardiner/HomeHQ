@@ -86,6 +86,11 @@ try
     builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+        options.AddPolicy("BearerAndCookies", policy =>
+        {
+            policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, IdentityConstants.BearerScheme);
+            policy.RequireAuthenticatedUser();
+        });
     });
 
     builder.Services.AddHttpContextAccessor();
@@ -130,8 +135,20 @@ try
     // Configure authentication schemes - cookie for web, bearer for API
     builder.Services.AddAuthentication(options =>
     {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        options.DefaultScheme = "SmartScheme";
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+    })
+    .AddPolicyScheme("SmartScheme", "Smart Auth Scheme", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                return IdentityConstants.BearerScheme;
+            }
+            return IdentityConstants.ApplicationScheme;
+        };
     });
 
     Directory.CreateDirectory("appdata");
@@ -144,6 +161,21 @@ try
     builder.Services.AddControllers(options =>
     {
         options.ModelBinderProviders.Insert(0, new ModelBinderProvider());
+    });
+
+    // Development CORS - allow the PWA origin(s). Adjust ports if your PWA runs on different ports.
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("LocalDev", policy =>
+        {
+            policy.WithOrigins(
+                    "https://localhost:7134", // PWA default in SettingsService
+                    "http://localhost:7134"   // if you run HTTP in dev
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+            // .AllowCredentials(); // enable only if you need cookies and then do NOT use AllowAnyOrigin()
+        });
     });
 
     builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -226,6 +258,8 @@ try
     }
 
     app.UseForwardedHeaders();
+
+    app.UseCors("LocalDev");
 
     app.UseAuthentication();
     app.UseAuthorization();

@@ -2,13 +2,6 @@
 
 namespace HomeHQ.Services
 {
-    public interface ICurrentUserService
-    {
-        string? UserId { get; }
-        string? UserName { get; }
-        bool IsMobile { get; }
-    }
-
     public class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;

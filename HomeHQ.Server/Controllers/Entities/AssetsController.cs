@@ -8,7 +8,7 @@ namespace HomeHQ.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "BearerAndCookies")]
 public class AssetsController : EntitiesController<Asset>
 {
     private readonly IAssetImportService _assetImportService;

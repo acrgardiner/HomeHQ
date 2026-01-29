@@ -1,7 +1,11 @@
+using HomeHQ.Mobile.Services;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows.Input;
-using HomeHQ.Mobile.Services;
+using HomeHQ.DTOs;
+using HomeHQ.Entities;
 
 namespace HomeHQ.Mobile.ViewModels;
 
@@ -10,7 +14,7 @@ public class AssetsViewModel : BaseViewModel
     private readonly ApiClient _apiClient;
     private readonly AuthService _authService;
 
-    public ObservableCollection<AssetItemViewModel> Assets { get; } = [];
+    public ObservableCollection<Asset> Assets { get; } = [];
 
     private string _searchText = string.Empty;
     public string SearchText
@@ -77,7 +81,7 @@ public class AssetsViewModel : BaseViewModel
 
         RefreshCommand = new Command(async () => await LoadAssetsAsync(forceRefresh: true));
         SearchCommand = new Command(async () => await SearchAssetsAsync());
-        AssetSelectedCommand = new Command<AssetItemViewModel>(async (asset) => await OnAssetSelected(asset));
+        AssetSelectedCommand = new Command<Asset>(async (asset) => await OnAssetSelected(asset));
         LogoutCommand = new Command(async () => await LogoutAsync());
     }
 
@@ -95,15 +99,15 @@ public class AssetsViewModel : BaseViewModel
 
             if (response.IsSuccessStatusCode)
             {
-                var assets = await response.Content.ReadFromJsonAsync<List<AssetDto>>();
-                
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Asset>>>();
+
                 Assets.Clear();
                 
-                if (assets is { Count: > 0 })
+                if (apiResponse?.Data?.Count > 0)
                 {
-                    foreach (var asset in assets)
+                    foreach (var asset in apiResponse.Data)
                     {
-                        Assets.Add(new AssetItemViewModel(asset));
+                        Assets.Add(asset);
                     }
                 }
             }
@@ -140,17 +144,17 @@ public class AssetsViewModel : BaseViewModel
         await LoadAssetsAsync();
     }
 
-    private async Task OnAssetSelected(AssetItemViewModel? asset)
+    private async Task OnAssetSelected(Asset? asset)
     {
         if (asset == null) return;
 
         // Navigate to asset detail page (you can implement this later)
-        await Shell.Current.DisplayAlert("Asset Selected", $"You selected: {asset.Name}", "OK");
+        await Shell.Current.DisplayAlertAsync("Asset Selected", $"You selected: {asset.Name}", "OK");
     }
 
     private async Task LogoutAsync()
     {
-        bool confirm = await Shell.Current.DisplayAlert(
+        bool confirm = await Shell.Current.DisplayAlertAsync(
             "Logout",
             "Are you sure you want to logout?",
             "Yes", "No");
@@ -167,48 +171,4 @@ public class AssetsViewModel : BaseViewModel
         ShowEmptyState = !IsLoading && !HasError && Assets.Count == 0;
         ShowList = !IsLoading && !HasError && Assets.Count > 0;
     }
-}
-
-// DTO to match your server's Asset model
-public class AssetDto
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public string? Location { get; set; }
-    public int? CategoryId { get; set; }
-    public string? CategoryName { get; set; }
-    public DateTime? PurchaseDate { get; set; }
-    public decimal? PurchasePrice { get; set; }
-}
-
-// ViewModel for individual asset items in the list
-public class AssetItemViewModel
-{
-    private readonly AssetDto _asset;
-
-    public AssetItemViewModel(AssetDto asset)
-    {
-        _asset = asset;
-    }
-
-    public int Id => _asset.Id;
-    public string Name => _asset.Name;
-    public string? Description => _asset.Description;
-    public string? Location => _asset.Location;
-    public string CategoryName => _asset.CategoryName ?? "Uncategorized";
-    public bool HasLocation => !string.IsNullOrEmpty(Location);
-
-    public string CategoryIcon => CategoryName?.ToLowerInvariant() switch
-    {
-        "electronics" => "📱",
-        "furniture" => "🪑",
-        "appliances" => "🔌",
-        "tools" => "🔧",
-        "clothing" => "👕",
-        "documents" => "📄",
-        "vehicles" => "🚗",
-        "jewelry" => "💎",
-        _ => "📦"
-    };
 }
