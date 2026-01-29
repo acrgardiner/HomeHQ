@@ -42,7 +42,7 @@ jobs:
         run: dotnet restore
 
       - name: Build project
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build HomeHQ.Server/HomeHQ.Server.csproj --configuration Release --no-restore
 
   docker:
     name: Build and Push Docker Image
