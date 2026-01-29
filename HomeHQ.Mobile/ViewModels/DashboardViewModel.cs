@@ -10,6 +10,7 @@ namespace HomeHQ.Mobile.ViewModels;
 public class DashboardViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
+    private readonly CategoryService _categoryService;
 
     public ObservableCollection<Asset> RecentAssets { get; } = [];
 
@@ -65,9 +66,10 @@ public class DashboardViewModel : BaseViewModel
     public ICommand NavigateToAssetsCommand { get; }
     public ICommand AssetSelectedCommand { get; }
 
-    public DashboardViewModel(ApiClient apiClient)
+    public DashboardViewModel(ApiClient apiClient, CategoryService categoryService)
     {
         _apiClient = apiClient;
+        _categoryService = categoryService;
 
         RefreshCommand = new Command(async () => await LoadDashboardAsync(forceRefresh: true));
         NavigateToAssetsCommand = new Command(async () => await NavigateToAssetsAsync());
@@ -84,6 +86,9 @@ public class DashboardViewModel : BaseViewModel
             IsRefreshing = forceRefresh;
             ErrorMessage = null;
 
+            // Ensure categories are loaded (uses shared cache)
+            await _categoryService.EnsureLoadedAsync(forceRefresh);
+
             // Load assets to get counts and recent items
             var response = await _apiClient.GetAsync("api/assets");
 
@@ -94,6 +99,9 @@ public class DashboardViewModel : BaseViewModel
                 if (apiResponse?.Data != null)
                 {
                     var assets = apiResponse.Data;
+                    
+                    // Populate categories from shared service
+                    _categoryService.PopulateCategories(assets);
                     
                     // Update statistics
                     TotalAssets = assets.Count;

@@ -13,6 +13,7 @@ public class AssetsViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
     private readonly AuthService _authService;
+    private readonly CategoryService _categoryService;
 
     public ObservableCollection<Asset> Assets { get; } = [];
 
@@ -74,10 +75,11 @@ public class AssetsViewModel : BaseViewModel
     public ICommand AssetSelectedCommand { get; }
     public ICommand LogoutCommand { get; }
 
-    public AssetsViewModel(ApiClient apiClient, AuthService authService)
+    public AssetsViewModel(ApiClient apiClient, AuthService authService, CategoryService categoryService)
     {
         _apiClient = apiClient;
         _authService = authService;
+        _categoryService = categoryService;
 
         RefreshCommand = new Command(async () => await LoadAssetsAsync(forceRefresh: true));
         SearchCommand = new Command(async () => await SearchAssetsAsync());
@@ -95,6 +97,9 @@ public class AssetsViewModel : BaseViewModel
             IsRefreshing = forceRefresh;
             ErrorMessage = null;
 
+            // Ensure categories are loaded (uses shared cache)
+            await _categoryService.EnsureLoadedAsync(forceRefresh);
+
             var response = await _apiClient.GetAsync("api/assets");
 
             if (response.IsSuccessStatusCode)
@@ -105,6 +110,9 @@ public class AssetsViewModel : BaseViewModel
                 
                 if (apiResponse?.Data?.Count > 0)
                 {
+                    // Populate categories from shared service
+                    _categoryService.PopulateCategories(apiResponse.Data);
+                    
                     foreach (var asset in apiResponse.Data)
                     {
                         Assets.Add(asset);
@@ -162,6 +170,7 @@ public class AssetsViewModel : BaseViewModel
         if (confirm)
         {
             _authService.Logout();
+            _categoryService.ClearCache();
             await Shell.Current.GoToAsync("//Login");
         }
     }

@@ -1,6 +1,6 @@
-﻿using HomeHQ.Entities;
+﻿using HomeHQ.DTOs;
+using HomeHQ.Entities;
 using HomeHQ.Services;
-using HomeHQ.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

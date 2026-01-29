@@ -16,8 +16,8 @@
                HeightRequest="80"
                WidthRequest="80"
                HorizontalOptions="Start">
-            <Label Text="🏠" 
-                   FontSize="40"
+            <Image Source="logo_transparent.png"
+                   Aspect="AspectFit"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"/>
         </Frame>
@@ -32,7 +32,7 @@
         
         <!-- Tagline -->
         <Label Grid.Row="2"
-               Text="Home Inventory Management"
+               Text="Home Document Management"
                FontSize="13"
                TextColor="#CCFFFFFF"/>
         

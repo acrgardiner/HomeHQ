@@ -7,6 +7,8 @@ public partial class FlyoutFooter : ContentView
     public FlyoutFooter()
     {
         InitializeComponent();
+
+        Loaded += OnLoaded;
     }
 
     public void SetUsername(string? username)
@@ -15,6 +17,11 @@ public partial class FlyoutFooter : ContentView
         {
             UsernameLabel.Text = username;
             UserInitialLabel.Text = username[0].ToString().ToUpper();
+        }
+        else
+        {
+            UsernameLabel.Text = "User";
+            UserInitialLabel.Text = "U";
         }
     }
 
@@ -31,5 +38,20 @@ public partial class FlyoutFooter : ContentView
 
         // Navigate to login page
         await Shell.Current.GoToAsync("//Login");
+    }
+
+    private async void OnLoaded(object? sender, EventArgs e)
+    {
+        await LoadUsernameAsync();
+    }
+
+    private async Task LoadUsernameAsync()
+    {
+        var authService = Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
+        if (authService != null)
+        {
+            var username = await authService.GetUsernameAsync();
+            SetUsername(username);
+        }
     }
 }

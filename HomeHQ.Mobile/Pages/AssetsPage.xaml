@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
              x:Class="HomeHQ.Mobile.Pages.AssetsPage"
              x:DataType="vm:AssetsViewModel"
              Title="My Assets">
@@ -13,7 +14,7 @@
                    Placeholder="Search assets..."
                    Text="{Binding SearchText}"
                    SearchCommand="{Binding SearchCommand}"
-                   BackgroundColor="{StaticResource Gray100}"
+                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
                    Margin="16,8"/>
 
         <!-- Loading Indicator -->
@@ -90,11 +91,11 @@
                             SelectionChangedCommand="{Binding AssetSelectedCommand}"
                             SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="vm:AssetItemViewModel">
+                    <DataTemplate x:DataType="entities:Asset">
                         <Frame Margin="16,8" 
                                Padding="16" 
                                CornerRadius="12"
-                               BackgroundColor="White"
+                               BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
                                HasShadow="True">
                             <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
                                 
@@ -106,7 +107,7 @@
                                        HasShadow="False"
                                        HeightRequest="48"
                                        WidthRequest="48">
-                                    <Label Text="{Binding CategoryIcon}"
+                                    <Label Text="{Binding Category.Icon, TargetNullValue='📦'}"
                                            FontSize="20"
                                            HorizontalOptions="Center"
                                            VerticalOptions="Center"/>
@@ -119,22 +120,21 @@
                                     <Label Text="{Binding Name}"
                                            FontSize="16"
                                            FontAttributes="Bold"
-                                           TextColor="{StaticResource Gray900}"
+                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
                                            LineBreakMode="TailTruncation"/>
-                                    <Label Text="{Binding CategoryName}"
+                                    <Label Text="{Binding Category.Name, TargetNullValue='Uncategorized'}"
                                            FontSize="13"
                                            TextColor="{StaticResource Gray500}"/>
-                                    <Label Text="{Binding Location}"
+                                    <Label Text="{Binding PurchasedFrom}"
                                            FontSize="12"
-                                           TextColor="{StaticResource Gray400}"
-                                           IsVisible="{Binding HasLocation}"/>
+                                           TextColor="{StaticResource Gray400}"/>
                                 </VerticalStackLayout>
 
                                 <!-- Chevron -->
                                 <Label Grid.Column="2"
                                        Text="›"
                                        FontSize="24"
-                                       TextColor="{StaticResource Gray300}"
+                                       TextColor="{StaticResource Gray400}"
                                        VerticalOptions="Center"/>
                             </Grid>
                         </Frame>

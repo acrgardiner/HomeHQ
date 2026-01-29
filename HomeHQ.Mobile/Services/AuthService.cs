@@ -10,6 +10,7 @@ public class AuthService
     private const string AccessTokenKey = "access_token";
     private const string RefreshTokenKey = "refresh_token";
     private const string TokenExpiryKey = "token_expiry";
+    private const string UsernameKey = "username";
 
     public AuthService(SettingsService settings)
     {
@@ -39,6 +40,7 @@ public class AuthService
                 if (result is not null)
                 {
                     await StoreTokensAsync(result);
+                    await SecureStorage.Default.SetAsync(UsernameKey, username);
                     return AuthResult.Success();
                 }
             }
@@ -135,6 +137,7 @@ public class AuthService
         SecureStorage.Default.Remove(AccessTokenKey);
         SecureStorage.Default.Remove(RefreshTokenKey);
         SecureStorage.Default.Remove(TokenExpiryKey);
+        SecureStorage.Default.Remove(UsernameKey);
     }
 
     private async Task StoreTokensAsync(AccessTokenResponse tokens)
@@ -145,6 +148,12 @@ public class AuthService
         // Calculate and store expiry time
         var expiry = DateTime.UtcNow.AddSeconds(tokens.ExpiresIn);
         await SecureStorage.Default.SetAsync(TokenExpiryKey, expiry.ToString("O"));
+    }
+
+    // Add a method to get the username
+    public async Task<string?> GetUsernameAsync()
+    {
+        return await SecureStorage.Default.GetAsync(UsernameKey);
     }
 }
 

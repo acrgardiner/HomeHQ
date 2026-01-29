@@ -17,15 +17,18 @@ public partial class SettingsPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        LoadSettings();
+        _ = LoadSettings();
     }
 
-    private void LoadSettings()
+    private async Task LoadSettings()
     {
         ServerUrlEntry.Text = _settingsService.ApiBaseUrl;
-        
-        // TODO: Get username from a user service or token claims
-        UsernameLabel.Text = "Authenticated User";
+
+        // Get username from AuthService
+        var username = await _authService.GetUsernameAsync();
+        UsernameLabel.Text = username ?? "Unknown User";
+
+        VersionLabel.Text = AppInfo.Current.VersionString;
     }
 
     private async void OnSaveServerClicked(object? sender, EventArgs e)

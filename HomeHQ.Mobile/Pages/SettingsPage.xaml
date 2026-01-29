@@ -80,7 +80,8 @@
                     <Grid ColumnDefinitions="*, Auto">
                         <Label Text="Version"
                                TextColor="{StaticResource Gray500}"/>
-                        <Label Grid.Column="1"
+                        <Label x:Name="VersionLabel"
+                               Grid.Column="1"
                                Text="1.0.0"
                                TextColor="{StaticResource Gray600}"/>
                     </Grid>
