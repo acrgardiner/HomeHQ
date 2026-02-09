@@ -49,9 +49,10 @@
                      VerticalOptions="Center"
                      Clicked="OnLogoutClicked">
             <ImageButton.Source>
-                <FontImageSource Glyph="⏻" 
-                                 Color="{StaticResource Gray500}" 
-                                 Size="20"/>
+                <FontImageSource Color="{StaticResource Gray500}" 
+                    FontFamily="MSO"
+                    Glyph="\ue145"
+                    Size="20" />
             </ImageButton.Source>
         </ImageButton>
         
