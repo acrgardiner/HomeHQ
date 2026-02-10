@@ -74,6 +74,7 @@ public class AssetsViewModel : BaseViewModel
     public ICommand SearchCommand { get; }
     public ICommand AssetSelectedCommand { get; }
     public ICommand LogoutCommand { get; }
+    public ICommand AddAssetCommand { get; }
 
     public AssetsViewModel(ApiClient apiClient, AuthService authService, CategoryService categoryService)
     {
@@ -85,6 +86,7 @@ public class AssetsViewModel : BaseViewModel
         SearchCommand = new Command(async () => await SearchAssetsAsync());
         AssetSelectedCommand = new Command<Asset>(async (asset) => await OnAssetSelected(asset));
         LogoutCommand = new Command(async () => await LogoutAsync());
+        AddAssetCommand = new Command(async () => await AddAssetAsync());
     }
 
     public async Task LoadAssetsAsync(bool forceRefresh = false)
@@ -173,6 +175,11 @@ public class AssetsViewModel : BaseViewModel
             _categoryService.ClearCache();
             await Shell.Current.GoToAsync("//Login");
         }
+    }
+
+    private async Task AddAssetAsync()
+    {
+        await Shell.Current.GoToAsync("Create");
     }
 
     private void UpdateVisibility()

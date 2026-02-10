@@ -7,15 +7,18 @@
              x:DataType="vm:AssetsViewModel"
              Title="My Assets">
 
-    <Grid RowDefinitions="Auto, *">
+    <!-- Main container with FAB overlay -->
+    <Grid>
+        <!-- Content Grid -->
+        <Grid RowDefinitions="Auto, *">
 
-        <!-- Search Bar -->
-        <SearchBar Grid.Row="0"
-                   Placeholder="Search assets..."
-                   Text="{Binding SearchText}"
-                   SearchCommand="{Binding SearchCommand}"
-                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
-                   Margin="16,8"/>
+            <!-- Search Bar -->
+            <SearchBar Grid.Row="0"
+                       Placeholder="Search assets..."
+                       Text="{Binding SearchText}"
+                       SearchCommand="{Binding SearchCommand}"
+                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                       Margin="16,8"/>
 
         <!-- Loading Indicator -->
         <ActivityIndicator Grid.Row="1"
@@ -40,15 +43,23 @@
                    FontAttributes="Bold"
                    TextColor="{StaticResource Gray600}"
                    HorizontalOptions="Center"/>
-            <Label Text="Pull down to refresh or add your first asset"
+            <Label Text="Add your first asset to get started"
                    FontSize="14"
                    TextColor="{StaticResource Gray400}"
                    HorizontalOptions="Center"
                    HorizontalTextAlignment="Center"/>
-            <Button Text="Refresh"
-                    Command="{Binding RefreshCommand}"
+            <Button Text="➕ Add Asset"
+                    Command="{Binding AddAssetCommand}"
                     BackgroundColor="{StaticResource Primary}"
                     TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="44"
+                    WidthRequest="140"
+                    FontAttributes="Bold"/>
+            <Button Text="Refresh"
+                    Command="{Binding RefreshCommand}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
                     CornerRadius="8"
                     HeightRequest="44"
                     WidthRequest="120"/>
@@ -143,5 +154,21 @@
             </CollectionView>
         </RefreshView>
 
+        </Grid>
+
+        <!-- Floating Action Button -->
+        <Button Text="＋"
+                Command="{Binding AddAssetCommand}"
+                BackgroundColor="{StaticResource Primary}"
+                TextColor="White"
+                FontSize="28"
+                FontAttributes="Bold"
+                CornerRadius="32"
+                HeightRequest="64"
+                WidthRequest="64"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,20,20"
+                Shadow="{Shadow Brush=Black, Offset='2,4', Radius=8, Opacity=0.3}"/>
     </Grid>
 </ContentPage>

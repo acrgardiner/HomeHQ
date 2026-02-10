@@ -1,4 +1,4 @@
-﻿using HomeHQ.DTOs;
+using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
 using System.Collections.ObjectModel;
@@ -8,14 +8,14 @@ using System.Windows.Input;
 
 namespace HomeHQ.Mobile.ViewModels;
 
-public class NewAssetViewModel : BaseViewModel
+public class AssetCreateViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
     private readonly AuthService _authService;
     private readonly CategoryService _categoryService;
     private readonly SharedImageService _sharedImageService;
 
-    public NewAssetViewModel(
+    public AssetCreateViewModel(
         ApiClient apiClient,
         AuthService authService,
         CategoryService categoryService,

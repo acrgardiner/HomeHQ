@@ -33,14 +33,14 @@ public static class MauiProgram
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<AssetsViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
-        builder.Services.AddTransient<NewAssetViewModel>();
+        builder.Services.AddTransient<AssetCreateViewModel>();
 
         // Register Pages
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<AssetsPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<DashboardPage>();
-        builder.Services.AddTransient<NewAssetPage>();
+        builder.Services.AddTransient<AssetCreatePage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

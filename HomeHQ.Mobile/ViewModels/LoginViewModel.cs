@@ -7,6 +7,7 @@ public class LoginViewModel : BaseViewModel
 {
     private readonly AuthService _authService;
     private readonly SettingsService _settings;
+    private readonly SharedImageService _sharedImageService;
 
     private string _serverUrl = string.Empty;
     public string ServerUrl
@@ -54,10 +55,11 @@ public class LoginViewModel : BaseViewModel
     public ICommand LoginCommand { get; }
     public ICommand ToggleServerUrlCommand { get; }
 
-    public LoginViewModel(AuthService authService, SettingsService settings)
+    public LoginViewModel(AuthService authService, SettingsService settings, SharedImageService sharedImageService)
     {
         _authService = authService;
         _settings = settings;
+        _sharedImageService = sharedImageService;
 
         // Load current server URL
         _serverUrl = _settings.ApiBaseUrl;
@@ -121,8 +123,15 @@ public class LoginViewModel : BaseViewModel
                 // Clear sensitive data
                 Password = string.Empty;
 
-                // Navigate to dashboard
-                await Shell.Current.GoToAsync("//Dashboard");
+                // Check for pending shared image
+                if (CheckAndLoadPendingImage())
+                {
+                    await Shell.Current.GoToAsync("//Assets/Create");
+                }
+                else
+                {
+                    await Shell.Current.GoToAsync("//Dashboard");
+                }
             }
             else
             {
@@ -138,5 +147,42 @@ public class LoginViewModel : BaseViewModel
             IsBusy = false;
             OnPropertyChanged(nameof(LoginButtonText));
         }
+    }
+
+    /// <summary>
+    /// Checks for pending image in Preferences and loads it into SharedImageService.
+    /// Returns true if a pending image was found.
+    /// </summary>
+    private bool CheckAndLoadPendingImage()
+    {
+        try
+        {
+            var imagePath = Preferences.Get("pending_image_path", string.Empty);
+
+            if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+            {
+                var fileName = Preferences.Get("pending_image_filename", string.Empty);
+                var contentType = Preferences.Get("pending_image_contenttype", string.Empty);
+
+                // Load into shared service
+                _sharedImageService.SetPendingImage(
+                    imagePath,
+                    string.IsNullOrEmpty(fileName) ? null : fileName,
+                    string.IsNullOrEmpty(contentType) ? null : contentType);
+
+                // Clear preferences
+                Preferences.Remove("pending_image_path");
+                Preferences.Remove("pending_image_filename");
+                Preferences.Remove("pending_image_contenttype");
+
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error checking for pending image: {ex}");
+        }
+
+        return false;
     }
 }
