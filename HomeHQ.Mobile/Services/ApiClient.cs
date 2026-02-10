@@ -84,6 +84,16 @@ public class ApiClient
         return await SendAsync(request, endpoint, cancellationToken);
     }
 
+    /// <summary>
+    /// Sends a POST request with multipart form data (for file uploads).
+    /// </summary>
+    public async Task<HttpResponseMessage> PostMultipartAsync(string endpoint, MultipartFormDataContent content, CancellationToken cancellationToken = default)
+    {
+        var request = CreateRequest(HttpMethod.Post, endpoint);
+        request.Content = content;
+        return await SendAsync(request, endpoint, cancellationToken);
+    }
+
     private HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)
     {
         var uri = new Uri(new Uri(_settings.ApiBaseUrl), endpoint);

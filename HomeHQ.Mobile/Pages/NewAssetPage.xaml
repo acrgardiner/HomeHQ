@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
+             x:Class="HomeHQ.Mobile.Pages.NewAssetPage"
+             x:DataType="vm:NewAssetViewModel"
+             Title="New Asset"
+             Shell.NavBarIsVisible="True">
+
+    <Shell.TitleView>
+        <Grid ColumnDefinitions="*, Auto">
+            <Label Text="New Asset" 
+                   FontSize="18" 
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                   VerticalOptions="Center"/>
+            <Button Grid.Column="1"
+                    Text="Save"
+                    Command="{Binding SaveCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="36"
+                    Padding="16,0"
+                    FontAttributes="Bold"/>
+        </Grid>
+    </Shell.TitleView>
+
+    <Grid RowDefinitions="*, Auto">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16" Spacing="16">
+
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HeightRequest="48"
+                                   WidthRequest="48"
+                                   HorizontalOptions="Center"/>
+
+                <!-- Error Message -->
+                <Frame IsVisible="{Binding HasError}"
+                       BackgroundColor="#FFEBEE"
+                       BorderColor="#EF5350"
+                       CornerRadius="8"
+                       Padding="12">
+                    <Label Text="{Binding ErrorMessage}"
+                           TextColor="#C62828"
+                           FontSize="14"/>
+                </Frame>
+
+                <!-- Form Content -->
+                <VerticalStackLayout IsVisible="{Binding ShowContent}" Spacing="16">
+
+                    <!-- Image Preview Section -->
+                    <Frame BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                           CornerRadius="12"
+                           Padding="0"
+                           HasShadow="False"
+                           IsVisible="{Binding HasPendingImage}">
+                        <Grid RowDefinitions="Auto, Auto">
+                            <!-- Image Preview -->
+                            <Image Grid.Row="0"
+                                   Source="{Binding PendingImageSource}"
+                                   Aspect="AspectFill"
+                                   HeightRequest="200"
+                                   HorizontalOptions="Fill">
+                                <Image.Clip>
+                                    <RoundRectangleGeometry Rect="0,0,400,200" CornerRadius="12,12,0,0"/>
+                                </Image.Clip>
+                            </Image>
+
+                            <!-- Image Info Bar -->
+                            <Grid Grid.Row="1" 
+                                  Padding="12,8"
+                                  ColumnDefinitions="*, Auto"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
+                                <VerticalStackLayout>
+                                    <Label Text="{Binding PendingImageFileName}"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Text="Shared Image"
+                                           FontSize="12"
+                                           TextColor="{StaticResource Gray500}"/>
+                                </VerticalStackLayout>
+                                <Button Grid.Column="1"
+                                        Text="✕"
+                                        Command="{Binding RemoveImageCommand}"
+                                        BackgroundColor="Transparent"
+                                        TextColor="{StaticResource Gray500}"
+                                        FontSize="20"
+                                        WidthRequest="40"
+                                        HeightRequest="40"
+                                        Padding="0"/>
+                            </Grid>
+                        </Grid>
+                    </Frame>
+
+                    <!-- Add Image Button (when no image) -->
+                    <Frame IsVisible="{Binding HasPendingImage, Converter={StaticResource InvertedBoolConverter}}"
+                           BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                           CornerRadius="12"
+                           Padding="24"
+                           HasShadow="False">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding AddImageCommand}"/>
+                        </Frame.GestureRecognizers>
+                        <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
+                            <Label Text="📷" FontSize="40" HorizontalOptions="Center"/>
+                            <Label Text="Tap to add an image"
+                                   FontSize="14"
+                                   TextColor="{StaticResource Gray500}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- Asset Name -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Asset Name *"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}"/>
+                        <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Entry Text="{Binding Name}"
+                                   Placeholder="Enter asset name"
+                                   FontSize="16"
+                                   Margin="12,8"/>
+                        </Frame>
+                    </VerticalStackLayout>
+
+                    <!-- Category Picker -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Category"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}"/>
+                        <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Picker ItemsSource="{Binding Categories}"
+                                    SelectedItem="{Binding SelectedCategory}"
+                                    ItemDisplayBinding="{Binding Name}"
+                                    Title="Select a category"
+                                    FontSize="16"
+                                    Margin="8,0"/>
+                        </Frame>
+                    </VerticalStackLayout>
+
+                    <!-- Purchased From -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Purchased From"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}"/>
+                        <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <Entry Text="{Binding PurchasedFrom}"
+                                   Placeholder="e.g., Amazon, Best Buy, etc."
+                                   FontSize="16"
+                                   Margin="12,8"/>
+                        </Frame>
+                    </VerticalStackLayout>
+
+                    <!-- Purchase Date -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Purchase Date"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}"/>
+                        <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                               BorderColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                               CornerRadius="8"
+                               Padding="0"
+                               HasShadow="False">
+                            <DatePicker Date="{Binding PurchaseDate}"
+                                        FontSize="16"
+                                        Margin="12,8"/>
+                        </Frame>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Bottom Action Bar -->
+        <Grid Grid.Row="1"
+              Padding="16"
+              ColumnDefinitions="*, *"
+              ColumnSpacing="12"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
+            <Button Grid.Column="0"
+                    Text="Cancel"
+                    Command="{Binding CancelCommand}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                    CornerRadius="8"
+                    HeightRequest="48"/>
+            <Button Grid.Column="1"
+                    Text="{Binding IsBusy, Converter={StaticResource BusyToTextConverter}, ConverterParameter='Save|Saving...'}"
+                    Command="{Binding SaveCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="48"
+                    FontAttributes="Bold"/>
+        </Grid>
+    </Grid>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <local:InvertedBoolConverter x:Key="InvertedBoolConverter"
+                                         xmlns:local="clr-namespace:HomeHQ.Mobile.Converters"/>
+            <local:BusyToTextConverter x:Key="BusyToTextConverter"
+                                       xmlns:local="clr-namespace:HomeHQ.Mobile.Converters"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+</ContentPage>

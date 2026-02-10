@@ -66,4 +66,10 @@
 	  <ProjectReference Include="..\HomeHQ.Shared\HomeHQ.Shared.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <MauiXaml Update="Pages\NewAssetPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
 </Project>

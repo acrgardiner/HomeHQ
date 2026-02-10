@@ -39,3 +39,24 @@ public class BoolToExpandTextConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Converts boolean IsBusy to different text values.
+/// Parameter format: "NormalText|BusyText"
+/// </summary>
+public class BusyToTextConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not bool isBusy)
+            return parameter?.ToString()?.Split('|').FirstOrDefault() ?? "Action";
+
+        var texts = parameter?.ToString()?.Split('|') ?? ["Action", "Loading..."];
+        return isBusy ? (texts.Length > 1 ? texts[1] : "Loading...") : texts[0];
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
