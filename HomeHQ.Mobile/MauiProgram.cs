@@ -27,20 +27,16 @@ public static class MauiProgram
         builder.Services.AddSingleton<ApiClient>();
         builder.Services.AddSingleton<CategoryService>();
 
-        builder.Services.AddSingleton<SharedImageService>();
-
         // Register ViewModels
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<AssetsViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
-        builder.Services.AddTransient<AssetCreateViewModel>();
 
         // Register Pages
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<AssetsPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<DashboardPage>();
-        builder.Services.AddTransient<AssetCreatePage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

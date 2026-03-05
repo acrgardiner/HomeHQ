@@ -14,6 +14,7 @@ public class AssetsViewModel : BaseViewModel
     private readonly ApiClient _apiClient;
     private readonly AuthService _authService;
     private readonly CategoryService _categoryService;
+    private readonly SettingsService _settingsService;
 
     public ObservableCollection<Asset> Assets { get; } = [];
 
@@ -76,11 +77,12 @@ public class AssetsViewModel : BaseViewModel
     public ICommand LogoutCommand { get; }
     public ICommand AddAssetCommand { get; }
 
-    public AssetsViewModel(ApiClient apiClient, AuthService authService, CategoryService categoryService)
+    public AssetsViewModel(ApiClient apiClient, AuthService authService, CategoryService categoryService, SettingsService settingsService)
     {
         _apiClient = apiClient;
         _authService = authService;
         _categoryService = categoryService;
+        _settingsService = settingsService;
 
         RefreshCommand = new Command(async () => await LoadAssetsAsync(forceRefresh: true));
         SearchCommand = new Command(async () => await SearchAssetsAsync());
@@ -179,7 +181,9 @@ public class AssetsViewModel : BaseViewModel
 
     private async Task AddAssetAsync()
     {
-        await Shell.Current.GoToAsync("Create");
+        // Open the web create page in the browser
+        var createUrl = $"{_settingsService.ApiBaseUrl}/assets/create";
+        await Browser.OpenAsync(createUrl, BrowserLaunchMode.External);
     }
 
     private void UpdateVisibility()

@@ -99,7 +99,7 @@
                                                     <div>
                                                         <MudText Typo="Typo.body1">@asset.Name</MudText>
                                                         <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                            @asset.Category?.Name • @asset.CreatedOn.ToString("MMM dd, yyyy")
+                                                            @asset.Category?.Name • @asset.CreatedOn?.ToString("MMM dd, yyyy")
                                                         </MudText>
                                                     </div>
                                                 </div>
@@ -323,8 +323,11 @@
                 .Select(m => Formatter.FormatDate(m, "MMM yyyy"))
                 .ToArray();
 
-            //Prepare data for the chart
-            var attachGrouped = await AssetService.GetCountByPropertyAsync(a => a.CreatedOn.Year.ToString() + "-" + a.CreatedOn.Month.ToString(), a => a.CreatedOn >= fromDate);
+            var attachGrouped = await AssetService.GetCountByPropertyAsync(
+                a => a.CreatedOn.HasValue
+                     ? a.CreatedOn.Value.Year.ToString() + "-" + a.CreatedOn.Value.Month.ToString()
+                     : "null",
+                a => a.CreatedOn.HasValue && a.CreatedOn.Value >= fromDate);
 
             var attachmentSeriesData = months
                 .Select(m => attachGrouped.TryGetValue($"{m.Year}-{m.Month}", out var count) ? count : 0)

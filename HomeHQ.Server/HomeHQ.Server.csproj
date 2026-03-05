@@ -35,10 +35,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include=".github\workflows\*" />
   </ItemGroup>
 
