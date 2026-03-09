@@ -9,7 +9,7 @@
    height="1024"
    width="1024"
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
-   sodipodi:docname="homehq.svg"
+   sodipodi:docname="homehqwText.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -182,13 +182,13 @@
          id="path17"
          inkscape:label="corner" /></g><text
        xml:space="preserve"
-       style="font-size:34.7385px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;display:none;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#ffffff;stroke-width:2.64583;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       style="font-size:34.7385px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;display:inline;fill:#417d90;fill-opacity:1;fill-rule:evenodd;stroke:#417d90;stroke-width:2.64583;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
        x="55.48539"
        y="244.63174"
        id="text24"
        inkscape:label="text"><tspan
          sodipodi:role="line"
          id="tspan24"
-         style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
-         x="55.48539"
-         y="244.63174">Home HQ</tspan></text></g></svg>
+         style="fill:#417d90;fill-opacity:1;stroke:#417d90;stroke-width:2.64583;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="0"
+         y="0">Home HQ</tspan></text></g></svg>

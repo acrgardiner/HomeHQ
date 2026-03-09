@@ -51,11 +51,10 @@
             <ImageButton.Source>
                 <FontImageSource Color="{StaticResource Gray500}" 
                     FontFamily="MSO"
-                    Glyph="\ue145"
-                    Size="20" />
+                    Glyph="&#xe9ba;"
+                    Size="16" />
             </ImageButton.Source>
         </ImageButton>
-        
     </Grid>
     
 </ContentView>

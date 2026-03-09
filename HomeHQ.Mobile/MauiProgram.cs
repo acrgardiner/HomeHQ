@@ -18,7 +18,7 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 fonts.AddFont("fontawesome.ttf", "FontAwesomeRegular");
                 fonts.AddFont("MaterialIcons-Regular.ttf", "MaterialIconsRegular");
-                fonts.AddFont("MaterialSymbolsOutlined.ttf", "MSO"); // MSO = Material Symbols Outlined
+                fonts.AddFont("material-symbols-outlined-latin-100-normal.ttf", "MSO"); // MSO = Material Symbols Outlined
             });
 
         // Register Services (order matters - SettingsService first)
