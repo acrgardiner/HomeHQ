@@ -160,8 +160,8 @@ public class AssetsViewModel : BaseViewModel
     {
         if (asset == null) return;
 
-        // Navigate to asset detail page (you can implement this later)
-        await Shell.Current.DisplayAlertAsync("Asset Selected", $"You selected: {asset.Name}", "OK");
+        // Navigate to asset detail page
+        await Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}");
     }
 
     private async Task LogoutAsync()
