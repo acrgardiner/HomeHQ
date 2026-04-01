@@ -105,7 +105,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         _apiClient = apiClient;
         _settingsService = settingsService;
 
-        GoBackCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
+        GoBackCommand = new Command(async () => await GoBackAsync());
         OpenExternallyCommand = new Command(async () => await OpenExternallyAsync());
         RefreshCommand = new Command(async () => await LoadAttachmentAsync());
     }
@@ -184,6 +184,13 @@ public class AttachmentViewerViewModel : BaseViewModel
             HasError = true;
             ErrorMessage = "Failed to load image";
         }
+    }
+
+    private async Task GoBackAsync()
+    {
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync(".."),
+            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 
     private async Task OpenExternallyAsync()

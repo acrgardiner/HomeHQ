@@ -15,11 +15,26 @@ public partial class DashboardPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadDashboardAsync();
+
+        try
+        {
+            await _viewModel.LoadDashboardAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to load dashboard: {ex.Message}", "OK");
+        }
     }
 
     private async void OnSettingsClicked(object? sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync("//Settings");
+        try
+        {
+            await Shell.Current.GoToAsync("//Settings");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Navigation failed: {ex.Message}", "OK");
+        }
     }
 }

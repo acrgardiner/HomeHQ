@@ -158,30 +158,45 @@ public class AssetsViewModel : BaseViewModel
             return;
         }
 
-        // Navigate to asset detail page
-        await Shell.Current.GoToAsync($"//AssetDetail?assetId={asset.Id}");
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync($"//AssetDetail?assetId={asset.Id}"),
+            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 
     private async Task LogoutAsync()
     {
-        bool confirm = await Shell.Current.DisplayAlertAsync(
-            "Logout",
-            "Are you sure you want to logout?",
-            "Yes", "No");
-
-        if (confirm)
+        try
         {
-            _authService.Logout();
-            _categoryService.ClearCache();
-            await Shell.Current.GoToAsync("//Login");
+            bool confirm = await Shell.Current.DisplayAlertAsync(
+                "Logout",
+                "Are you sure you want to logout?",
+                "Yes", "No");
+
+            if (confirm)
+            {
+                _authService.Logout();
+                _categoryService.ClearCache();
+                await Shell.Current.GoToAsync("//Login");
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Logout failed: {ex.Message}";
         }
     }
 
     private async Task AddAssetAsync()
     {
-        // Open the web create page in the browser
-        var createUrl = $"{_settingsService.ApiBaseUrl}/assets/create";
-        await Browser.OpenAsync(createUrl, BrowserLaunchMode.External);
+        try
+        {
+            // Open the web create page in the browser
+            var createUrl = $"{_settingsService.ApiBaseUrl}/assets/create";
+            await Browser.OpenAsync(createUrl, BrowserLaunchMode.External);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Could not open browser: {ex.Message}";
+        }
     }
 
     private void UpdateVisibility()

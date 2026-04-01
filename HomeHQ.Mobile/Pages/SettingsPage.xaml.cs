@@ -22,35 +22,56 @@ public partial class SettingsPage : ContentPage
 
     private async Task LoadSettings()
     {
-        ServerUrlEntry.Text = _settingsService.ApiBaseUrl;
+        try
+        {
+            ServerUrlEntry.Text = _settingsService.ApiBaseUrl;
 
-        // Get username from AuthService
-        var username = await _authService.GetUsernameAsync();
-        UsernameLabel.Text = username ?? "Unknown User";
+            // Get username from AuthService
+            var username = await _authService.GetUsernameAsync();
+            UsernameLabel.Text = username ?? "Unknown User";
 
-        VersionLabel.Text = AppInfo.Current.VersionString;
+            VersionLabel.Text = AppInfo.Current.VersionString;
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to load settings: {ex.Message}", "OK");
+        }
     }
 
     private async void OnSaveServerClicked(object? sender, EventArgs e)
     {
-        var url = ServerUrlEntry.Text?.Trim();
-        if (string.IsNullOrEmpty(url))
+        try
         {
-            await DisplayAlert("Error", "Please enter a valid server URL", "OK");
-            return;
-        }
+            var url = ServerUrlEntry.Text?.Trim();
+            if (string.IsNullOrEmpty(url))
+            {
+                await DisplayAlert("Error", "Please enter a valid server URL", "OK");
+                return;
+            }
 
-        _settingsService.SetApiBaseUrl(url);
-        await DisplayAlert("Success", "Server URL has been saved", "OK");
+            _settingsService.SetApiBaseUrl(url);
+            await DisplayAlert("Success", "Server URL has been saved", "OK");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to save server URL: {ex.Message}", "OK");
+        }
     }
 
     private async void OnLogoutClicked(object? sender, EventArgs e)
     {
-        var confirm = await DisplayAlert("Sign Out", "Are you sure you want to sign out?", "Yes", "No");
-        if (confirm)
+        try
         {
-            _authService.Logout();
-            await Shell.Current.GoToAsync("//Login");
+            var confirm = await DisplayAlert("Sign Out", "Are you sure you want to sign out?", "Yes", "No");
+            if (confirm)
+            {
+                _authService.Logout();
+                await Shell.Current.GoToAsync("//Login");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Sign out failed: {ex.Message}", "OK");
         }
     }
 }

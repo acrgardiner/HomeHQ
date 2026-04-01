@@ -153,7 +153,9 @@ public class DashboardViewModel : BaseViewModel
 
     private async Task NavigateToAssetsAsync()
     {
-        await Shell.Current.GoToAsync("//Assets");
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync("//Assets"),
+            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 
     private async Task OnAssetSelected(Asset? asset)
@@ -163,12 +165,15 @@ public class DashboardViewModel : BaseViewModel
             return;
         }
 
-        // Navigate to asset detail page
-        await Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}");
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}"),
+            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 
     private async Task AddAssetAsync()
     {
-        await Shell.Current.GoToAsync($"Asset/Create");
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync("Asset/Create"),
+            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 }

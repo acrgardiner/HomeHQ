@@ -15,6 +15,14 @@ public partial class AssetsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.LoadAssetsAsync();
+
+        try
+        {
+            await _viewModel.LoadAssetsAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to load assets: {ex.Message}", "OK");
+        }
     }
 }

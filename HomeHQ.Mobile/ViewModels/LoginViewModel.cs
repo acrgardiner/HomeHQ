@@ -64,7 +64,10 @@ public class LoginViewModel : BaseViewModel
 
     public async Task<bool> CheckAuthenticationAsync()
     {
-        return await _authService.IsAuthenticatedAsync();
+        return await SafeExecuteAsync(
+            () => _authService.IsAuthenticatedAsync(),
+            defaultValue: false,
+            onError: ex => ErrorMessage = $"Authentication check failed: {ex.Message}");
     }
 
     private async Task LoginAsync()

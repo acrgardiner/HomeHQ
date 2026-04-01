@@ -122,6 +122,84 @@ public class AssetDetailViewModel : BaseViewModel
     public ICommand RefreshCommand { get; }
     public ICommand OpenAttachmentCommand { get; }
 
+    // --- Attachment Carousel ---
+
+    private int _currentAttachmentIndex;
+
+    /// <summary>The attachment currently shown in the carousel.</summary>
+    public Attachment? CurrentAttachment
+        => Attachments.Count > 0 && _currentAttachmentIndex < Attachments.Count
+               ? Attachments[_currentAttachmentIndex]
+               : null;
+
+    /// <summary>Zero-based index of the currently displayed attachment.</summary>
+    public int CurrentAttachmentIndex
+    {
+        get => _currentAttachmentIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, Math.Max(0, Attachments.Count - 1));
+            if (SetProperty(ref _currentAttachmentIndex, clamped))
+            {
+                NotifyAttachmentCarouselChanged();
+                _ = LoadCurrentAttachmentPreviewAsync();
+            }
+        }
+    }
+
+    public bool CanGoPreviousAttachment => _currentAttachmentIndex > 0;
+    public bool CanGoNextAttachment     => _currentAttachmentIndex < Attachments.Count - 1;
+
+    public string AttachmentCountText => Attachments.Count > 0
+        ? $"{_currentAttachmentIndex + 1} of {Attachments.Count}"
+        : string.Empty;
+
+    public bool HasMultipleAttachments => Attachments.Count > 1;
+
+    public bool CurrentAttachmentIsImage
+        => CurrentAttachment?.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true;
+
+    public string CurrentAttachmentFileIcon => GetFileTypeIcon(CurrentAttachment?.ContentType);
+
+    /// <summary>Image bytes loaded from the API for the current attachment (images only).</summary>
+    public ImageSource? CurrentAttachmentPreviewSource
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(HasPreviewImage));
+                OnPropertyChanged(nameof(ShowFileIcon));
+            }
+        }
+    }
+
+    /// <summary>True while the preview image is being fetched from the API.</summary>
+    public bool IsLoadingPreview
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(ShowFileIcon));
+            }
+        }
+    }
+
+    /// <summary>True when a preview image has been successfully loaded.</summary>
+    public bool HasPreviewImage => CurrentAttachmentPreviewSource != null;
+
+    /// <summary>
+    /// True when the file-icon fallback should be shown (no image loaded and not currently loading).
+    /// </summary>
+    public bool ShowFileIcon => !IsLoadingPreview && !HasPreviewImage;
+
+    public ICommand PreviousAttachmentCommand { get; }
+    public ICommand NextAttachmentCommand { get; }
+    public ICommand SelectAttachmentCommand { get; }
+
     public AssetDetailViewModel(ApiClient apiClient, CategoryService categoryService, SettingsService settingsService)
     {
         _apiClient = apiClient;
@@ -133,6 +211,17 @@ public class AssetDetailViewModel : BaseViewModel
         DeleteCommand = new Command(async () => await DeleteAssetAsync());
         RefreshCommand = new Command(async () => await LoadAssetAsync());
         OpenAttachmentCommand = new Command<Attachment>(async (attachment) => await OpenAttachmentAsync(attachment));
+
+        PreviousAttachmentCommand = new Command(() => CurrentAttachmentIndex--);
+        NextAttachmentCommand     = new Command(() => CurrentAttachmentIndex++);
+        SelectAttachmentCommand   = new Command<Attachment>(attachment =>
+        {
+            var index = Attachments.IndexOf(attachment);
+            if (index >= 0)
+            {
+                CurrentAttachmentIndex = index;
+            }
+        });
     }
 
     public async Task LoadAssetAsync()
@@ -282,11 +371,87 @@ public class AssetDetailViewModel : BaseViewModel
         {
             // Silently fail for secondary data
         }
+        finally
+        {
+            // Reset carousel to first item whenever attachments are (re)loaded.
+            // Directly assign the backing field so the setter's equality guard
+            // does not prevent re-initialisation on subsequent reloads.
+            _currentAttachmentIndex = 0;
+            NotifyAttachmentCarouselChanged();
+            CurrentAttachmentPreviewSource = null;
+            IsLoadingPreview = false;
+            if (Attachments.Count > 0)
+            {
+                _ = LoadCurrentAttachmentPreviewAsync();
+            }
+        }
     }
+
+    /// <summary>Fires all property-change notifications related to the carousel state.</summary>
+    private void NotifyAttachmentCarouselChanged()
+    {
+        OnPropertyChanged(nameof(CurrentAttachment));
+        OnPropertyChanged(nameof(CurrentAttachmentIndex));
+        OnPropertyChanged(nameof(CanGoPreviousAttachment));
+        OnPropertyChanged(nameof(CanGoNextAttachment));
+        OnPropertyChanged(nameof(AttachmentCountText));
+        OnPropertyChanged(nameof(HasMultipleAttachments));
+        OnPropertyChanged(nameof(CurrentAttachmentIsImage));
+        OnPropertyChanged(nameof(CurrentAttachmentFileIcon));
+        OnPropertyChanged(nameof(HasAttachments));
+    }
+
+    /// <summary>
+    /// Downloads the raw bytes for the current attachment from the API and
+    /// exposes them as an <see cref="ImageSource"/> (images only).
+    /// </summary>
+    private async Task LoadCurrentAttachmentPreviewAsync()
+    {
+        CurrentAttachmentPreviewSource = null;
+
+        if (CurrentAttachment == null || !CurrentAttachmentIsImage)
+        {
+            return;
+        }
+
+        try
+        {
+            IsLoadingPreview = true;
+            var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/data");
+            if (response.IsSuccessStatusCode)
+            {
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                CurrentAttachmentPreviewSource = ImageSource.FromStream(() => new MemoryStream(bytes));
+            }
+        }
+        catch
+        {
+            // Preview load failed silently; ShowFileIcon will fall back to the icon.
+        }
+        finally
+        {
+            IsLoadingPreview = false;
+        }
+    }
+
+    /// <summary>Returns an emoji icon that represents the given MIME content type.</summary>
+    private static string GetFileTypeIcon(string? contentType) => contentType switch
+    {
+        var ct when ct?.StartsWith("image/") == true                                          => "🖼️",
+        var ct when ct?.Contains("pdf") == true                                               => "📄",
+        var ct when ct?.Contains("word") == true                                              => "📝",
+        var ct when ct?.Contains("excel") == true || ct?.Contains("spreadsheet") == true     => "📊",
+        var ct when ct?.Contains("video") == true                                             => "🎬",
+        var ct when ct?.Contains("audio") == true                                             => "🎵",
+        var ct when ct?.Contains("zip") == true || ct?.Contains("compressed") == true        => "📦",
+        _                                                                                     => "📎"
+    };
 
     private async Task GoBackAsync()
     {
-        await Shell.Current.GoToAsync("..");
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync(".."),
+            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 
     private async Task EditAssetAsync()
@@ -296,9 +461,17 @@ public class AssetDetailViewModel : BaseViewModel
             return;
         }
 
-        // Open the web edit page in the browser
-        var editUrl = $"{_settingsService.ApiBaseUrl}/assets/{Asset.Id}/edit";
-        await Browser.OpenAsync(editUrl, BrowserLaunchMode.External);
+        try
+        {
+            // Open the web edit page in the browser
+            var editUrl = $"{_settingsService.ApiBaseUrl}/assets/{Asset.Id}/edit";
+            await Browser.OpenAsync(editUrl, BrowserLaunchMode.External);
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"Could not open browser: {ex.Message}";
+        }
     }
 
     private async Task DeleteAssetAsync()
@@ -344,7 +517,8 @@ public class AssetDetailViewModel : BaseViewModel
             return;
         }
 
-        // Navigate to attachment viewer page
-        await Shell.Current.GoToAsync($"AttachmentViewer?attachmentId={attachment.Id}");
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync($"AttachmentViewer?attachmentId={attachment.Id}"),
+            onError: ex => ErrorMessage = $"Could not open attachment: {ex.Message}");
     }
 }

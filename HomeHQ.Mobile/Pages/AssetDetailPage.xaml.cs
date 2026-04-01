@@ -15,11 +15,18 @@ public partial class AssetDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        
-        // Only reload if asset is not already loaded (e.g., when navigating back)
-        if (_viewModel.Asset == null && !string.IsNullOrEmpty(_viewModel.AssetId))
+
+        try
         {
-            await _viewModel.LoadAssetAsync();
+            // Only reload if asset is not already loaded (e.g., when navigating back)
+            if (_viewModel.Asset == null && !string.IsNullOrEmpty(_viewModel.AssetId))
+            {
+                await _viewModel.LoadAssetAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Failed to load asset: {ex.Message}", "OK");
         }
     }
 }
