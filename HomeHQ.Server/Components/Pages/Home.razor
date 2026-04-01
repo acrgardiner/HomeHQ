@@ -5,6 +5,7 @@
 @using System.Linq.Expressions
 @using HomeHQ.Helpers
 @using HomeHQ.Components.Entities.Common
+@using MudBlazor.Charts
 
 @inject IEntityService<Asset> AssetService
 @inject IEntityService<Category> CategoryService
@@ -17,7 +18,7 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <AuthorizeView>
         <Authorized>
-            <PageTitle>Dashboard - @Constants.Application.Title</PageTitle>
+            <PageTitle>Dashboard - @Constants.Application.TITLE</PageTitle>
 
             <div class="d-flex align-center justify-space-between mb-6">
                 <div>
@@ -41,7 +42,7 @@
                                     <MudText Typo="Typo.h4" Color="Color.Primary">@_totalAssets</MudText>
                                 </div>
                                 <MudAvatar Color="Color.Primary" Class="dashboard-avatar">
-                                    <MudIcon Icon="@Icons.Material.Filled.AccountBox" />
+                                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
                                 </MudAvatar>
                             </div>
                         </MudCardContent>
@@ -117,7 +118,7 @@
                                     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">Start by creating your first asset</MudText>
                                     <MudButton Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"
                                               OnClick="@(() => Navigation.NavigateTo("/assets/create"))">
-                                        Create Asset
+                                        Add Asset
                                     </MudButton>
                                 </div>
                             }
@@ -142,7 +143,7 @@
                                       ChartOptions="@_activityChartOptions"
                                       ChartSeries="@_activityChartData"
                                       Width="100%"
-                                      AxisChartOptions="_activityAxisChartOptions" />
+                                      ChartLabels="@_activityChartLabels" /> <!--AxisChartOptions="_activityAxisChartOptions"-->
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -204,7 +205,7 @@
                 <MudCard Elevation="2" Class="pa-8">
                     <div class="d-flex flex-column align-center">
                         <MudImage Src="homehq-welcome.png" Alt="Welcome Image" Width="200" Class="mb-4" />
-                        <MudText Typo="Typo.h3" Class="mb-4">Welcome to @Constants.Application.Name</MudText>
+                        <MudText Typo="Typo.h3" Class="mb-4">Welcome to @Constants.Application.NAME</MudText>
                         <MudText Typo="Typo.body1" Class="mb-6 mud-text-secondary" Style="text-align: center;">
                             Streamline your asset management by easily uploading and organizing receipt attachments 
                             while tracking assets in a centralized system. With intuitive tools for uploading receipts 
@@ -235,9 +236,9 @@
 
     //Activity Chart
     private string[] _activityChartLabels = Array.Empty<string>();
-    private List<ChartSeries> _activityChartData = new();
-    private ChartOptions _activityChartOptions = new() { YAxisTicks = 5, LineStrokeWidth = 4 };
-    private AxisChartOptions _activityAxisChartOptions = new() { XAxisLabelRotation = 15 };
+    private List<ChartSeries<double>> _activityChartData = new();
+    private ChartOptions _activityChartOptions = new() ;//{  YAxisTicks = 5, LineStrokeWidth = 4 };
+    //private AxisChartOptions _activityAxisChartOptions = new() ;//{ XAxisLabelRotation = 15 };
 
 
     protected override async Task OnInitializedAsync()
@@ -335,7 +336,7 @@
                 .ToArray();
 
             _activityChartData.Clear();
-            _activityChartData.Add(new ChartSeries() { Name = "Assets", Data = attachmentSeriesData, ShowDataMarkers = true });
+            _activityChartData.Add(new ChartSeries<double>() { Name = "Assets", Data = attachmentSeriesData }); //, ShowDataMarkers = true
         }
         catch (Exception ex)
         {

@@ -1,4 +1,4 @@
-using HomeHQ.Mobile.Services;
+﻿using HomeHQ.Mobile.Services;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Windows.Input;
@@ -13,46 +13,39 @@ public class DashboardViewModel : BaseViewModel
     private readonly CategoryService _categoryService;
 
     public ObservableCollection<Asset> RecentAssets { get; } = [];
-
-    private int _totalAssets;
     public int TotalAssets
     {
-        get => _totalAssets;
-        set => SetProperty(ref _totalAssets, value);
+        get;
+        set => SetProperty(ref field, value);
     }
-
-    private int _expiringWarranties;
     public int ExpiringWarranties
     {
-        get => _expiringWarranties;
-        set => SetProperty(ref _expiringWarranties, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
-    private bool _isLoading;
     public bool IsLoading
     {
-        get => _isLoading;
+        get;
         set
         {
-            SetProperty(ref _isLoading, value);
+            SetProperty(ref field, value);
             OnPropertyChanged(nameof(ShowContent));
         }
     }
 
-    private bool _isRefreshing;
     public bool IsRefreshing
     {
-        get => _isRefreshing;
-        set => SetProperty(ref _isRefreshing, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
-    private string? _errorMessage;
     public string? ErrorMessage
     {
-        get => _errorMessage;
+        get;
         set
         {
-            SetProperty(ref _errorMessage, value);
+            SetProperty(ref field, value);
             OnPropertyChanged(nameof(HasError));
             OnPropertyChanged(nameof(ShowContent));
         }
@@ -64,7 +57,9 @@ public class DashboardViewModel : BaseViewModel
 
     public ICommand RefreshCommand { get; }
     public ICommand NavigateToAssetsCommand { get; }
+    public ICommand NavigateToAssetCommand { get; }
     public ICommand AssetSelectedCommand { get; }
+    public ICommand AddAssetCommand { get; }
 
     public DashboardViewModel(ApiClient apiClient, CategoryService categoryService)
     {
@@ -74,11 +69,15 @@ public class DashboardViewModel : BaseViewModel
         RefreshCommand = new Command(async () => await LoadDashboardAsync(forceRefresh: true));
         NavigateToAssetsCommand = new Command(async () => await NavigateToAssetsAsync());
         AssetSelectedCommand = new Command<Asset>(async (asset) => await OnAssetSelected(asset));
+        AddAssetCommand = new Command(async () => await AddAssetAsync());
     }
 
     public async Task LoadDashboardAsync(bool forceRefresh = false)
     {
-        if (IsLoading && !forceRefresh) return;
+        if (IsLoading && !forceRefresh)
+        {
+            return;
+        }
 
         try
         {
@@ -159,7 +158,17 @@ public class DashboardViewModel : BaseViewModel
 
     private async Task OnAssetSelected(Asset? asset)
     {
-        if (asset == null) return;
-        await Shell.Current.DisplayAlertAsync("Asset", $"Selected: {asset.Name}", "OK");
+        if (asset == null)
+        {
+            return;
+        }
+
+        // Navigate to asset detail page
+        await Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}");
+    }
+
+    private async Task AddAssetAsync()
+    {
+        await Shell.Current.GoToAsync($"Asset/Create");
     }
 }

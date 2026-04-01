@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:HomeHQ.Mobile.Pages"
     xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+    xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
     Title="HomeHQ"
     Shell.FlyoutBehavior="Flyout"
     Shell.FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
@@ -29,16 +30,17 @@
         FlyoutItemIsVisible="False"/>
 
     <!-- Main Navigation Items -->
-    <FlyoutItem Title="Dashboard" 
-                Icon="{FontImage Glyph='🏠', Color={StaticResource Primary}, Size=22}">
+    <FlyoutItem Title="Dashboard"
+                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Dashboard, IconColor={StaticResource Primary}, IconSize=22}"
+    >
         <ShellContent
             Route="Dashboard"
             ContentTemplate="{DataTemplate pages:DashboardPage}"
             Title="Dashboard"/>
     </FlyoutItem>
 
-    <FlyoutItem Title="Assets" 
-                Icon="{FontImage Glyph='📦', Color={StaticResource Primary}, Size=22}">
+    <FlyoutItem Title="Assets"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Assets"
             ContentTemplate="{DataTemplate pages:AssetsPage}"
@@ -50,7 +52,7 @@
 
     <!-- Settings/Configuration Section -->
     <FlyoutItem Title="Settings"
-                Icon="{FontImage Glyph='⚙️', Color={StaticResource Gray500}, Size=22}">
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Settings, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Settings"
             ContentTemplate="{DataTemplate pages:SettingsPage}"

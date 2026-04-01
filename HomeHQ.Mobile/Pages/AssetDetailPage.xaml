@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
              x:Class="HomeHQ.Mobile.Pages.AssetDetailPage"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:DataType="vm:AssetDetailViewModel"
              Title="{Binding Asset.Name, FallbackValue='Asset Details'}"
              Shell.NavBarIsVisible="False">
@@ -47,17 +48,17 @@
               Padding="8,8,8,8"
               BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
               ColumnDefinitions="Auto, *, Auto, Auto">
-            
+
             <!-- Back Button -->
             <Button Grid.Column="0"
-                    Text="‹"
-                    FontSize="28"
-                    Command="{Binding GoBackCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="{StaticResource Primary}"
-                    WidthRequest="44"
-                    HeightRequest="44"/>
-            
+                x:Name="BackButton"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ArrowBack}"
+                Command="{Binding GoBackCommand}"
+                BackgroundColor="Transparent"
+                WidthRequest="44"
+                HeightRequest="44"
+            />
+
             <!-- Title -->
             <VerticalStackLayout Grid.Column="1" 
                                  VerticalOptions="Center"
@@ -67,33 +68,30 @@
                        FontAttributes="Bold"
                        TextColor="{StaticResource Primary}"
                        LineBreakMode="TailTruncation"/>
-                <Label Text="View asset details"
-                       FontSize="12"
-                       TextColor="{StaticResource Gray500}"/>
             </VerticalStackLayout>
             
             <!-- Edit Button -->
             <Button Grid.Column="2"
-                    Text="✏️"
-                    FontSize="18"
-                    Command="{Binding EditCommand}"
-                    BackgroundColor="{StaticResource Primary}"
-                    TextColor="White"
-                    CornerRadius="20"
-                    WidthRequest="40"
-                    HeightRequest="40"
-                    Margin="4,0"/>
-            
+                x:Name="EditAsset"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Edit}"
+                Command="{Binding EditCommand}"
+                BackgroundColor="{StaticResource Primary}"
+                CornerRadius="20"
+                WidthRequest="40"
+                HeightRequest="40"
+                Margin="4,0"
+            />
+
             <!-- Delete Button -->
             <Button Grid.Column="3"
-                    Text="🗑️"
-                    FontSize="18"
-                    Command="{Binding DeleteCommand}"
-                    BackgroundColor="#DC3545"
-                    TextColor="White"
-                    CornerRadius="20"
-                    WidthRequest="40"
-                    HeightRequest="40"/>
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                x:Name="DeleteAsset"
+                Command="{Binding DeleteCommand}"
+                BackgroundColor="{StaticResource Error}"
+                CornerRadius="20"
+                WidthRequest="40"
+                HeightRequest="40"
+                Margin="4,0"/> 
         </Grid>
         
         <!-- Content Area -->
@@ -113,7 +111,7 @@
                                  HorizontalOptions="Center"
                                  Spacing="16"
                                  Padding="32">
-                <Label Text="⚠️" FontSize="64" HorizontalOptions="Center"/>
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}" FontSize="64" HorizontalOptions="Center"/>
                 <Label Text="Something went wrong"
                        FontSize="18"
                        FontAttributes="Bold"
@@ -145,11 +143,11 @@
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
-                                       Text="ℹ️" 
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Info}"
                                        FontSize="20" 
                                        VerticalOptions="Center"
                                        Margin="0,0,8,0"/>
-                                <Label Grid.Column="1" 
+                                <Label Grid.Column="1"
                                        Text="Basic Information" 
                                        Style="{StaticResource SectionHeaderStyle}"
                                        VerticalOptions="Center"/>
@@ -159,7 +157,7 @@
                                      Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"/>
                             
                             <!-- Card Content -->
-                            <Grid Padding="16" 
+                            <Grid Padding="16,16,16,0" 
                                   RowDefinitions="Auto, Auto, Auto, Auto"
                                   ColumnDefinitions="*, *"
                                   RowSpacing="16"
@@ -201,7 +199,7 @@
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
-                                       Text="✓" 
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified}"
                                        FontSize="20" 
                                        TextColor="{Binding WarrantyStatusColor}"
                                        VerticalOptions="Center"
@@ -250,7 +248,8 @@
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
-                                       Text="🧩" 
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Extension}"
+                                       TextColor="{StaticResource Info}"
                                        FontSize="20" 
                                        VerticalOptions="Center"
                                        Margin="0,0,8,0"/>
@@ -290,7 +289,7 @@
                             <VerticalStackLayout Padding="24" 
                                                  IsVisible="{Binding HasAttributes, Converter={StaticResource InvertedBoolConverter}}"
                                                  HorizontalOptions="Center">
-                                <Label Text="🧩" FontSize="32" HorizontalOptions="Center" Opacity="0.5"/>
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}" FontSize="32" HorizontalOptions="Center" Opacity="0.5"/>
                                 <Label Text="No attributes" 
                                        FontSize="14" 
                                        TextColor="{StaticResource Gray400}"
@@ -307,7 +306,7 @@
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
-                                       Text="📝" 
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Notes}"
                                        FontSize="20" 
                                        VerticalOptions="Center"
                                        Margin="0,0,8,0"/>
@@ -349,7 +348,7 @@
                             <VerticalStackLayout Padding="24" 
                                                  IsVisible="{Binding HasNotes, Converter={StaticResource InvertedBoolConverter}}"
                                                  HorizontalOptions="Center">
-                                <Label Text="📝" FontSize="32" HorizontalOptions="Center" Opacity="0.5"/>
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}" FontSize="32" HorizontalOptions="Center" Opacity="0.5"/>
                                 <Label Text="No notes" 
                                        FontSize="14" 
                                        TextColor="{StaticResource Gray400}"
@@ -366,19 +365,19 @@
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
-                                       Text="📎" 
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile}"
                                        FontSize="20" 
                                        VerticalOptions="Center"
-                                       Margin="0,0,8,0"/>
+                                       Margin="0,0,8,0" TextColor="{StaticResource Warning}"/>
                                 <Label Grid.Column="1" 
                                        Text="Attachments" 
                                        Style="{StaticResource SectionHeaderStyle}"
                                        VerticalOptions="Center"/>
                             </Grid>
-                            
+
                             <BoxView HeightRequest="1" 
                                      Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"/>
-                            
+
                             <!-- Attachments List -->
                             <VerticalStackLayout Padding="16" IsVisible="{Binding HasAttachments}">
                                 <CollectionView ItemsSource="{Binding Attachments}">
@@ -395,6 +394,7 @@
                                                         CommandParameter="{Binding .}"/>
                                                 </Frame.GestureRecognizers>
                                                 <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                                                    
                                                     <!-- File Icon -->
                                                     <Frame Grid.Column="0"
                                                            BackgroundColor="{StaticResource Primary}"
@@ -408,7 +408,7 @@
                                                                HorizontalOptions="Center"
                                                                VerticalOptions="Center"/>
                                                     </Frame>
-                                                    
+
                                                     <!-- File Info -->
                                                     <VerticalStackLayout Grid.Column="1" 
                                                                          VerticalOptions="Center"
@@ -422,7 +422,7 @@
                                                                FontSize="12"
                                                                TextColor="{StaticResource Gray500}"/>
                                                     </VerticalStackLayout>
-                                                    
+
                                                     <!-- Open Indicator -->
                                                     <Label Grid.Column="2"
                                                            Text="›"
@@ -435,12 +435,12 @@
                                     </CollectionView.ItemTemplate>
                                 </CollectionView>
                             </VerticalStackLayout>
-                            
+
                             <!-- Empty State -->
                             <VerticalStackLayout Padding="24" 
                                                  IsVisible="{Binding HasAttachments, Converter={StaticResource InvertedBoolConverter}}"
                                                  HorizontalOptions="Center">
-                                <Label Text="📎" FontSize="32" HorizontalOptions="Center" Opacity="0.5"/>
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}" FontSize="32" HorizontalOptions="Center" Opacity="0.5"/>
                                 <Label Text="No attachments" 
                                        FontSize="14" 
                                        TextColor="{StaticResource Gray400}"
@@ -448,10 +448,6 @@
                             </VerticalStackLayout>
                         </VerticalStackLayout>
                     </Frame>
-                    
-                    <!-- Bottom padding for safe area -->
-                    <BoxView HeightRequest="32"/>
-                    
                 </VerticalStackLayout>
             </ScrollView>
         </Grid>

@@ -1,4 +1,4 @@
-namespace HomeHQ.Services;
+﻿namespace HomeHQ.Services;
 
 public interface IPurgeService
 {
@@ -6,5 +6,3 @@ public interface IPurgeService
     Task<Dictionary<string, int>> PurgeSoftDeletedRecordsAsync(DateTime deletedBefore);
     Task<Dictionary<string, int>> GetSoftDeletedCountAsync();
 }
-
-

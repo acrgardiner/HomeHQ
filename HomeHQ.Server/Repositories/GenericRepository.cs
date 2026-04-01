@@ -4,346 +4,357 @@ using HomeHQ.Data;
 using HomeHQ.Entities;
 using System.Linq.Expressions;
 
-namespace HomeHQ.Repositories
+namespace HomeHQ.Repositories;
+
+public interface IGenericRepository<T> where T : AuditableEntity, IEntity
 {
-    public interface IGenericRepository<T> where T : AuditableEntity, IEntity
+    Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null);
+    Task<IEnumerable<T>> GetAsync<TKey>(
+        Expression<Func<T, bool>>? filter = null,
+        Expression<Func<T, TKey>>? orderBy = null,
+        bool descending = false,
+        int? skip = null,
+        int? take = null,
+        List<Expression<Func<T, object>>>? includes = null
+    );
+    Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null);
+    Task AddAsync(T entity);
+    void Update(T entity);
+    void Delete(T entity);
+    Task SaveChangesAsync();
+
+    Task<int> CountAsync(Expression<Func<T, bool>>? filter = null, bool includeDeleted = false);
+    Task<TResult> AggregateAsync<TResult>(
+        Expression<Func<T, bool>>? filter,
+        Expression<Func<T, TResult>> selector,
+        Func<IQueryable<TResult>, Task<TResult>> aggregateFunc
+    );
+
+    Task<Dictionary<string, int>> GetCountByPropertyAsync<TKey>(Expression<Func<T, TKey>> propertySelector, Expression<Func<T, bool>>? filter = null);
+}
+
+public class GenericRepository<T> : IGenericRepository<T> where T : AuditableEntity, IEntity
+{
+    private readonly ApplicationDbContext _applicationContext;
+    private readonly DbSet<T> _dbSet;
+
+    public GenericRepository(ApplicationDbContext context)
     {
-        Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null);
-        Task<IEnumerable<T>> GetAsync<TKey>(
-            Expression<Func<T, bool>>? filter = null,
-            Expression<Func<T, TKey>>? orderBy = null,
-            bool descending = false,
-            int? skip = null,
-            int? take = null,
-            List<Expression<Func<T, object>>>? includes = null
-        );
-        Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null);
-        Task AddAsync(T entity);
-        void Update(T entity);
-        void Delete(T entity);
-        Task SaveChangesAsync();
-
-        Task<int> CountAsync(Expression<Func<T, bool>>? filter = null, bool includeDeleted = false);
-        Task<TResult> AggregateAsync<TResult>(
-            Expression<Func<T, bool>>? filter,
-            Expression<Func<T, TResult>> selector,
-            Func<IQueryable<TResult>, Task<TResult>> aggregateFunc
-        );
-
-        Task<Dictionary<string, int>> GetCountByPropertyAsync<TKey>(Expression<Func<T, TKey>> propertySelector, Expression<Func<T, bool>>? filter = null);
+        _applicationContext = context;
+        _dbSet = context.Set<T>();
     }
 
-    public class GenericRepository<T> : IGenericRepository<T> where T : AuditableEntity, IEntity
+    public IQueryable<T> GetQueryable(bool includeDeleted = false)
     {
-        private readonly ApplicationDbContext _applicationContext;
-        private readonly DbSet<T> _dbSet;
-
-        public GenericRepository(ApplicationDbContext context)
+        var query = _dbSet.AsQueryable();
+        if (!includeDeleted && typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
         {
-            _applicationContext = context;
-            _dbSet = context.Set<T>();
+            // Build a filter for soft delete
+            var parameter = Expression.Parameter(typeof(T), "e");
+            var deletedOnProp = Expression.PropertyOrField(parameter, "DeletedOn");
+            var nullConstant = Expression.Constant(null, typeof(DateTime?));
+            var body = Expression.Equal(deletedOnProp, nullConstant);
+            var lambda = Expression.Lambda<Func<T, bool>>(body, parameter);
+            query = query.Where(lambda);
+        }
+        return query;
+    }
+
+    public async Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null)
+    {
+        IQueryable<T> query = GetQueryable();
+
+        bool includeParent = false;
+
+        if (includes != null && includes.Count > 0)
+        {
+            includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
         }
 
-        public IQueryable<T> GetQueryable(bool includeDeleted = false)
+        var result = await query.FirstOrDefaultAsync(e => e.Id == id);
+
+        if (includeParent && result != null)
         {
-            var query = _dbSet.AsQueryable();
-            if (!includeDeleted && typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                // Build a filter for soft delete
-                var parameter = Expression.Parameter(typeof(T), "e");
-                var deletedOnProp = Expression.PropertyOrField(parameter, "DeletedOn");
-                var nullConstant = Expression.Constant(null, typeof(DateTime?));
-                var body = Expression.Equal(deletedOnProp, nullConstant);
-                var lambda = Expression.Lambda<Func<T, bool>>(body, parameter);
-                query = query.Where(lambda);
-            }
-            return query;
+            await LoadPolymorphicParents(new[] { result });
         }
 
-        public async Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null)
+        return result;
+    }
+
+    public async Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null)
+    {
+        IQueryable<T> query = GetQueryable();
+
+        bool includeParent = false;
+
+        if (includes != null && includes.Count > 0)
         {
-            IQueryable<T> query = GetQueryable();
+            includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
 
-            bool includeParent = false;
-
-            if (includes != null && includes.Count > 0)
+            foreach (var include in includes)
             {
-                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
-
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
+                query = query.Include(include);
             }
-
-            var result = await query.FirstOrDefaultAsync(e => e.Id == id);
-
-            if (includeParent && result != null)
-            {
-                await LoadPolymorphicParents(new[] { result });
-            }
-
-            return result;
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null)
+        var result = await query.ToListAsync();
+
+        if (includeParent)
         {
-            IQueryable<T> query = GetQueryable();
-
-            bool includeParent = false;
-
-            if (includes != null && includes.Count > 0)
-            {
-                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
-
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
-            }
-
-            var result = await query.ToListAsync();
-
-            if (includeParent)
-            {
-                await LoadPolymorphicParents(result);
-            }
-
-            return result;
+            await LoadPolymorphicParents(result);
         }
 
-        public async Task<IEnumerable<T>> GetAsync<TKey>(
-            Expression<Func<T, bool>>? filter = null,
-            Expression<Func<T, TKey>>? orderBy = null,
-            bool descending = false,
-            int? skip = null,
-            int? take = null,
-            List<Expression<Func<T, object>>>? includes = null
-        )
+        return result;
+    }
+
+    public async Task<IEnumerable<T>> GetAsync<TKey>(
+        Expression<Func<T, bool>>? filter = null,
+        Expression<Func<T, TKey>>? orderBy = null,
+        bool descending = false,
+        int? skip = null,
+        int? take = null,
+        List<Expression<Func<T, object>>>? includes = null
+    )
+    {
+        IQueryable<T> query = GetQueryable();
+
+        bool includeParent = false;
+
+        if (includes != null && includes.Count > 0)
         {
-            IQueryable<T> query = GetQueryable();
+            includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
 
-            bool includeParent = false;
-
-            if (includes != null && includes.Count > 0)
+            foreach (var include in includes)
             {
-                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
-
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
+                query = query.Include(include);
             }
-
-            if (filter != null)
-                query = query.Where(filter);
-
-            if (orderBy != null)
-                query = descending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
-
-            if (skip.HasValue)
-                query = query.Skip(skip.Value);
-
-            if (take.HasValue)
-                query = query.Take(take.Value);
-
-            var result = await query.ToListAsync();
-
-            if (includeParent)
-            {
-                await LoadPolymorphicParents(result);
-            }
-
-            return result;
         }
 
-        private async Task LoadPolymorphicParents(IEnumerable<T> entities)
+        if (filter != null)
         {
-            if (!entities.Any()) return;
+            query = query.Where(filter);
+        }
 
-            // Group entities by ParentType for efficient querying
-            var parentGroups = entities
-                .GroupBy(e => GetParentType(e))
-                .Where(g => !string.IsNullOrEmpty(g.Key))
+        if (orderBy != null)
+        {
+            query = descending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
+        }
+
+        if (skip.HasValue)
+        {
+            query = query.Skip(skip.Value);
+        }
+
+        if (take.HasValue)
+        {
+            query = query.Take(take.Value);
+        }
+
+        var result = await query.ToListAsync();
+
+        if (includeParent)
+        {
+            await LoadPolymorphicParents(result);
+        }
+
+        return result;
+    }
+
+    private async Task LoadPolymorphicParents(IEnumerable<T> entities)
+    {
+        if (!entities.Any())
+        {
+            return;
+        }
+
+        // Group entities by ParentType for efficient querying
+        var parentGroups = entities
+            .GroupBy(e => GetParentType(e))
+            .Where(g => !string.IsNullOrEmpty(g.Key))
+            .ToList();
+
+        foreach (var group in parentGroups)
+        {
+            string? parentType = group.Key;
+            var parentIds = group
+                .Select(e => GetParentId(e))
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct()
                 .ToList();
 
-            foreach (var group in parentGroups)
+            if (parentType is null || !parentIds.Any())
             {
-                var parentType = group.Key;
-                var parentIds = group
-                    .Select(e => GetParentId(e))
-                    .Where(id => id.HasValue)
-                    .Select(id => id!.Value)
-                    .Distinct()
-                    .ToList();
+                continue;
+            }
 
-                if (!parentIds.Any()) continue;
+            // Load parents based on type
+            var parents = await LoadParentsByType(parentType, parentIds);
 
-                // Load parents based on type
-                var parents = await LoadParentsByType(parentType, parentIds);
-
-                // Assign parents to entities
-                foreach (var entity in group)
+            // Assign parents to entities
+            foreach (var entity in group)
+            {
+                var parentId = GetParentId(entity);
+                if (parentId.HasValue)
                 {
-                    var parentId = GetParentId(entity);
-                    if (parentId.HasValue)
-                    {
-                        var parent = parents.FirstOrDefault(p => GetEntityId(p) == parentId.Value);
-                        SetParent(entity, parent);
-                    }
+                    var parent = parents.FirstOrDefault(p => GetEntityId(p) == parentId.Value);
+                    SetParent(entity, parent);
                 }
             }
         }
+    }
 
-        private string? GetParentType(T entity)
+    private string? GetParentType(T entity)
+    {
+        return entity.GetType().GetProperty("ParentType")?.GetValue(entity)?.ToString();
+    }
+
+    private Guid? GetParentId(T entity)
+    {
+        return entity.GetType().GetProperty("ParentId")?.GetValue(entity) as Guid?;
+    }
+
+    private void SetParent(T entity, object? parent)
+    {
+        var parentProperty = entity.GetType().GetProperty("Parent");
+        parentProperty?.SetValue(entity, parent);
+    }
+
+    private Guid GetEntityId(object entity)
+    {
+        var idProperty = entity.GetType().GetProperty("Id");
+        return (Guid)(idProperty?.GetValue(entity) ?? Guid.Empty);
+    }
+
+    private async Task<List<object>> LoadParentsByType(string parentType, List<Guid> parentIds)
+    {
+        return parentType switch
         {
-            return entity.GetType().GetProperty("ParentType")?.GetValue(entity)?.ToString();
+            nameof(Asset) => (await _applicationContext.Assets
+                .Where(a => parentIds.Contains(a.Id))
+                .ToListAsync()).Cast<object>().ToList(),
+
+            nameof(Category) => (await _applicationContext.Categories
+                .Where(c => parentIds.Contains(c.Id))
+                .ToListAsync()).Cast<object>().ToList(),
+
+            nameof(WarrantyType) => (await _applicationContext.WarrantyTypes
+                .Where(w => parentIds.Contains(w.Id))
+                .ToListAsync()).Cast<object>().ToList(),
+
+            nameof(AttachmentType) => (await _applicationContext.AttachmentTypes
+                .Where(at => parentIds.Contains(at.Id))
+                .ToListAsync()).Cast<object>().ToList(),
+
+            _ => new List<object>()
+        };
+    }
+
+    public async Task AddAsync(T entity)
+    {
+        await _dbSet.AddAsync(entity);
+    }
+
+    public void Update(T entity)
+    {
+        _dbSet.Update(entity);
+    }
+
+    public void Delete(T entity)
+    {
+        // Delete polymorphic children first
+        DeletePolymorphicChildren(entity.Id);
+
+        _dbSet.Remove(entity);
+    }
+
+    private void DeletePolymorphicChildren(Guid parentId)
+    {
+        // Get the parent type name
+        var parentType = typeof(T).Name;
+
+        // Delete all Attachments linked to this parent
+        var attachments = _applicationContext.Attachments
+            .Where(a => a.ParentId == parentId && a.ParentType == parentType)
+            .ToList();
+
+        if (attachments.Any())
+        {
+            _applicationContext.Attachments.RemoveRange(attachments);
         }
 
-        private Guid? GetParentId(T entity)
+        // Delete all Notes linked to this parent
+        var notes = _applicationContext.Notes
+            .Where(n => n.ParentId == parentId && n.ParentType == parentType)
+            .ToList();
+
+        if (notes.Any())
         {
-            return entity.GetType().GetProperty("ParentId")?.GetValue(entity) as Guid?;
+            _applicationContext.Notes.RemoveRange(notes);
         }
 
-        private void SetParent(T entity, object? parent)
+        // Delete all AttributeValues linked to this parent
+        var attributes = _applicationContext.Attributes
+            .Where(a => a.ParentId == parentId && a.ParentType == parentType)
+            .ToList();
+
+        if (attributes.Any())
         {
-            var parentProperty = entity.GetType().GetProperty("Parent");
-            parentProperty?.SetValue(entity, parent);
+            _applicationContext.Attributes.RemoveRange(attributes);
+        }
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _applicationContext.SaveChangesAsync();
+    }
+
+    public async Task<int> CountAsync(Expression<Func<T, bool>>? filter = null, bool includeDeleted = false)
+    {
+        IQueryable<T> query = GetQueryable(includeDeleted);
+
+        if (filter != null)
+        {
+            query = query.Where(filter);
         }
 
-        private Guid GetEntityId(object entity)
+        return includeDeleted ? await query.IgnoreQueryFilters().CountAsync(): await query.CountAsync();
+    }
+
+    public async Task<TResult> AggregateAsync<TResult>(
+        Expression<Func<T, bool>>? filter,
+        Expression<Func<T, TResult>> selector,
+        Func<IQueryable<TResult>, Task<TResult>> aggregateFunc
+    )
+    {
+        IQueryable<T> query = GetQueryable();
+
+        if (filter != null)
         {
-            var idProperty = entity.GetType().GetProperty("Id");
-            return (Guid)(idProperty?.GetValue(entity) ?? Guid.Empty);
+            query = query.Where(filter);
         }
 
-        private async Task<List<object>> LoadParentsByType(string parentType, List<Guid> parentIds)
+        var selectedQuery = query.Select(selector);
+
+        return await aggregateFunc(selectedQuery);
+    }
+
+    public async Task<Dictionary<string, int>> GetCountByPropertyAsync<TKey>(Expression<Func<T, TKey>> propertySelector, Expression<Func<T, bool>>? filter = null)
+    {
+        IQueryable<T> query = GetQueryable();
+        if (filter != null)
         {
-            return parentType switch
-            {
-                nameof(Asset) => (await _applicationContext.Assets
-                    .Where(a => parentIds.Contains(a.Id))
-                    .ToListAsync()).Cast<object>().ToList(),
-
-                nameof(Category) => (await _applicationContext.Categories
-                    .Where(c => parentIds.Contains(c.Id))
-                    .ToListAsync()).Cast<object>().ToList(),
-
-                nameof(WarrantyType) => (await _applicationContext.WarrantyTypes
-                    .Where(w => parentIds.Contains(w.Id))
-                    .ToListAsync()).Cast<object>().ToList(),
-
-                nameof(AttachmentType) => (await _applicationContext.AttachmentTypes
-                    .Where(at => parentIds.Contains(at.Id))
-                    .ToListAsync()).Cast<object>().ToList(),
-
-                _ => new List<object>()
-            };
+            query = query.Where(filter);
         }
 
-        public async Task AddAsync(T entity)
-        {
-            await _dbSet.AddAsync(entity);
-        }
-
-        public void Update(T entity)
-        {
-            _dbSet.Update(entity);
-        }
-
-        public void Delete(T entity)
-        {
-            // Delete polymorphic children first
-            DeletePolymorphicChildren(entity.Id);
-
-            _dbSet.Remove(entity);
-        }
-
-        private void DeletePolymorphicChildren(Guid parentId)
-        {
-            // Get the parent type name
-            var parentType = typeof(T).Name;
-
-            // Delete all Attachments linked to this parent
-            var attachments = _applicationContext.Attachments
-                .Where(a => a.ParentId == parentId && a.ParentType == parentType)
-                .ToList();
-
-            if (attachments.Any())
-            {
-                _applicationContext.Attachments.RemoveRange(attachments);
-            }
-
-            // Delete all Notes linked to this parent
-            var notes = _applicationContext.Notes
-                .Where(n => n.ParentId == parentId && n.ParentType == parentType)
-                .ToList();
-
-            if (notes.Any())
-            {
-                _applicationContext.Notes.RemoveRange(notes);
-            }
-
-            // Delete all AttributeValues linked to this parent
-            var attributes = _applicationContext.Attributes
-                .Where(a => a.ParentId == parentId && a.ParentType == parentType)
-                .ToList();
-
-            if (attributes.Any())
-            {
-                _applicationContext.Attributes.RemoveRange(attributes);
-            }
-        }
-
-        public async Task SaveChangesAsync()
-        {
-            await _applicationContext.SaveChangesAsync();
-        }
-
-        public async Task<int> CountAsync(Expression<Func<T, bool>>? filter = null, bool includeDeleted = false)
-        {
-            IQueryable<T> query = GetQueryable(includeDeleted);
-
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
-
-            if (includeDeleted)
-                return await query.IgnoreQueryFilters().CountAsync();
-            else
-                 return await query.CountAsync();
-        }
-
-        public async Task<TResult> AggregateAsync<TResult>(
-            Expression<Func<T, bool>>? filter,
-            Expression<Func<T, TResult>> selector,
-            Func<IQueryable<TResult>, Task<TResult>> aggregateFunc
-        )
-        {
-            IQueryable<T> query = GetQueryable();
-
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
-
-            var selectedQuery = query.Select(selector);
-
-            return await aggregateFunc(selectedQuery);
-        }
-
-        public async Task<Dictionary<string, int>> GetCountByPropertyAsync<TKey>(Expression<Func<T, TKey>> propertySelector, Expression<Func<T, bool>>? filter = null)
-        {
-            IQueryable<T> query = GetQueryable();
-            if (filter != null)
-            {
-                query = query.Where(filter);
-            }
-            return await query
-                .GroupBy(propertySelector)
-                .Select(g => new { Key = g.Key.ToString(), Count = g.Count() })
-                .ToDictionaryAsync(x => x.Key, x => x.Count);
-        }
+        return await query
+            .GroupBy(propertySelector)
+            .Select(g => new { Key = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Key?.ToString() ?? "", x => x.Count);
     }
 }

@@ -1,10 +1,10 @@
-@page "/assets/create"
+﻿@page "/assets/create"
 @using HomeHQ.Components.Entities.Common
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize()]
 
-@inject IEntityService<Asset> AssetService
+@inject IEntityService<HomeHQ.Entities.Asset> AssetService
 @inject IEntityService<Category> CategoryService
 @inject IEntityService<WarrantyType> WarrantyTypeService
 @inject IEntityService<AttributeValue> AttributeService
@@ -13,11 +13,11 @@
 @inject ICurrentUserService CurrentUser
 
 @inject ISnackbar Snackbar
-@inject ILogger<Asset_Create_Page> Logger
+@inject ILogger<AssetCreatePage> Logger
 @inject NavigationManager Navigation
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
-    <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
+    <EditForm Model="@_asset" OnValidSubmit="HandleValidSubmit">
         <DataAnnotationsValidator />
 
         <!-- Header -->
@@ -57,7 +57,7 @@
                     <MudCardContent>
                         <MudGrid Spacing="3">
                             <MudItem xs="12" md="6">
-                                <MudTextField @bind-Value="asset.Name"
+                                <MudTextField @bind-Value="_asset.Name"
                                     Label="Name"
                                     Required="true"
                                     Variant="Variant.Outlined"
@@ -66,7 +66,7 @@
                                     AdornmentIcon="@Icons.Material.Filled.Label" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect @bind-Value="asset.CategoryId"
+                                <MudSelect @bind-Value="_asset.CategoryId"
                                            T="Guid?"
                                            Label="Category"
                                            Required="true"
@@ -79,7 +79,7 @@
                                             -- Select Category --
                                         </div>
                                     </MudSelectItem>
-                                    @foreach (var cat in categories)
+                                    @foreach (var cat in _categories)
                                     {
                                         <MudSelectItem Value="@(cat.Id as Guid?)">
                                             <div class="d-flex align-center">
@@ -91,7 +91,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudTextField @bind-Value="asset.PurchasedFrom"
+                                <MudTextField @bind-Value="_asset.PurchasedFrom"
                                               Label="Purchased From"
                                               Required="true"
                                               Variant="Variant.Outlined"
@@ -100,7 +100,7 @@
                                               AdornmentIcon="@Icons.Material.Filled.Store" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudDatePicker Date="asset.PurchaseDate"
+                                <MudDatePicker Date="_asset.PurchaseDate"
                                     DateChanged="OnPurchaseDateChanged"
                                     Label="Purchase Date"
                                     Required="true"
@@ -131,7 +131,7 @@
                     <MudCardContent>
                         <MudGrid Spacing="3">
                             <MudItem xs="12" md="6">
-                                <MudSelect @bind-Value="asset.WarrantyTypeId"
+                                <MudSelect @bind-Value="_asset.WarrantyTypeId"
                                          Label="Warranty Type"
                                            @bind-Value:after="SetWarrantyExpiration"
                                          Variant="Variant.Outlined"
@@ -143,7 +143,7 @@
                                             -- No Warranty --
                                         </div>
                                     </MudSelectItem>
-                                    @foreach (var wt in warrantyTypes)
+                                    @foreach (var wt in _warrantyTypes)
                                     {
                                         <MudSelectItem Value="@(wt.Id as Guid?)">
                                             <div class="d-flex align-center">
@@ -156,13 +156,13 @@
                             </MudItem>
 
                             <MudItem xs="12" md="6">
-                                <MudDatePicker @bind-Date="asset.WarrantyExpiration"
+                                <MudDatePicker @bind-Date="_asset.WarrantyExpiration"
                                              Label="Warranty Expiration"
                                              Variant="Variant.Outlined"
                                              HelperText="When does the warranty expire?"
                                              Adornment="Adornment.Start"
                                              AdornmentIcon="@Icons.Material.Filled.Event"
-                                             Disabled="asset.WarrantyTypeId == null"
+                                             Disabled="_asset.WarrantyTypeId == null"
                                              ShowToolbar="false"
                                              Editable="true" />
                             </MudItem>
@@ -319,7 +319,7 @@
 
             <!-- Attachments Sidebar -->
             <MudItem xs="12" lg="4">
-                <Attachment_Sidebar @ref="attachmentSidebar" ParentId="@asset.Id" IsMobile="@IsMobile" ParentType="@typeof(Asset).Name" Readonly="@false" />
+                <Attachment_Sidebar @ref="_attachmentSidebar" ParentId="@_asset.Id" IsMobile="@_IsMobile" ParentType="@typeof(Asset).Name" Readonly="@false" />
             </MudItem>
         </MudGrid>
 
@@ -332,157 +332,4 @@
     </EditForm>
 </MudContainer>
 
-@code {
-    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
-    
-    private Asset asset = new() { PurchaseDate = DateTime.Today, WarrantyExpiration = DateTime.Today };
-    private List<Category> categories = new();
-    private List<WarrantyType> warrantyTypes = new();
-    private static readonly Guid? nullGuid = null;
 
-    private List<AttributeValue> _attributes = new();
-    private List<Note> _notes = new();
-    private List<string> _validationErrors = new();
-
-    private Guid defaultWarrantyTypeId;
-
-    private bool IsMobile;
-
-    private Attachment_Sidebar attachmentSidebar;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            IsMobile = CurrentUser.IsMobile;
-
-            categories = (await CategoryService.GetAllAsync()).ToList();
-            warrantyTypes = ((await WarrantyTypeService.GetAllAsync()).OrderBy(x => x.SortOrder)).ToList();
-
-            defaultWarrantyTypeId = warrantyTypes.Where(wt => wt.Default).First().Id;
-
-            if (asset.PurchaseDate == default)
-                asset.PurchaseDate = DateTime.Today;
-
-            asset.WarrantyTypeId = defaultWarrantyTypeId;
-            SetWarrantyExpiration();
-
-            _attributes.Add(new AttributeValue()); // Add initial empty attribute
-            _notes.Add(new Note()); // Add initial empty note
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
-            Logger.LogError(ex, "Error initializing CreateAsset components");
-        }
-    }
-
-    private void AddAttribute()
-    {
-        _attributes.Add(new AttributeValue());
-    }
-
-    private void AddNote()
-    {
-        _notes.Add(new Note());
-    }
-
-    private async Task SaveAttributes(Guid Id)
-    {
-        try
-        {
-            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
-            {
-                attr.ParentId = Id;
-                attr.ParentType = nameof(Asset);
-
-                await AttributeService.AddAsync(attr);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save attributes");
-            Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task SaveNotes(Guid Id)
-    {
-        try
-        {
-            foreach (var note in _notes.Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content)))
-            {
-                note.ParentId = Id;
-                note.ParentType = nameof(Asset);
-
-                await NoteService.AddAsync(note);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save notes");
-            Snackbar.Add($"Failed to save notes: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task HandleValidSubmit()
-    {
-        try
-        {
-            Snackbar.Add($"Saving...", Severity.Info);
-            // Set null for empty Guid selections
-            if (asset.CategoryId == Guid.Empty) asset.CategoryId = null;
-            if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
-
-            var newAsset = await AssetService.AddAsync(asset);
-
-            await SaveAttributes(newAsset.Id);
-            await SaveNotes(newAsset.Id);
-            await attachmentSidebar.SaveAttachments(newAsset.Id);
-
-            Snackbar.Add("Asset created successfully.", Severity.Success);
-            GoBack(); // Use GoBack to preserve navigation state
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private void GoBack()
-    {
-        Navigation.GoBack(ReturnState, "/assets");
-    }
-
-    private void OnPurchaseDateChanged(DateTime? date)
-    {
-        asset.PurchaseDate = date;
-        SetWarrantyExpiration();
-    }
-
-    private void SetWarrantyExpiration()
-    {
-        if (asset.WarrantyTypeId == nullGuid)
-        {
-            asset.WarrantyExpiration = null;
-        }
-        else
-        {
-            if (asset.PurchaseDate.HasValue)
-            {
-                var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
-                if (warrantyType != null)
-                {
-                    if (warrantyType.Years is not null)
-                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddYears(warrantyType.Years.Value);
-                    if (warrantyType.Months is not null)
-                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddMonths(warrantyType.Months.Value);
-                    if (warrantyType.Days is not null)
-                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddDays(warrantyType.Days.Value);
-
-                    StateHasChanged();
-                }
-            }
-        }
-    }
-}

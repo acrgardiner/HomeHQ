@@ -1,11 +1,10 @@
-﻿namespace HomeHQ.Identity
+﻿namespace HomeHQ.Identity;
+
+public interface IUserService
 {
-    public interface IUserService
-    {
-        Task<List<ApplicationUser>> GetUsersAsync();
-        Task<int> GetUserCountAsync();
-        Task<ApplicationUser> AddUser(string username, string password, List<Roles> roles);
-        Task<bool> UpdateUserName(string userId, string newUsername);
-        Task<bool> ResetPasswordAsync(string userId, string newPassword);
-    }
+    Task<List<ApplicationUser>> GetUsersAsync();
+    Task<int> GetUserCountAsync();
+    Task<ApplicationUser> AddUser(string username, string password, List<Roles> roles);
+    Task<bool> UpdateUserName(string userId, string newUsername);
+    Task<bool> ResetPasswordAsync(string userId, string newPassword);
 }

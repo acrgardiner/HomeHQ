@@ -12,7 +12,7 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in - @Constants.Application.Title</PageTitle>
+<PageTitle>Log in - @Constants.Application.TITLE</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
     <div class="d-flex align-center justify-space-between mb-6">
@@ -90,12 +90,20 @@
         {
             Logger.LogInformation("User {username} logging in.", Input.Username);
             var currentUser = await UserManager.FindByNameAsync(Input.Username);
-            // Update the LastLogin property
-            currentUser.LastLogin = DateTime.UtcNow;
-            // Save changes to the database
-            await UserManager.UpdateAsync(currentUser);
 
-            RedirectManager.RedirectTo(ReturnUrl);
+            if (currentUser is not null)
+            {
+                // Update the LastLogin property
+                currentUser.LastLogin = DateTime.UtcNow;
+                // Save changes to the database
+                await UserManager.UpdateAsync(currentUser);
+
+                RedirectManager.RedirectTo(ReturnUrl);
+            }
+            else
+            {
+                errorMessage = "Error: Invalid login attempt.";
+            }
         }
         else if (result.IsLockedOut)
         {

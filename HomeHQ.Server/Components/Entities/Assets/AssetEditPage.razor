@@ -18,13 +18,13 @@
 @inject ICurrentUserService CurrentUser
 
 @inject ISnackbar Snackbar
-@inject ILogger<Asset_Edit_Page> Logger
+@inject ILogger<AssetEditPage> Logger
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
-    <EditForm Model="@asset" OnValidSubmit="HandleValidSubmit">
+    <EditForm Model="@_asset" OnValidSubmit="HandleValidSubmit">
         <DataAnnotationsValidator />
 
         <!-- Header -->
@@ -64,7 +64,7 @@
                     <MudCardContent>
                         <MudGrid Spacing="3">
                             <MudItem xs="12" md="6">
-                                <MudTextField @bind-Value="asset.Name"
+                                <MudTextField @bind-Value="_asset.Name"
                                     Label="Name"
                                     Required="true"
                                     Variant="Variant.Outlined"
@@ -73,7 +73,7 @@
                                     AdornmentIcon="@Icons.Material.Filled.Label" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudSelect @bind-Value="asset.CategoryId"
+                                <MudSelect @bind-Value="_asset.CategoryId"
                                            T="Guid?"
                                            Label="Category"
                                            Required="true"
@@ -86,7 +86,7 @@
                                             -- Select Category --
                                         </div>
                                     </MudSelectItem>
-                                    @foreach (var cat in categories)
+                                    @foreach (var cat in _categories)
                                     {
                                         <MudSelectItem Value="@(cat.Id as Guid?)">
                                             <div class="d-flex align-center">
@@ -98,7 +98,7 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudTextField @bind-Value="asset.PurchasedFrom"
+                                <MudTextField @bind-Value="_asset.PurchasedFrom"
                                               Label="Purchased From"
                                               Required="true"
                                               Variant="Variant.Outlined"
@@ -107,7 +107,7 @@
                                               AdornmentIcon="@Icons.Material.Filled.Store" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <MudDatePicker Date="asset.PurchaseDate"
+                                <MudDatePicker Date="_asset.PurchaseDate"
                                              DateChanged="OnPurchaseDateChanged"
                                              Label="Purchase Date"
                                              Required="true"
@@ -136,7 +136,7 @@
                     <MudCardContent>
                         <MudGrid Spacing="3">
                             <MudItem xs="12" md="6">
-                                <MudSelect @bind-Value="asset.WarrantyTypeId"
+                                <MudSelect @bind-Value="_asset.WarrantyTypeId"
                                          Label="Warranty Type"
                                          @bind-Value:after="SetWarrantyExpiration"
                                          Variant="Variant.Outlined"
@@ -148,7 +148,7 @@
                                             -- No Warranty --
                                         </div>
                                     </MudSelectItem>
-                                    @foreach (var wt in warrantyTypes)
+                                    @foreach (var wt in _warrantyTypes)
                                     {
                                         <MudSelectItem Value="@(wt.Id as Guid?)">
                                             <div class="d-flex align-center">
@@ -161,13 +161,13 @@
                             </MudItem>
 
                             <MudItem xs="12" md="6">
-                                <MudDatePicker @bind-Date="asset.WarrantyExpiration"
+                                <MudDatePicker @bind-Date="_asset.WarrantyExpiration"
                                              Label="Warranty Expiration"
                                              Variant="Variant.Outlined"
                                              HelperText="When does the warranty expire?"
                                              Adornment="Adornment.Start"
                                              AdornmentIcon="@Icons.Material.Filled.Event"
-                                             Disabled="asset.WarrantyTypeId == null"
+                                             Disabled="_asset.WarrantyTypeId == null"
                                              ShowToolbar="false"
                                              Editable="true"
                                                />
@@ -323,7 +323,7 @@
 
             <!-- Attachments Sidebar -->
             <MudItem xs="12" lg="4">
-                <Attachment_Sidebar @ref="attachmentSidebar" ParentId="@asset.Id" IsMobile="@IsMobile" ParentType="@typeof(Asset).Name" Readonly="@false" />
+                <Attachment_Sidebar @ref="_attachmentSidebar" ParentId="@_asset.Id" IsMobile="@_IsMobile" ParentType="@typeof(Asset).Name" Readonly="@false" />
             </MudItem>
         </MudGrid>
 
@@ -336,186 +336,3 @@
     </EditForm>
 </MudContainer>
 
-@code {
-    [Parameter] public Guid Id { get; set; }
-    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
-
-    private Asset asset = new();
-    private List<Category> categories = new();
-    private List<WarrantyType> warrantyTypes = new();
-    private static readonly Guid? nullGuid = null;
-
-    private List<AttributeValue> _attributes = new();
-    private List<Note> _notes = new();
-    private List<string> _validationErrors = new();
-
-    private Guid defaultWarrantyTypeId;
-
-    private Attachment_Sidebar attachmentSidebar;
-    private bool IsMobile;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            IsMobile = CurrentUser.IsMobile;
-
-            categories = (await CategoryService.GetAllAsync()).ToList();
-            warrantyTypes = ((await WarrantyTypeService.GetAllAsync()).OrderBy(x => x.SortOrder)).ToList();
-
-            defaultWarrantyTypeId = warrantyTypes.Where(wt => wt.Default).First().Id;
-
-            var loadedAsset = await AssetService.GetByIdAsync(Id);
-            if (loadedAsset == null)
-            {
-                Snackbar.Add("Asset not found.", Severity.Error);
-                GoBack();
-                return;
-            }
-            asset = loadedAsset;
-
-            _attributes = (await AttributeService.GetAsync(
-                filter: x => x.ParentId == Id && x.ParentType == nameof(Asset)
-            )).ToList();
-
-            _notes = (await NoteService.GetAsync(
-                filter: x => x.ParentId == Id && x.ParentType == nameof(Asset)
-            )).ToList();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
-            Logger.LogError(ex, "Error initializing EditAsset components");
-        }
-    }
-
-    private async Task Remove(AttributeValue item)
-    {
-        _attributes.Remove(item);
-        if (item.Id != Guid.Empty)
-        {
-            await AttributeService.DeleteAsync(item.Id);
-        }
-    }
-
-    private async Task Remove(Note item)
-    {
-        _notes.Remove(item);
-        if (item.Id != Guid.Empty)
-        {
-            await NoteService.DeleteAsync(item.Id);
-        }
-    }
-
-    private void AddAttribute()
-    {
-        _attributes.Add(new AttributeValue());
-    }
-
-    private void AddNote()
-    {
-        _notes.Add(new Note());
-    }
-
-    private async Task HandleValidSubmit()
-    {
-        try
-        {
-            Snackbar.Add($"Saving...", Severity.Info);
-
-            if (asset.CategoryId == Guid.Empty) asset.CategoryId = null;
-            if (asset.WarrantyTypeId == Guid.Empty) asset.WarrantyTypeId = null;
-
-            await AssetService.UpdateAsync(asset);
-            await SaveAttributes(asset.Id);
-            await SaveNotes(asset.Id);
-            await attachmentSidebar.SaveAttachments(asset.Id);
-
-            Snackbar.Add("Asset updated successfully.", Severity.Success);
-            GoBack(); // Use GoBack to preserve navigation state
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private void GoBack()
-    {
-        Navigation.GoBack(ReturnState, "/assets");
-    }
-
-    private void OnPurchaseDateChanged(DateTime? date)
-    {
-        asset.PurchaseDate = date;
-        SetWarrantyExpiration();
-    }
-
-    private void SetWarrantyExpiration()
-    {
-        if (asset.WarrantyTypeId == nullGuid)
-        {
-            asset.WarrantyExpiration = null;
-        }
-        else
-        {
-            if (asset.PurchaseDate.HasValue)
-            {
-                var warrantyType = warrantyTypes.Where(w => w.Id == asset.WarrantyTypeId).FirstOrDefault();
-                if (warrantyType != null)
-                {
-                    if (warrantyType.Years is not null)
-                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddYears(warrantyType.Years.Value);
-                    if (warrantyType.Months is not null)
-                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddMonths(warrantyType.Months.Value);
-                    if (warrantyType.Days is not null)
-                        asset.WarrantyExpiration = asset.PurchaseDate.Value.AddDays(warrantyType.Days.Value);
-
-                    StateHasChanged();
-                }
-            }
-        }
-    }
-
-    private async Task SaveAttributes(Guid Id)
-    {
-        try
-        {
-            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
-            {
-                if (attr.Id == Guid.Empty)
-                {
-                    attr.ParentId = Id;
-                    attr.ParentType = nameof(Asset);
-                    await AttributeService.AddAsync(attr);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save attributes");
-            Snackbar.Add($"Failed to save attributes: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task SaveNotes(Guid Id)
-    {
-        try
-        {
-            foreach (var note in _notes.Where(a => !string.IsNullOrWhiteSpace(a.Title) || !string.IsNullOrWhiteSpace(a.Content)))
-            {
-                if (note.Id == Guid.Empty)
-                {
-                    note.ParentId = Id;
-                    note.ParentType = nameof(Asset);
-                    await NoteService.AddAsync(note);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save notes");
-            Snackbar.Add($"Failed to save notes: {ex.Message}", Severity.Error);
-        }
-    }
-}

@@ -12,7 +12,7 @@
 @inject ISnackbar Snackbar
 @inject ILogger<ListCategories> Logger
 
-<PageTitle>Categories - @Constants.Application.Title</PageTitle>
+<PageTitle>Categories - @Constants.Application.TITLE</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->
@@ -45,7 +45,7 @@
 
     <!-- Main Content Card -->
     <MudCard Elevation="2" Class="entity-list-card">
-        <EntityList @ref="@entityList" TEntityType="Category" Plural="Categories" Singular="Category" EntityService="CategoryService"
+        <EntityList @ref="@_entityList" TEntityType="Category" Plural="Categories" Singular="Category" EntityService="CategoryService"
             EditDialog="@(parameters => DialogService.ShowAsync<EditCategory>("Edit Category", parameters))"
             Logger="Logger"
             Columns="@(
@@ -58,21 +58,3 @@
     </MudCard>
 </MudContainer>
 
-@code {
-    private EntityList<Category>? entityList;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await Task.Yield();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await entityList?.ReloadData();
-    }
-
-    private async Task OpenCreate()
-    {
-        await DialogService.ShowAsync<CreateCategory>("Add New Category");
-    }
-}

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:Class="HomeHQ.Mobile.Controls.FlyoutFooter">
-    
+
     <Grid BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
           Padding="16,12"
           ColumnDefinitions="Auto, *, Auto">
-        
+
         <!-- User Avatar -->
         <Frame Grid.Column="0"
                BackgroundColor="{StaticResource Primary}"
@@ -24,7 +25,7 @@
                    HorizontalOptions="Center"
                    VerticalOptions="Center"/>
         </Frame>
-        
+
         <!-- User Info -->
         <VerticalStackLayout Grid.Column="1"
                              VerticalOptions="Center"
@@ -39,22 +40,11 @@
                    FontSize="11"
                    TextColor="{StaticResource Gray500}"/>
         </VerticalStackLayout>
-        
+
         <!-- Logout Button -->
-        <ImageButton Grid.Column="2"
-                     x:Name="LogoutButton"
-                     BackgroundColor="Transparent"
-                     HeightRequest="40"
-                     WidthRequest="40"
-                     VerticalOptions="Center"
-                     Clicked="OnLogoutClicked">
-            <ImageButton.Source>
-                <FontImageSource Color="{StaticResource Gray500}" 
-                    FontFamily="MSO"
-                    Glyph="&#xe9ba;"
-                    Size="16" />
-            </ImageButton.Source>
-        </ImageButton>
+        <Button Grid.Column="2" BackgroundColor="Transparent"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Logout, IconColor={StaticResource Gray500}}"
+                Clicked="OnLogoutClicked"
+         />
     </Grid>
-    
 </ContentView>

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace HomeHQ.Mobile.Converters;
 
@@ -9,16 +9,12 @@ public class InvertedBoolConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is bool boolValue)
-            return !boolValue;
-        return value;
+        return value is bool boolValue ? !boolValue : value;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is bool boolValue)
-            return !boolValue;
-        return value;
+        return value is bool boolValue ? !boolValue : value;
     }
 }
 
@@ -29,9 +25,7 @@ public class BoolToExpandTextConverter : IValueConverter
 {
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is bool isExpanded)
-            return isExpanded ? "Hide ▲" : "Edit ▼";
-        return "Edit";
+        return value is bool isExpanded ? isExpanded ? "Hide ▲" : "Edit ▼" : "Edit";
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -49,7 +43,9 @@ public class BusyToTextConverter : IValueConverter
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is not bool isBusy)
+        {
             return parameter?.ToString()?.Split('|').FirstOrDefault() ?? "Action";
+        }
 
         var texts = parameter?.ToString()?.Split('|') ?? ["Action", "Loading..."];
         return isBusy ? (texts.Length > 1 ? texts[1] : "Loading...") : texts[0];

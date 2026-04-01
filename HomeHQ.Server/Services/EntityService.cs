@@ -1,7 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using HomeHQ.Contracts;
+﻿using HomeHQ.Contracts;
 using HomeHQ.Repositories;
-using System;
 using System.Linq.Expressions;
 
 namespace HomeHQ.Services;

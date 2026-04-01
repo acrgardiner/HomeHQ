@@ -14,12 +14,12 @@
         <MudText Typo="Typo.h6">Edit Warranty Type</MudText>
     </TitleContent>
     <DialogContent>
-        <MudForm @ref="form" Model="@model">
-            <MudTextField T="string" @bind-Value="model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
+        <MudForm @ref="_form" Model="@_model">
+            <MudTextField T="string" @bind-Value="_model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
             <MudDivider />
-            <MudNumericField T="int?" @bind-Value="model.Years" Label="Years" />
-            <MudNumericField T="int?" @bind-Value="model.Months" Label="Months" />
-            <MudNumericField T="int?" @bind-Value="model.Days" Label="Days" />
+            <MudNumericField T="int?" @bind-Value="_model.Years" Label="Years" />
+            <MudNumericField T="int?" @bind-Value="_model.Months" Label="Months" />
+            <MudNumericField T="int?" @bind-Value="_model.Days" Label="Days" />
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -28,38 +28,3 @@
     </DialogActions>
 </MudDialog>
 
-@code {
-    [CascadingParameter] public required IMudDialogInstance Dialog { get; set; }
-
-    [Parameter] public required WarrantyType Entity { get; set; }
-    [Parameter] public required string Title { get; set; }
-
-    private MudForm form;
-    private WarrantyType model = new();
-
-    protected override void OnInitialized()
-    {
-        model = Entity;
-    }
-
-    private void Cancel() => Dialog.Cancel();
-
-    private async Task Submit()
-    {
-        await form.Validate();
-        if (form.IsValid)
-        {
-            try
-            {
-                await WarrantyService.UpdateAsync(model);
-                Snackbar.Add("updated successfully", Severity.Success);
-                Dialog.Close(DialogResult.Ok(true));
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error updating");
-                Snackbar.Add("Error updating", Severity.Error);
-            }
-        }
-    }
-}

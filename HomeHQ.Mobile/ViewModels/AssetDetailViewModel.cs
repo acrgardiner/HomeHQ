@@ -1,4 +1,4 @@
-using HomeHQ.Mobile.Services;
+﻿using HomeHQ.Mobile.Services;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Helpers;
@@ -19,27 +19,25 @@ public class AssetDetailViewModel : BaseViewModel
     public ObservableCollection<Note> Notes { get; } = [];
     public ObservableCollection<Attachment> Attachments { get; } = [];
 
-    private string _assetId = string.Empty;
     public string AssetId
     {
-        get => _assetId;
+        get;
         set
         {
-            if (SetProperty(ref _assetId, value))
+            if (SetProperty(ref field, value))
             {
                 // Load asset when ID is set
                 _ = LoadAssetAsync();
             }
         }
-    }
+    } = string.Empty;
 
-    private Asset? _asset;
     public Asset? Asset
     {
-        get => _asset;
+        get;
         set
         {
-            if (SetProperty(ref _asset, value))
+            if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(HasAsset));
                 OnPropertyChanged(nameof(CategoryTitle));
@@ -55,33 +53,30 @@ public class AssetDetailViewModel : BaseViewModel
 
     public bool HasAsset => Asset != null;
 
-    private bool _isLoading;
     public bool IsLoading
     {
-        get => _isLoading;
+        get;
         set
         {
-            SetProperty(ref _isLoading, value);
+            SetProperty(ref field, value);
             OnPropertyChanged(nameof(ShowContent));
         }
     }
 
-    private bool _hasError;
     public bool HasError
     {
-        get => _hasError;
+        get;
         set
         {
-            SetProperty(ref _hasError, value);
+            SetProperty(ref field, value);
             OnPropertyChanged(nameof(ShowContent));
         }
     }
 
-    private string? _errorMessage;
     public string? ErrorMessage
     {
-        get => _errorMessage;
-        set => SetProperty(ref _errorMessage, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
     public bool ShowContent => !IsLoading && !HasError && HasAsset;
@@ -102,7 +97,10 @@ public class AssetDetailViewModel : BaseViewModel
     {
         get
         {
-            if (Asset?.WarrantyExpiration == null) return Colors.Gray;
+            if (Asset?.WarrantyExpiration == null)
+            {
+                return Colors.Gray;
+            }
 
             var daysRemaining = (Asset.WarrantyExpiration.Value - DateTime.Today).Days;
             return daysRemaining switch
@@ -139,8 +137,15 @@ public class AssetDetailViewModel : BaseViewModel
 
     public async Task LoadAssetAsync()
     {
-        if (string.IsNullOrEmpty(AssetId)) return;
-        if (!Guid.TryParse(AssetId, out var assetGuid)) return;
+        if (string.IsNullOrEmpty(AssetId))
+        {
+            return;
+        }
+
+        if (!Guid.TryParse(AssetId, out var assetGuid))
+        {
+            return;
+        }
 
         try
         {
@@ -286,7 +291,10 @@ public class AssetDetailViewModel : BaseViewModel
 
     private async Task EditAssetAsync()
     {
-        if (Asset == null) return;
+        if (Asset == null)
+        {
+            return;
+        }
 
         // Open the web edit page in the browser
         var editUrl = $"{_settingsService.ApiBaseUrl}/assets/{Asset.Id}/edit";
@@ -295,14 +303,20 @@ public class AssetDetailViewModel : BaseViewModel
 
     private async Task DeleteAssetAsync()
     {
-        if (Asset == null) return;
+        if (Asset == null)
+        {
+            return;
+        }
 
         bool confirm = await Shell.Current.DisplayAlertAsync(
             "Delete Asset",
             $"Are you sure you want to delete '{Asset.Name}'? This action cannot be undone.",
             "Delete", "Cancel");
 
-        if (!confirm) return;
+        if (!confirm)
+        {
+            return;
+        }
 
         try
         {
@@ -325,10 +339,12 @@ public class AssetDetailViewModel : BaseViewModel
 
     private async Task OpenAttachmentAsync(Attachment? attachment)
     {
-        if (attachment == null) return;
+        if (attachment == null)
+        {
+            return;
+        }
 
-        // Open the attachment in browser
-        var attachmentUrl = $"{_settingsService.ApiBaseUrl}/api/attachments/{attachment.Id}/data";
-        await Browser.OpenAsync(attachmentUrl, BrowserLaunchMode.External);
+        // Navigate to attachment viewer page
+        await Shell.Current.GoToAsync($"AttachmentViewer?attachmentId={attachment.Id}");
     }
 }

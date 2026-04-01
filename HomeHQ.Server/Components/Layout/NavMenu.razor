@@ -19,7 +19,7 @@
             <Authorized>
                 <!-- Assets Section -->
                 <div class="nav-section">
-                    <MudNavLink Href="/assets" Icon="@Icons.Material.Filled.AccountBox" Class="nav-item">
+                    <MudNavLink Href="/assets" Icon="@Icons.Material.Filled.Inventory2" Class="nav-item">
                         <div class="d-flex align-center justify-space-between">
                             <MudText Typo="Typo.body2">Assets</MudText>
                             <MudChip T="int" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="nav-badge">
@@ -92,42 +92,5 @@
     </MudNavMenu>
 </div>
 
-@code {
-    private string? currentUrl;
-    private int _assetsCount = 0;
 
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-        // Load assets count for badge
-        _ = LoadAssetCount();
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    private async Task LoadAssetCount()
-    {
-        try
-        {
-            // This would ideally come from a service injection
-            // For now, we'll use a placeholder
-            _assetsCount = await AssetService.CountAsync();
-            StateHasChanged();
-        }
-        catch
-        {
-            // Handle silently
-        }
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-}
 

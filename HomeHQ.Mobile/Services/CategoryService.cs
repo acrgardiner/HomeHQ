@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 
@@ -44,8 +44,7 @@ public class CategoryService
     /// </summary>
     public Category? GetCategory(Guid? categoryId)
     {
-        if (!categoryId.HasValue) return null;
-        return _categoriesLookup.TryGetValue(categoryId.Value, out var category) ? category : null;
+        return !categoryId.HasValue ? null : _categoriesLookup.TryGetValue(categoryId.Value, out var category) ? category : null;
     }
 
     /// <summary>
@@ -75,13 +74,19 @@ public class CategoryService
     /// </summary>
     public async Task EnsureLoadedAsync(bool forceRefresh = false)
     {
-        if (_isLoaded && !forceRefresh) return;
+        if (_isLoaded && !forceRefresh)
+        {
+            return;
+        }
 
         await _loadLock.WaitAsync();
         try
         {
             // Double-check after acquiring lock
-            if (_isLoaded && !forceRefresh) return;
+            if (_isLoaded && !forceRefresh)
+            {
+                return;
+            }
 
             await LoadCategoriesAsync();
         }

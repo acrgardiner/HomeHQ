@@ -15,13 +15,13 @@
 @inject IEntityService<Note> NoteService
 
 @inject ISnackbar Snackbar
-@inject ILogger<Asset_Detail_Page> Logger
+@inject ILogger<AssetDetailPage> Logger
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject ICurrentUserService CurrentUser
 
-<PageTitle>@(asset?.Name ?? "Asset Details") - @Constants.Application.Title</PageTitle>
+<PageTitle>@(asset?.Name ?? "Asset Details") - @Constants.Application.TITLE</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header -->
@@ -267,7 +267,7 @@
     }
 </MudContainer>
 
-    @code{
+@code{
     [Parameter] public string Id { get; set; } = string.Empty;
     [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
 

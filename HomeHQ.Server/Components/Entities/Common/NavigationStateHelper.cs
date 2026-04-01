@@ -1,5 +1,4 @@
-using Microsoft.AspNetCore.Http.Json;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -15,7 +14,9 @@ public static class NavigationStateHelper
     public static string Encode<T>(T obj)
     {
         if (obj == null)
+        {
             return string.Empty;
+        }
 
         var json = JsonSerializer.Serialize(obj, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
@@ -25,7 +26,9 @@ public static class NavigationStateHelper
     public static T? Decode<T>(string encoded)
     {
         if (string.IsNullOrWhiteSpace(encoded))
-            return default(T);
+        {
+            return default;
+        }
 
         try
         {
@@ -41,21 +44,24 @@ public static class NavigationStateHelper
 
     public static string? DecodeUrl(ReturnState state)
     {
-        string query = string.Empty;
-
-        query = state?.Destination ?? string.Empty;
+        string query = state?.Destination ?? string.Empty;
 
         string paramString = string.Empty;
 
         foreach (var param in state?.Parameters?.GetType().GetProperties() ?? Array.Empty<System.Reflection.PropertyInfo>())
         {
-            var value = param.GetValue(state.Parameters);
+            var value = param.GetValue(state?.Parameters);
             if (value != null)
             {
                 if (paramString.Length > 0)
+                {
                     paramString += "&";
+                }
                 else
+                {
                     paramString += "?";
+                }
+
                 paramString += $"{param.Name.ToLower()}={Uri.EscapeDataString(value.ToString() ?? string.Empty)}";
             }
         }
@@ -68,7 +74,9 @@ public static class NavigationStateHelper
         var state = Decode<ReturnState>(stateStr ?? string.Empty);
 
         if (state is null)
+        {
             return defaultDestination;
+        }
 
         string? query = state?.Destination ?? defaultDestination;
 
@@ -86,13 +94,19 @@ public static class NavigationStateHelper
     {
         // Only create state if there's meaningful data to preserve
         if ((page == null || page == 0) && string.IsNullOrWhiteSpace(search) && (pageSize == null || pageSize == 10))
+        {
             return null;
+        }
 
         if (page == 0)
+        {
             page = null;
+        }
 
         if (search == string.Empty)
+        {
             search = null;
+        }
 
         return new ReturnState
         {

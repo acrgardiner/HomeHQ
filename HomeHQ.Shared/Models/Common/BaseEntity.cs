@@ -1,8 +1,11 @@
-namespace HomeHQ.Contracts;
+﻿namespace HomeHQ.Contracts;
 
 public abstract class BaseEntity : BaseEntity<Guid>
 {
-    protected BaseEntity() => Id = Guid.NewGuid();
+    protected BaseEntity()
+    {
+        Id = Guid.NewGuid();
+    }
 }
 
 public abstract class BaseEntity<TId> : IEntity<TId>

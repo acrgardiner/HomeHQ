@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
+             x:DataType="vm:AttachmentViewerViewModel"
+             Title="{Binding FileName}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark=Black}">
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- Custom Header -->
+        <Grid Grid.Row="0" 
+              Padding="8"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+              ColumnDefinitions="Auto, *, Auto">
+
+            <!-- Back Button -->
+            <Button Grid.Column="0"
+                    Text="�"
+                    FontSize="28"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+
+            <!-- Title -->
+            <VerticalStackLayout Grid.Column="1" 
+                                 VerticalOptions="Center"
+                                 Padding="8,0">
+                <Label Text="{Binding FileName}"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                       LineBreakMode="TailTruncation"
+                       MaxLines="1"/>
+                <Label Text="{Binding Attachment.ContentType}"
+                       FontSize="12"
+                       TextColor="{StaticResource Gray500}"/>
+            </VerticalStackLayout>
+
+            <!-- Open Externally Button -->
+            <Button Grid.Column="2"
+                    Text="??"
+                    FontSize="18"
+                    Command="{Binding OpenExternallyCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="40"
+                    HeightRequest="40"/>
+        </Grid>
+
+        <!-- Content Area -->
+        <Grid Grid.Row="1">
+            <!-- Loading Indicator -->
+            <VerticalStackLayout IsVisible="{Binding IsLoading}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HeightRequest="48"
+                                   WidthRequest="48"/>
+                <Label Text="Loading attachment..."
+                       FontSize="14"
+                       TextColor="{StaticResource Gray500}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+
+            <!-- Error State -->
+            <VerticalStackLayout IsVisible="{Binding HasError}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label Text="??" FontSize="64" HorizontalOptions="Center"/>
+                <Label Text="Failed to load attachment"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="Try Again"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <!-- Image Viewer -->
+            <ScrollView IsVisible="{Binding IsImage}"
+                        Orientation="Both"
+                        HorizontalScrollBarVisibility="Always"
+                        VerticalScrollBarVisibility="Always">
+                <Image Source="{Binding ImageSource}"
+                       Aspect="AspectFit"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Margin="16"/>
+            </ScrollView>
+
+            <!-- Non-Image File Preview -->
+            <VerticalStackLayout IsVisible="{Binding IsOtherFile}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="24"
+                                 Padding="32">
+
+                <!-- File Icon Card -->
+                <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                       CornerRadius="16"
+                       Padding="32"
+                       HasShadow="True"
+                       HorizontalOptions="Center">
+                    <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                        <Label Text="{Binding FileTypeIcon}"
+                               FontSize="72"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding FileName}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               MaxLines="2"
+                               LineBreakMode="TailTruncation"/>
+                        <Label Text="{Binding Attachment.ContentType}"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray500}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Label Text="This file type cannot be previewed in the app"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray500}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+
+                <Button Text="?? Open with External App"
+                        Command="{Binding OpenExternallyCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="48"
+                        WidthRequest="220"
+                        FontSize="15"
+                        FontAttributes="Bold"/>
+            </VerticalStackLayout>
+
+            <!-- PDF Viewer (using WebView) -->
+            <Grid IsVisible="{Binding IsPdf}">
+                <VerticalStackLayout VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="24"
+                                     Padding="32">
+
+                    <!-- PDF Icon Card -->
+                    <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                           CornerRadius="16"
+                           Padding="32"
+                           HasShadow="True"
+                           HorizontalOptions="Center">
+                        <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                            <Label Text="??"
+                                   FontSize="72"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding FileName}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"
+                                   MaxLines="2"
+                                   LineBreakMode="TailTruncation"/>
+                            <Label Text="PDF Document"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Gray500}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <Label Text="Tap below to open this PDF"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray500}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"/>
+
+                    <Button Text="?? Open PDF"
+                            Command="{Binding OpenExternallyCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="48"
+                            WidthRequest="180"
+                            FontSize="15"
+                            FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>

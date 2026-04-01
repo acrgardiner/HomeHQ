@@ -45,30 +45,6 @@
         </EntityList>
     </MudPaper>
 </MudContainer>
-@code {
-    private List<EntityAction<Attachment>> AttachmentActions => new()
-    {
-        new EntityAction<Attachment>
-        {
-            Icon = Icons.Material.Filled.Image,
-            Tooltip = "View",
-            Action = async (attachment) => await ShowGalleryAsync(attachment)
-        }
-    };
 
-    private Task ShowGalleryAsync(Attachment attachment)
-    {
-        var param = new DialogParameters<ViewImage>()
-        {
-            { x => x.Attachment, attachment }
-        };
-        return DialogService.ShowAsync<ViewImage>("View Attachment", param);
-    }
-
-    List<Expression<Func<Attachment, object>>>? Includes => new List<Expression<Func<Attachment, object>>>
-    {
-        x => x.AttachmentType
-    };
-}
 
 

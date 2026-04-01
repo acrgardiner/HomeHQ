@@ -16,6 +16,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("Dashboard", typeof(DashboardPage));
         Routing.RegisterRoute("Assets", typeof(AssetsPage));
         Routing.RegisterRoute("AssetDetail", typeof(AssetDetailPage));
+        Routing.RegisterRoute("AttachmentViewer", typeof(AttachmentViewerPage));
         Routing.RegisterRoute("Settings", typeof(SettingsPage));
 
         // Try to get services

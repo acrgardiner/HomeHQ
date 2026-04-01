@@ -12,7 +12,7 @@
 @inject ISnackbar Snackbar
 @inject ILogger<ListWarrantyTypes> Logger
 
-<PageTitle>Warranty Types - @Constants.Application.Title</PageTitle>
+<PageTitle>Warranty Types - @Constants.Application.TITLE</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
     <!-- Header and actions -->
@@ -61,21 +61,3 @@
     </MudCard>
 </MudContainer>
 
-@code {
-    private EntityList<WarrantyType>? entityList;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await Task.Yield();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        await entityList?.ReloadData();
-    }
-
-    private async Task OpenCreate()
-    {
-        await DialogService.ShowAsync<CreateWarrantyType>("Add New Warranty Type");
-    }
-}

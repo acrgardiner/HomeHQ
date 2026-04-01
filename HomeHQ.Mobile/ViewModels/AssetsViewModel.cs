@@ -1,4 +1,4 @@
-using HomeHQ.Mobile.Services;
+﻿using HomeHQ.Mobile.Services;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -17,39 +17,34 @@ public class AssetsViewModel : BaseViewModel
     private readonly SettingsService _settingsService;
 
     public ObservableCollection<Asset> Assets { get; } = [];
-
-    private string _searchText = string.Empty;
     public string SearchText
     {
-        get => _searchText;
-        set => SetProperty(ref _searchText, value);
-    }
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
 
-    private bool _isLoading;
     public bool IsLoading
     {
-        get => _isLoading;
+        get;
         set
         {
-            SetProperty(ref _isLoading, value);
+            SetProperty(ref field, value);
             UpdateVisibility();
         }
     }
 
-    private bool _isRefreshing;
     public bool IsRefreshing
     {
-        get => _isRefreshing;
-        set => SetProperty(ref _isRefreshing, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
-    private string? _errorMessage;
     public string? ErrorMessage
     {
-        get => _errorMessage;
+        get;
         set
         {
-            SetProperty(ref _errorMessage, value);
+            SetProperty(ref field, value);
             OnPropertyChanged(nameof(HasError));
             UpdateVisibility();
         }
@@ -57,18 +52,15 @@ public class AssetsViewModel : BaseViewModel
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
-    private bool _showEmptyState;
     public bool ShowEmptyState
     {
-        get => _showEmptyState;
-        set => SetProperty(ref _showEmptyState, value);
+        get;
+        set => SetProperty(ref field, value);
     }
-
-    private bool _showList;
     public bool ShowList
     {
-        get => _showList;
-        set => SetProperty(ref _showList, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
     public ICommand RefreshCommand { get; }
@@ -93,7 +85,10 @@ public class AssetsViewModel : BaseViewModel
 
     public async Task LoadAssetsAsync(bool forceRefresh = false)
     {
-        if (IsLoading) return;
+        if (IsLoading)
+        {
+            return;
+        }
 
         try
         {
@@ -158,10 +153,13 @@ public class AssetsViewModel : BaseViewModel
 
     private async Task OnAssetSelected(Asset? asset)
     {
-        if (asset == null) return;
+        if (asset == null)
+        {
+            return;
+        }
 
         // Navigate to asset detail page
-        await Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}");
+        await Shell.Current.GoToAsync($"//AssetDetail?assetId={asset.Id}");
     }
 
     private async Task LogoutAsync()

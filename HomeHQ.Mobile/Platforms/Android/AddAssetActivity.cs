@@ -6,7 +6,6 @@ using Android.Widget;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
@@ -216,7 +215,9 @@ public class AddAssetActivity : Activity
 
             using var inputStream = ContentResolver?.OpenInputStream(uri);
             if (inputStream == null)
+            {
                 return (null, null);
+            }
 
             using var outputStream = File.Create(cachePath);
             inputStream.CopyTo(outputStream);

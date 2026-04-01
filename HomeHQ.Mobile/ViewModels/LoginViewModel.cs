@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile.ViewModels;
@@ -8,43 +8,38 @@ public class LoginViewModel : BaseViewModel
     private readonly AuthService _authService;
     private readonly SettingsService _settings;
 
-    private string _serverUrl = string.Empty;
     public string ServerUrl
     {
-        get => _serverUrl;
-        set => SetProperty(ref _serverUrl, value);
-    }
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
 
-    private string _username = string.Empty;
     public string Username
     {
-        get => _username;
-        set => SetProperty(ref _username, value);
-    }
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
 
-    private string _password = string.Empty;
     public string Password
     {
-        get => _password;
-        set => SetProperty(ref _password, value);
-    }
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
 
-    private string? _errorMessage;
     public string? ErrorMessage
     {
-        get => _errorMessage;
+        get;
         set
         {
-            SetProperty(ref _errorMessage, value);
+            SetProperty(ref field, value);
             OnPropertyChanged(nameof(HasError));
         }
     }
 
-    private bool _showServerUrl;
     public bool ShowServerUrl
     {
-        get => _showServerUrl;
-        set => SetProperty(ref _showServerUrl, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
@@ -60,8 +55,8 @@ public class LoginViewModel : BaseViewModel
         _settings = settings;
 
         // Load current server URL
-        _serverUrl = _settings.ApiBaseUrl;
-        _showServerUrl = !_settings.HasCustomApiUrl; // Show by default if not configured
+        ServerUrl = _settings.ApiBaseUrl;
+        ShowServerUrl = !_settings.HasCustomApiUrl; // Show by default if not configured
 
         LoginCommand = new Command(async () => await LoginAsync(), () => !IsBusy);
         ToggleServerUrlCommand = new Command(() => ShowServerUrl = !ShowServerUrl);
@@ -74,7 +69,10 @@ public class LoginViewModel : BaseViewModel
 
     private async Task LoginAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            return;
+        }
 
         // Validate server URL
         if (string.IsNullOrWhiteSpace(ServerUrl))

@@ -1,8 +1,7 @@
-﻿namespace HomeHQ.Constants
+﻿namespace HomeHQ.Constants;
+
+public static class Application
 {
-    public static class Application
-    {
-        public const string Title = "HomeHQ";
-        public const string Name = "HomeHQ";
-    }
+    public const string TITLE = "HomeHQ";
+    public const string NAME = "HomeHQ";
 }

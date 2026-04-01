@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:Class="HomeHQ.Mobile.Pages.AssetsPage"
              x:DataType="vm:AssetsViewModel"
              Title="My Assets">
@@ -37,7 +38,7 @@
                              HorizontalOptions="Center"
                              Spacing="16"
                              Padding="32">
-            <Label Text="📦" FontSize="64" HorizontalOptions="Center"/>
+            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2, IconColor={StaticResource Primary}, IconSize=22}"  FontSize="64" HorizontalOptions="Center"/>
             <Label Text="No assets found"
                    FontSize="18"
                    FontAttributes="Bold"
@@ -72,7 +73,7 @@
                              HorizontalOptions="Center"
                              Spacing="16"
                              Padding="32">
-            <Label Text="⚠️" FontSize="64" HorizontalOptions="Center"/>
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}" FontSize="64" HorizontalOptions="Center"/>
             <Label Text="Something went wrong"
                    FontSize="18"
                    FontAttributes="Bold"
@@ -98,9 +99,7 @@
                      Command="{Binding RefreshCommand}"
                      IsVisible="{Binding ShowList}">
             <CollectionView ItemsSource="{Binding Assets}"
-                            SelectionMode="Single"
-                            SelectionChangedCommand="{Binding AssetSelectedCommand}"
-                            SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}">
+                            SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="entities:Asset">
                         <Frame Margin="16,8" 
@@ -108,7 +107,12 @@
                                CornerRadius="12"
                                BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
                                HasShadow="True">
-                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AssetsViewModel}}, Path=AssetSelectedCommand}"
+                                        CommandParameter="{Binding .}"/>
+                                </Frame.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
                                 
                                 <!-- Category Icon -->
                                 <Frame Grid.Column="0"

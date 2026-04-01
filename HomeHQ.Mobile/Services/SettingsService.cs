@@ -1,3 +1,5 @@
+﻿using System.Diagnostics.CodeAnalysis;
+
 namespace HomeHQ.Mobile.Services;
 
 /// <summary>
@@ -5,21 +7,22 @@ namespace HomeHQ.Mobile.Services;
 /// </summary>
 public class SettingsService
 {
-    private const string ApiBaseUrlKey = "api_base_url";
-    private const string DefaultApiUrl = "https://your-server-url/";
-
-    private string? _cachedApiBaseUrl;
+    private const string API_BASE_URL_KEY = "api_base_url";
+    private const string DEFAULT_API_URL = "https://your-server-url/";
 
     /// <summary>
     /// Gets the configured API base URL.
     /// </summary>
+    [AllowNull]
     public string ApiBaseUrl
     {
         get
         {
-            _cachedApiBaseUrl ??= Preferences.Default.Get(ApiBaseUrlKey, DefaultApiUrl);
-            return _cachedApiBaseUrl;
+            field ??= Preferences.Default.Get(API_BASE_URL_KEY, DEFAULT_API_URL);
+            return field;
         }
+
+        private set;
     }
 
     /// <summary>
@@ -29,10 +32,12 @@ public class SettingsService
     {
         // Ensure URL ends with /
         if (!url.EndsWith('/'))
+        {
             url += "/";
+        }
 
-        Preferences.Default.Set(ApiBaseUrlKey, url);
-        _cachedApiBaseUrl = url;
+        Preferences.Default.Set(API_BASE_URL_KEY, url);
+        ApiBaseUrl = url;
 
         // Notify that settings changed
         OnApiBaseUrlChanged?.Invoke(this, url);
@@ -41,16 +46,16 @@ public class SettingsService
     /// <summary>
     /// Checks if a custom API URL has been configured.
     /// </summary>
-    public bool HasCustomApiUrl => Preferences.Default.ContainsKey(ApiBaseUrlKey);
+    public bool HasCustomApiUrl => Preferences.Default.ContainsKey(API_BASE_URL_KEY);
 
     /// <summary>
     /// Resets to default API URL.
     /// </summary>
     public void ResetApiBaseUrl()
     {
-        Preferences.Default.Remove(ApiBaseUrlKey);
-        _cachedApiBaseUrl = null;
-        OnApiBaseUrlChanged?.Invoke(this, DefaultApiUrl);
+        Preferences.Default.Remove(API_BASE_URL_KEY);
+        ApiBaseUrl = null;
+        OnApiBaseUrlChanged?.Invoke(this, DEFAULT_API_URL);
     }
 
     /// <summary>

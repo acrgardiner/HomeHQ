@@ -12,12 +12,12 @@
 
 <MudDialog>
     <DialogContent>
-        <MudForm @ref="form" Model="@model">
-            <MudTextField T="string" @bind-Value="model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
+        <MudForm @ref="_form" Model="@_model">
+            <MudTextField T="string" @bind-Value="_model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
             <MudDivider />
-            <MudNumericField T="int?" @bind-Value="model.Years" Label="Years" />
-            <MudNumericField T="int?" @bind-Value="model.Months" Label="Months" />
-            <MudNumericField T="int?" @bind-Value="model.Days" Label="Days" />
+            <MudNumericField T="int?" @bind-Value="_model.Years" Label="Years" />
+            <MudNumericField T="int?" @bind-Value="_model.Months" Label="Months" />
+            <MudNumericField T="int?" @bind-Value="_model.Days" Label="Days" />
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -26,32 +26,3 @@
     </DialogActions>
 </MudDialog>
 
-@code {
-    [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
-    private MudForm form;
-    private WarrantyType model;
-
-    private void Cancel()
-    {
-        MudDialog.Cancel();
-    }
-
-    private async Task Submit()
-    {
-        await form.Validate();
-        if (form.IsValid)
-        {
-            try
-            {
-                await WarrantyService.AddAsync(model);
-                Snackbar.Add("Warranty Type created successfully", Severity.Success);
-                MudDialog.Close(DialogResult.Ok(true));
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error creating Warranty Type");
-                Snackbar.Add("Error creating Warranty Type", Severity.Error);
-            }
-        }
-    }
-}
