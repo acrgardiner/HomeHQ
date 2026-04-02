@@ -17,7 +17,6 @@ public partial class Attachment_Sidebar
     private List<Attachment_wfile> _attachments = new();
     private const long MAX_PREVIEW_SIZE = 30 * 1024 * 1024;
     private bool _uploading = false;
-    private bool _connectionLost = false;
 
     private List<AttachmentType> _attachmentTypes = new();
     private Guid _defaultAttachmentTypeId;

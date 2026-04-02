@@ -13,6 +13,7 @@
             
             <!-- Converters -->
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
+            <converters:FileSizeConverter     x:Key="FileSizeConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

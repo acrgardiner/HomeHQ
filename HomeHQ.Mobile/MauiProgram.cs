@@ -1,4 +1,5 @@
-﻿using HomeHQ.Mobile.Pages;
+﻿using HomeHQ.Entities;
+using HomeHQ.Mobile.Pages;
 using HomeHQ.Mobile.Services;
 using HomeHQ.Mobile.ViewModels;
 using MauiIcons.Material.Outlined;
@@ -24,7 +25,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<SettingsService>();
         builder.Services.AddSingleton<AuthService>();
         builder.Services.AddSingleton<ApiClient>();
-        builder.Services.AddSingleton<CategoryService>();
+        // Reference-data cache services (one singleton per entity type)
+        builder.Services.AddSingleton(sp =>
+            new CacheService<Category>(sp.GetRequiredService<ApiClient>(), "api/categories"));
+        builder.Services.AddSingleton(sp =>
+            new CacheService<AttachmentType>(sp.GetRequiredService<ApiClient>(), "api/attachmenttypes"));
+        builder.Services.AddSingleton(sp =>
+            new CacheService<WarrantyType>(sp.GetRequiredService<ApiClient>(), "api/warrantytypes"));
 
         // Register ViewModels
         builder.Services.AddTransient<LoginViewModel>();

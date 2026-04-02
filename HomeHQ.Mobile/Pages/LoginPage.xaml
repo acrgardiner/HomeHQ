@@ -136,7 +136,7 @@
 
         <!-- Footer -->
         <Label Grid.Row="2" 
-               Text="© 2026 HomeHQ"
+               Text="2026 HomeHQ"
                TextColor="#99FFFFFF"
                FontSize="12"
                HorizontalOptions="Center"

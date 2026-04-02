@@ -1,4 +1,4 @@
-using HomeHQ.Mobile.ViewModels;
+﻿using HomeHQ.Mobile.ViewModels;
 
 namespace HomeHQ.Mobile.Pages;
 
@@ -26,7 +26,7 @@ public partial class AssetDetailPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to load asset: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"Failed to load asset: {ex.Message}", "OK");
         }
     }
 }

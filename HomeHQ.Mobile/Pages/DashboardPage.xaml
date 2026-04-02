@@ -58,9 +58,6 @@
                            FontSize="28"
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
-                    <Label Text="Here's your home inventory overview"
-                           FontSize="14"
-                           TextColor="{StaticResource Gray500}"/>
                 </VerticalStackLayout>
 
                 <!-- Statistics Cards -->

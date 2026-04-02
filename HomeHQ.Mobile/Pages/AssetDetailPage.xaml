@@ -172,7 +172,7 @@
                                 <!-- Category -->
                                 <VerticalStackLayout Grid.Row="0" Grid.Column="1">
                                     <Label Text="Category" Style="{StaticResource FieldLabelStyle}"/>
-                                    <Label Text="{Binding CategoryTitle}" Style="{StaticResource FieldValueStyle}"/>
+                                    <Label Text="{Binding Asset.Category.Title}" Style="{StaticResource FieldValueStyle}"/>
                                 </VerticalStackLayout>
                                 
                                 <!-- Purchased From -->
@@ -476,47 +476,39 @@
                                     </Grid>
                                 </Frame>
 
-                                <!-- File name + MIME type metadata -->
-                                <VerticalStackLayout Spacing="2">
-                                    <Label Text="{Binding CurrentAttachment.OriginFileName}"
-                                           FontSize="14"
-                                           FontAttributes="Bold"
-                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                           LineBreakMode="TailTruncation"/>
-                                    <Label Text="{Binding CurrentAttachment.ContentType}"
-                                           FontSize="12"
-                                           TextColor="{StaticResource Gray500}"/>
-                                </VerticalStackLayout>
+                                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
 
-                                <!-- Thumbnail strip — only shown when there are 2+ attachments -->
-                                <CollectionView ItemsSource="{Binding Attachments}"
-                                                IsVisible="{Binding HasMultipleAttachments}"
-                                                HeightRequest="68"
-                                                ItemsLayout="HorizontalList">
-                                    <CollectionView.ItemTemplate>
-                                        <DataTemplate x:DataType="entities:Attachment">
-                                            <Frame Padding="0"
-                                                   Margin="0,0,8,4"
-                                                   CornerRadius="8"
-                                                   HeightRequest="60"
-                                                   WidthRequest="60"
-                                                   HasShadow="False"
-                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}">
-                                                <Frame.GestureRecognizers>
-                                                    <TapGestureRecognizer
-                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AssetDetailViewModel}}, Path=SelectAttachmentCommand}"
-                                                        CommandParameter="{Binding .}"/>
-                                                </Frame.GestureRecognizers>
-                                                <!-- Generic file icon; the main preview shows the actual content -->
-                                                <Label Text="📎"
-                                                       FontSize="22"
-                                                       HorizontalOptions="Center"
-                                                       VerticalOptions="Center"/>
-                                            </Frame>
-                                        </DataTemplate>
-                                    </CollectionView.ItemTemplate>
-                                </CollectionView>
-
+                                    <!-- File name + MIME type metadata -->
+                                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                        <Label FontSize="12"
+                                               TextColor="{StaticResource Gray500}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding CurrentAttachmentFileSizeFormatted}"/>
+                                                    <Span Text=" • "/>
+                                                    <Span Text="{Binding CurrentAttachment.ContentType}"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                    <!-- Right: attachment type badge -->
+                                    <Frame Grid.Column="1"
+                                       Padding="8,4"
+                                       CornerRadius="12"
+                                       HasShadow="False"
+                                       VerticalOptions="Center"
+                                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray700}}">
+                                        <Label FontSize="11"
+                                           TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="🏷️ "/>
+                                                    <Span Text="{Binding CurrentAttachment.AttachmentType.Name}"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Frame>
+                                </Grid>
                             </VerticalStackLayout>
 
                             <!-- ═══ Empty State (no attachments) ═══ -->

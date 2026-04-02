@@ -10,7 +10,7 @@ namespace HomeHQ.Mobile.ViewModels;
 public class DashboardViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
-    private readonly CategoryService _categoryService;
+    private readonly CacheService<Category> _categoryCache;
 
     public ObservableCollection<Asset> RecentAssets { get; } = [];
     public int TotalAssets
@@ -61,10 +61,10 @@ public class DashboardViewModel : BaseViewModel
     public ICommand AssetSelectedCommand { get; }
     public ICommand AddAssetCommand { get; }
 
-    public DashboardViewModel(ApiClient apiClient, CategoryService categoryService)
+    public DashboardViewModel(ApiClient apiClient, CacheService<Category> categoryCache)
     {
         _apiClient = apiClient;
-        _categoryService = categoryService;
+        _categoryCache = categoryCache;
 
         RefreshCommand = new Command(async () => await LoadDashboardAsync(forceRefresh: true));
         NavigateToAssetsCommand = new Command(async () => await NavigateToAssetsAsync());
@@ -86,7 +86,7 @@ public class DashboardViewModel : BaseViewModel
             ErrorMessage = null;
 
             // Ensure categories are loaded (uses shared cache)
-            await _categoryService.EnsureLoadedAsync(forceRefresh);
+            await _categoryCache.EnsureLoadedAsync(forceRefresh);
 
             // Load assets to get counts and recent items
             var response = await _apiClient.GetAsync("api/assets");
@@ -98,10 +98,7 @@ public class DashboardViewModel : BaseViewModel
                 if (apiResponse?.Data != null)
                 {
                     var assets = apiResponse.Data;
-                    
-                    // Populate categories from shared service
-                    _categoryService.PopulateCategories(assets);
-                    
+                                        
                     // Update statistics
                     TotalAssets = assets.Count;
                     
@@ -117,7 +114,12 @@ public class DashboardViewModel : BaseViewModel
                     var recentItems = assets
                         .OrderByDescending(a => a.CreatedOn)
                         .Take(5);
-                    
+
+                    _categoryCache.PopulateAll(
+                        recentItems,
+                        a => a.CategoryId,
+                        (a, c) => a.Category = c);
+
                     foreach (var asset in recentItems)
                     {
                         RecentAssets.Add(asset);

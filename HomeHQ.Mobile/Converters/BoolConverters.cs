@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using HomeHQ.Helpers;
 
 namespace HomeHQ.Mobile.Converters;
 
@@ -32,6 +33,19 @@ public class BoolToExpandTextConverter : IValueConverter
     {
         throw new NotImplementedException();
     }
+}
+
+/// <summary>
+/// Converts a <see cref="float"/> byte count to a human-readable size string
+/// (e.g. 1 572 864 → "1.5 MB") using <see cref="Formatter.FormatFileSize"/>.
+/// </summary>
+public class FileSizeConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is float bytes ? Formatter.FormatFileSize(bytes) : string.Empty;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
 }
 
 /// <summary>

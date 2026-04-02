@@ -13,7 +13,7 @@ public class AssetsViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
     private readonly AuthService _authService;
-    private readonly CategoryService _categoryService;
+    private readonly CacheService<Category> _categoryCache;
     private readonly SettingsService _settingsService;
 
     public ObservableCollection<Asset> Assets { get; } = [];
@@ -66,20 +66,18 @@ public class AssetsViewModel : BaseViewModel
     public ICommand RefreshCommand { get; }
     public ICommand SearchCommand { get; }
     public ICommand AssetSelectedCommand { get; }
-    public ICommand LogoutCommand { get; }
     public ICommand AddAssetCommand { get; }
 
-    public AssetsViewModel(ApiClient apiClient, AuthService authService, CategoryService categoryService, SettingsService settingsService)
+    public AssetsViewModel(ApiClient apiClient, AuthService authService, CacheService<Category> categoryCache, SettingsService settingsService)
     {
         _apiClient = apiClient;
         _authService = authService;
-        _categoryService = categoryService;
+        _categoryCache = categoryCache;
         _settingsService = settingsService;
 
         RefreshCommand = new Command(async () => await LoadAssetsAsync(forceRefresh: true));
         SearchCommand = new Command(async () => await SearchAssetsAsync());
         AssetSelectedCommand = new Command<Asset>(async (asset) => await OnAssetSelected(asset));
-        LogoutCommand = new Command(async () => await LogoutAsync());
         AddAssetCommand = new Command(async () => await AddAssetAsync());
     }
 
@@ -97,7 +95,7 @@ public class AssetsViewModel : BaseViewModel
             ErrorMessage = null;
 
             // Ensure categories are loaded (uses shared cache)
-            await _categoryService.EnsureLoadedAsync(forceRefresh);
+            await _categoryCache.EnsureLoadedAsync(forceRefresh);
 
             var response = await _apiClient.GetAsync("api/assets");
 
@@ -106,12 +104,15 @@ public class AssetsViewModel : BaseViewModel
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Asset>>>();
 
                 Assets.Clear();
-                
+
                 if (apiResponse?.Data?.Count > 0)
                 {
-                    // Populate categories from shared service
-                    _categoryService.PopulateCategories(apiResponse.Data);
-                    
+                    // Populate Category navigation property on each asset from the cache.
+                    _categoryCache.PopulateAll(
+                        apiResponse.Data,
+                        a => a.CategoryId,
+                        (a, c) => a.Category = c);
+
                     foreach (var asset in apiResponse.Data)
                     {
                         Assets.Add(asset);
@@ -159,30 +160,8 @@ public class AssetsViewModel : BaseViewModel
         }
 
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync($"//AssetDetail?assetId={asset.Id}"),
+            () => Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}"),
             onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
-    }
-
-    private async Task LogoutAsync()
-    {
-        try
-        {
-            bool confirm = await Shell.Current.DisplayAlertAsync(
-                "Logout",
-                "Are you sure you want to logout?",
-                "Yes", "No");
-
-            if (confirm)
-            {
-                _authService.Logout();
-                _categoryService.ClearCache();
-                await Shell.Current.GoToAsync("//Login");
-            }
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = $"Logout failed: {ex.Message}";
-        }
     }
 
     private async Task AddAssetAsync()

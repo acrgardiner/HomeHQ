@@ -1,4 +1,4 @@
-using HomeHQ.Mobile.ViewModels;
+﻿using HomeHQ.Mobile.ViewModels;
 
 namespace HomeHQ.Mobile.Pages;
 
@@ -25,7 +25,7 @@ public partial class LoginPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"An unexpected error occurred: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"An unexpected error occurred: {ex.Message}", "OK");
         }
     }
 }

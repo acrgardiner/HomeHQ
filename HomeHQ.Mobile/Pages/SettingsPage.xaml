@@ -82,16 +82,14 @@
                                TextColor="{StaticResource Gray500}"/>
                         <Label x:Name="VersionLabel"
                                Grid.Column="1"
-                               Text="1.0.0"
-                               TextColor="{StaticResource Gray600}"/>
+                               Text="1.0.0" />
                     </Grid>
                     
                     <Grid ColumnDefinitions="*, Auto">
                         <Label Text="Build"
                                TextColor="{StaticResource Gray500}"/>
                         <Label Grid.Column="1"
-                               Text=".NET MAUI"
-                               TextColor="{StaticResource Gray600}"/>
+                               Text=".NET MAUI" />
                     </Grid>
                 </VerticalStackLayout>
             </Frame>

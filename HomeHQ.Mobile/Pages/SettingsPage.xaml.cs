@@ -1,4 +1,4 @@
-using HomeHQ.Mobile.Services;
+﻿using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile.Pages;
 
@@ -34,7 +34,7 @@ public partial class SettingsPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to load settings: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"Failed to load settings: {ex.Message}", "OK");
         }
     }
 
@@ -45,16 +45,16 @@ public partial class SettingsPage : ContentPage
             var url = ServerUrlEntry.Text?.Trim();
             if (string.IsNullOrEmpty(url))
             {
-                await DisplayAlert("Error", "Please enter a valid server URL", "OK");
+                await DisplayAlertAsync("Error", "Please enter a valid server URL", "OK");
                 return;
             }
 
             _settingsService.SetApiBaseUrl(url);
-            await DisplayAlert("Success", "Server URL has been saved", "OK");
+            await DisplayAlertAsync("Success", "Server URL has been saved", "OK");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to save server URL: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"Failed to save server URL: {ex.Message}", "OK");
         }
     }
 
@@ -62,7 +62,7 @@ public partial class SettingsPage : ContentPage
     {
         try
         {
-            var confirm = await DisplayAlert("Sign Out", "Are you sure you want to sign out?", "Yes", "No");
+            var confirm = await DisplayAlertAsync("Sign Out", "Are you sure you want to sign out?", "Yes", "No");
             if (confirm)
             {
                 _authService.Logout();
@@ -71,7 +71,7 @@ public partial class SettingsPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Sign out failed: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"Sign out failed: {ex.Message}", "OK");
         }
     }
 }

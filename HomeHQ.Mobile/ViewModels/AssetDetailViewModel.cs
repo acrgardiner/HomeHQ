@@ -12,7 +12,9 @@ namespace HomeHQ.Mobile.ViewModels;
 public class AssetDetailViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
-    private readonly CategoryService _categoryService;
+    private readonly CacheService<Category> _categoryCache;
+    private readonly CacheService<WarrantyType> _warrantyTypeCache;
+    private readonly CacheService<AttachmentType> _attachmentTypeCache;
     private readonly SettingsService _settingsService;
 
     public ObservableCollection<AttributeValue> Attributes { get; } = [];
@@ -40,8 +42,6 @@ public class AssetDetailViewModel : BaseViewModel
             if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(HasAsset));
-                OnPropertyChanged(nameof(CategoryTitle));
-                OnPropertyChanged(nameof(CategoryIcon));
                 OnPropertyChanged(nameof(PurchaseDateFormatted));
                 OnPropertyChanged(nameof(WarrantyExpirationFormatted));
                 OnPropertyChanged(nameof(WarrantyStatusText));
@@ -81,9 +81,6 @@ public class AssetDetailViewModel : BaseViewModel
 
     public bool ShowContent => !IsLoading && !HasError && HasAsset;
 
-    // Computed properties for display
-    public string CategoryTitle => Asset?.Category?.Title ?? "Uncategorized";
-    public string CategoryIcon => Asset?.Category?.Icon ?? "📦";
     public string PurchaseDateFormatted => Asset?.PurchaseDate.HasValue == true
         ? Formatter.FormatDate(Asset.PurchaseDate, "D")
         : "Not specified";
@@ -196,14 +193,32 @@ public class AssetDetailViewModel : BaseViewModel
     /// </summary>
     public bool ShowFileIcon => !IsLoadingPreview && !HasPreviewImage;
 
+    /// <summary>Human-readable file size of the current attachment (e.g. "1.4 MB").</summary>
+    public string CurrentAttachmentFileSizeFormatted
+        => Formatter.FormatFileSize(CurrentAttachment?.FileSize ?? 0);
+
+    /// <summary>True when the current attachment has a classified type.</summary>
+    public bool CurrentAttachmentHasType
+        => CurrentAttachment?.AttachmentTypeId != null
+           && _attachmentTypeCache.GetById(CurrentAttachment.AttachmentTypeId) != null;
+
     public ICommand PreviousAttachmentCommand { get; }
     public ICommand NextAttachmentCommand { get; }
     public ICommand SelectAttachmentCommand { get; }
 
-    public AssetDetailViewModel(ApiClient apiClient, CategoryService categoryService, SettingsService settingsService)
+    public AssetDetailViewModel(ApiClient apiClient
+        , CacheService<Category> categoryCache
+        , CacheService<AttachmentType> attachmentTypeCache
+        , CacheService<WarrantyType> warrantyTypeCache
+        , SettingsService settingsService
+    )
     {
         _apiClient = apiClient;
-        _categoryService = categoryService;
+
+        _categoryCache = categoryCache;
+        _attachmentTypeCache = attachmentTypeCache;
+        _warrantyTypeCache = warrantyTypeCache;
+
         _settingsService = settingsService;
 
         GoBackCommand = new Command(async () => await GoBackAsync());
@@ -242,8 +257,12 @@ public class AssetDetailViewModel : BaseViewModel
             HasError = false;
             ErrorMessage = null;
 
-            // Ensure categories are loaded
-            await _categoryService.EnsureLoadedAsync();
+            // Ensure reference caches are warm before resolving navigation properties.
+            await Task.WhenAll(
+                _categoryCache.EnsureLoadedAsync(),
+                _attachmentTypeCache.EnsureLoadedAsync(),
+                _warrantyTypeCache.EnsureLoadedAsync()
+            );
 
             // Load asset
             var response = await _apiClient.GetAsync($"api/assets/{AssetId}");
@@ -252,8 +271,18 @@ public class AssetDetailViewModel : BaseViewModel
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<Asset>>();
                 if (apiResponse?.Data != null)
                 {
+                    // Populate Category navigation property
+                    _categoryCache.Populate(
+                        apiResponse.Data,
+                        a => a.CategoryId,
+                        (a, c) => a.Category = c);
+
+                    _warrantyTypeCache.Populate(
+                        apiResponse.Data,
+                        a => a.WarrantyTypeId,
+                        (a, c) => a.WarrantyType = c);
+
                     Asset = apiResponse.Data;
-                    _categoryService.PopulateCategory(Asset);
                 }
                 else
                 {
@@ -360,6 +389,11 @@ public class AssetDetailViewModel : BaseViewModel
                 Attachments.Clear();
                 if (apiResponse?.Data != null)
                 {
+                    _attachmentTypeCache.PopulateAll(
+                        apiResponse.Data,
+                        a => a.AttachmentTypeId,
+                        (a, c) => a.AttachmentType = c);
+
                     foreach (var attachment in apiResponse.Data)
                     {
                         Attachments.Add(attachment);
@@ -398,6 +432,8 @@ public class AssetDetailViewModel : BaseViewModel
         OnPropertyChanged(nameof(HasMultipleAttachments));
         OnPropertyChanged(nameof(CurrentAttachmentIsImage));
         OnPropertyChanged(nameof(CurrentAttachmentFileIcon));
+        OnPropertyChanged(nameof(CurrentAttachmentFileSizeFormatted));
+        OnPropertyChanged(nameof(CurrentAttachmentHasType));
         OnPropertyChanged(nameof(HasAttachments));
     }
 
