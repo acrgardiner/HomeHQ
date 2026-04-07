@@ -140,7 +140,7 @@
                         <VerticalStackLayout>
                             <!-- Card Header -->
                             <Grid Padding="16,12" 
-                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Info}"
@@ -196,7 +196,7 @@
                         <VerticalStackLayout>
                             <!-- Card Header -->
                             <Grid Padding="16,12" 
-                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified}"
@@ -245,7 +245,7 @@
                         <VerticalStackLayout>
                             <!-- Card Header -->
                             <Grid Padding="16,12" 
-                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Extension}"
@@ -303,7 +303,7 @@
                         <VerticalStackLayout>
                             <!-- Card Header -->
                             <Grid Padding="16,12" 
-                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Notes}"
@@ -327,7 +327,7 @@
                                             <Frame Padding="12" 
                                                    Margin="0,0,0,8"
                                                    CornerRadius="8"
-                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                                    HasShadow="False">
                                                 <VerticalStackLayout Spacing="4">
                                                     <Label Text="{Binding Title}" 
@@ -363,7 +363,7 @@
 
                             <!-- Card Header — title + carousel navigation controls -->
                             <Grid Padding="16,12"
-                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *, Auto, Auto, Auto">
 
                                 <Label Grid.Column="0"
@@ -424,7 +424,7 @@
                                        Padding="0"
                                        IsClippedToBounds="True"
                                        HeightRequest="200"
-                                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}">
+                                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
                                     <Frame.GestureRecognizers>
                                         <TapGestureRecognizer
                                             Command="{Binding OpenAttachmentCommand}"

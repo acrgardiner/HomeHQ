@@ -1,5 +1,4 @@
-﻿using HomeHQ.Entities;
-using HomeHQ.Server.Components.Entities.Common;
+﻿using HomeHQ.Server.Components.Entities.Common;
 
 namespace HomeHQ.Server.Components.Entities.WarrantyType;
 

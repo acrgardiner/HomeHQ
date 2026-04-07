@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:DataType="vm:AttachmentViewerViewModel"
              Title="{Binding FileName}"
              Shell.NavBarIsVisible="False"
@@ -17,7 +18,7 @@
 
             <!-- Back Button -->
             <Button Grid.Column="0"
-                    Text="�"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ArrowBack}"
                     FontSize="28"
                     Command="{Binding GoBackCommand}"
                     BackgroundColor="Transparent"
@@ -42,7 +43,7 @@
 
             <!-- Open Externally Button -->
             <Button Grid.Column="2"
-                    Text="??"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Share}"
                     FontSize="18"
                     Command="{Binding OpenExternallyCommand}"
                     BackgroundColor="{StaticResource Primary}"
@@ -75,7 +76,7 @@
                                  HorizontalOptions="Center"
                                  Spacing="16"
                                  Padding="32">
-                <Label Text="??" FontSize="64" HorizontalOptions="Center"/>
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Error}" FontSize="64" HorizontalOptions="Center"/>
                 <Label Text="Failed to load attachment"
                        FontSize="18"
                        FontAttributes="Bold"
@@ -96,16 +97,19 @@
             </VerticalStackLayout>
 
             <!-- Image Viewer -->
-            <ScrollView IsVisible="{Binding IsImage}"
-                        Orientation="Both"
-                        HorizontalScrollBarVisibility="Always"
-                        VerticalScrollBarVisibility="Always">
-                <Image Source="{Binding ImageSource}"
-                       Aspect="AspectFit"
-                       HorizontalOptions="Center"
-                       VerticalOptions="Center"
-                       Margin="16"/>
-            </ScrollView>
+            <Grid IsVisible="{Binding IsImage}" BackgroundColor="{AppThemeBinding Light=Transparent, Dark=Transparent}">
+                <Image x:Name="AttachmentImage"
+                           Source="{Binding ImageSource}"
+                           Aspect="AspectFit"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Margin="16">
+                    <Image.GestureRecognizers>
+                        <PinchGestureRecognizer PinchUpdated="OnPinchUpdated" />
+                        <PanGestureRecognizer PanUpdated="OnPanUpdated" />
+                    </Image.GestureRecognizers>
+                </Image>
+            </Grid>
 
             <!-- Non-Image File Preview -->
             <VerticalStackLayout IsVisible="{Binding IsOtherFile}"
@@ -145,7 +149,7 @@
                        HorizontalOptions="Center"
                        HorizontalTextAlignment="Center"/>
 
-                <Button Text="?? Open with External App"
+                <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=OpenInFull}" Text="Open with External App"
                         Command="{Binding OpenExternallyCommand}"
                         BackgroundColor="{StaticResource Primary}"
                         TextColor="White"
@@ -170,7 +174,7 @@
                            HasShadow="True"
                            HorizontalOptions="Center">
                         <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
-                            <Label Text="??"
+                            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}"
                                    FontSize="72"
                                    HorizontalOptions="Center"/>
                             <Label Text="{Binding FileName}"
@@ -194,7 +198,7 @@
                            HorizontalOptions="Center"
                            HorizontalTextAlignment="Center"/>
 
-                    <Button Text="?? Open PDF"
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}" Text="Open PDF"
                             Command="{Binding OpenExternallyCommand}"
                             BackgroundColor="{StaticResource Primary}"
                             TextColor="White"

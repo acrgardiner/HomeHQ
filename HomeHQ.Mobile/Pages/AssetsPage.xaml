@@ -49,7 +49,7 @@
                    TextColor="{StaticResource Gray400}"
                    HorizontalOptions="Center"
                    HorizontalTextAlignment="Center"/>
-            <Button Text="➕ Add Asset"
+                <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add, IconSize=18}" Text="Add Asset"
                     Command="{Binding AddAssetCommand}"
                     BackgroundColor="{StaticResource Primary}"
                     TextColor="White"
@@ -161,7 +161,7 @@
         </Grid>
 
         <!-- Floating Action Button -->
-        <Button Text="＋"
+        <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add, IconSize=18}"
                 Command="{Binding AddAssetCommand}"
                 BackgroundColor="{StaticResource Primary}"
                 TextColor="White"

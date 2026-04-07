@@ -1,16 +1,13 @@
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.FileProviders;
 using MudBlazor;
 using MudBlazor.Services;
 using MudBlazor.Template.Components.Account;
 using HomeHQ.Server.Components;
-using HomeHQ.Server.Components.Account;
 using HomeHQ.Data;
-using HomeHQ.Entities;
 using HomeHQ.FileStorage;
 using HomeHQ.Identity;
 using HomeHQ.Logging;
@@ -162,6 +159,33 @@ try
     {
         options.ModelBinderProviders.Insert(0, new ModelBinderProvider());
     });
+
+    // Optionally bypass SSL certificate validation for non-production scenarios.
+    // Enabled when running in Development OR when the SKIP_SSL_VALIDATION config/env var is set to "true".
+    var skipSsl = builder.Environment.IsDevelopment()
+                  || string.Equals(builder.Configuration["SKIP_SSL_VALIDATION"], "true", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(Environment.GetEnvironmentVariable("SKIP_SSL_VALIDATION"), "true", StringComparison.OrdinalIgnoreCase);
+
+    if (skipSsl)
+    {
+        // Named insecure client for callers that need to bypass certificate validation
+        builder.Services.AddHttpClient("insecure")
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+
+        // Optional: provide a default HttpClient that also bypasses cert validation
+        builder.Services.AddSingleton(new HttpClient(new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        }));
+    }
+    else
+    {
+        // Register the named client normally so callers can still request it without bypassing certs.
+        builder.Services.AddHttpClient("insecure");
+    }
 
     // Development CORS - allow the PWA origin(s). Adjust ports if your PWA runs on different ports.
     builder.Services.AddCors(options =>

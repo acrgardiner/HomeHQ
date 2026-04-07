@@ -7,7 +7,12 @@ public partial class CreateWarrantyType
 {
     [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
     private MudForm _form;
-    private HomeHQ.Entities.WarrantyType _model;
+    private readonly HomeHQ.Entities.WarrantyType _model;
+
+    public CreateWarrantyType()
+    {
+        _model = new HomeHQ.Entities.WarrantyType();
+    }
 
     private void Cancel()
     {
@@ -16,7 +21,7 @@ public partial class CreateWarrantyType
 
     private async Task Submit()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (_form.IsValid)
         {
             try
