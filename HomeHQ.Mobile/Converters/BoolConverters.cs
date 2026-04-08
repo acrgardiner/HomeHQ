@@ -36,6 +36,19 @@ public class BoolToExpandTextConverter : IValueConverter
 }
 
 /// <summary>
+/// Converts a boolean to an opacity value.
+/// True → 1.0 (fully visible), False → 0.4 (dimmed).
+/// </summary>
+public class BoolToOpacityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is bool b && b ? 1.0 : 0.4;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
 /// Converts a <see cref="float"/> byte count to a human-readable size string
 /// (e.g. 1 572 864 → "1.5 MB") using <see cref="Formatter.FormatFileSize"/>.
 /// </summary>

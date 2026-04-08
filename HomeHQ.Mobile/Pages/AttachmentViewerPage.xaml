@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
              x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
              xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:DataType="vm:AttachmentViewerViewModel"
@@ -97,19 +98,10 @@
             </VerticalStackLayout>
 
             <!-- Image Viewer -->
-            <Grid IsVisible="{Binding IsImage}" BackgroundColor="{AppThemeBinding Light=Transparent, Dark=Transparent}">
-                <Image x:Name="AttachmentImage"
-                           Source="{Binding ImageSource}"
-                           Aspect="AspectFit"
-                           HorizontalOptions="Center"
-                           VerticalOptions="Center"
-                           Margin="16">
-                    <Image.GestureRecognizers>
-                        <PinchGestureRecognizer PinchUpdated="OnPinchUpdated" />
-                        <PanGestureRecognizer PanUpdated="OnPanUpdated" />
-                    </Image.GestureRecognizers>
-                </Image>
-            </Grid>
+
+            <controls:PanPinchContainer x:Name="ImageViewerContainer" IsVisible="{Binding IsImage}">
+                <Image Source="{Binding ImageSource}" />
+            </controls:PanPinchContainer>     
 
             <!-- Non-Image File Preview -->
             <VerticalStackLayout IsVisible="{Binding IsOtherFile}"

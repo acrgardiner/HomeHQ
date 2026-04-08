@@ -485,9 +485,18 @@ public class AssetDetailViewModel : BaseViewModel
 
     private async Task GoBackAsync()
     {
-        await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync(".."),
-            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
+        try
+        {
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            // Surface the full exception so the root cause is visible
+            await Shell.Current.DisplayAlertAsync(
+                "Navigation Error",
+                $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
+                "OK");
+        }
     }
 
     private async Task EditAssetAsync()
@@ -497,17 +506,13 @@ public class AssetDetailViewModel : BaseViewModel
             return;
         }
 
-        try
-        {
-            // Open the web edit page in the browser
-            var editUrl = $"{_settingsService.ApiBaseUrl}/assets/{Asset.Id}/edit";
-            await Browser.OpenAsync(editUrl, BrowserLaunchMode.External);
-        }
-        catch (Exception ex)
-        {
-            HasError = true;
-            ErrorMessage = $"Could not open browser: {ex.Message}";
-        }
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync($"AssetEdit?assetId={Asset.Id}"),
+            onError: ex =>
+            {
+                HasError = true;
+                ErrorMessage = $"Could not open edit page: {ex.Message}";
+            });
     }
 
     private async Task DeleteAssetAsync()

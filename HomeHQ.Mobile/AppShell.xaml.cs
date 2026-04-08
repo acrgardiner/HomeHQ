@@ -12,12 +12,13 @@ public partial class AppShell : Shell
         InitializeComponent();
 
         // Register routes for navigation
-        Routing.RegisterRoute("Login", typeof(LoginPage));
-        Routing.RegisterRoute("Dashboard", typeof(DashboardPage));
-        Routing.RegisterRoute("Assets", typeof(AssetsPage));
+        // Register routes for detail/modal pages that are NOT declared in AppShell.xaml.
+        // NOTE: Do NOT re-register routes that already have Route="..." on a ShellContent in
+        //       the XAML (Login, Dashboard, Assets, Settings) – doing so creates duplicate
+        //       registrations which cause "Ambiguous routes matched" exceptions during GoToAsync("..").
         Routing.RegisterRoute("AssetDetail", typeof(AssetDetailPage));
+        Routing.RegisterRoute("AssetEdit", typeof(AssetEditPage));
         Routing.RegisterRoute("AttachmentViewer", typeof(AttachmentViewerPage));
-        Routing.RegisterRoute("Settings", typeof(SettingsPage));
 
         // Try to get services
         _authService = Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();

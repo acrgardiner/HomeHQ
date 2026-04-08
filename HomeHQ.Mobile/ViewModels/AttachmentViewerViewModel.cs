@@ -188,9 +188,18 @@ public class AttachmentViewerViewModel : BaseViewModel
 
     private async Task GoBackAsync()
     {
-        await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync(".."),
-            onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
+        try
+        {
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            // Surface the full exception so the root cause is visible
+            await Shell.Current.DisplayAlertAsync(
+                "Navigation Error",
+                $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
+                "OK");
+        }
     }
 
     private async Task OpenExternallyAsync()

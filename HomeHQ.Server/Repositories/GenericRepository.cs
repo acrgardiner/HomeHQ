@@ -262,6 +262,12 @@ public class GenericRepository<T> : IGenericRepository<T> where T : AuditableEnt
 
     public void Update(T entity)
     {
+        var existingEntry = _applicationContext.ChangeTracker
+        .Entries<T>()
+        .FirstOrDefault(e => e.Entity.Id == entity.Id);
+
+        existingEntry?.State = EntityState.Detached;
+
         _dbSet.Update(entity);
     }
 
