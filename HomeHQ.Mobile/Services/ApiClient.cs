@@ -1,6 +1,7 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Attachment = HomeHQ.Entities.Attachment;
 
 namespace HomeHQ.Mobile.Services;
 
@@ -94,6 +95,44 @@ public class ApiClient
         return await SendAsync(request, endpoint, cancellationToken);
     }
 
+    /// <summary>
+    /// Uploads an attachment to the server's AttachmentsController/Upload endpoint.
+    /// Sends the file along with metadata fields expected by the server.
+    /// </summary>
+    public async Task<HttpResponseMessage> UploadAttachmentAsync(
+        byte[] fileBytes,
+        Attachment attachment,
+        CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+
+        var fileContent = new ByteArrayContent(fileBytes);
+        if (!string.IsNullOrEmpty(attachment.ContentType))
+        {
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(attachment.ContentType);
+        }
+
+        // 'file' is the parameter name expected by the controller
+        multipart.Add(fileContent, "file", attachment.OriginFileName);
+        // Add metadata fields expected by AttachmentUploadDto
+        multipart.Add(new StringContent(attachment.ParentId.ToString() ?? string.Empty), "ParentId");
+        multipart.Add(new StringContent(attachment.ParentType), "ParentType");
+        multipart.Add(new StringContent(attachment.OriginFileName ?? attachment.LocalFileName), "OriginFileName");
+        if (attachment.AttachmentTypeId.HasValue)
+        {
+            multipart.Add(new StringContent(attachment.AttachmentTypeId.Value.ToString()), "AttachmentTypeId");
+        }
+
+        if (!string.IsNullOrEmpty(attachment.ContentType))
+        {
+            multipart.Add(new StringContent(attachment.ContentType), "ContentType");
+        }
+
+        multipart.Add(new StringContent(Path.GetExtension(attachment.OriginFileName) ?? string.Empty), "Extension");
+
+        return await PostMultipartAsync("api/attachments/upload", multipart, cancellationToken);
+    }
+
     private HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)
     {
         var uri = new Uri(new Uri(_settings.ApiBaseUrl), endpoint);
@@ -144,4 +183,5 @@ public class ApiClient
 
         return response;
     }
+
 }

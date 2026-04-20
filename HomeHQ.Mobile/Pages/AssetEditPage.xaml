@@ -54,7 +54,7 @@
 
             <!-- Input Container Style -->
             <Style x:Key="InputContainerStyle" TargetType="Border">
-                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}"/>
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"/>
                 <Setter Property="StrokeThickness" Value="1"/>
                 <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"/>
                 <Setter Property="StrokeShape" Value="RoundRectangle 8"/>
@@ -171,44 +171,46 @@
                             </Grid>
 
                             <BoxView HeightRequest="1"
-                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"/>
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
                             <!-- Card Content -->
                             <VerticalStackLayout Padding="16" Spacing="12">
 
                                 <!-- Name -->
-                                <controls:FloatingEntry Title="Name *"
-                                                        Text="{Binding Name}"
-                                                        Placeholder="Enter asset name" />
+                                <controls:FloatingEntry Title="Name *">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <Entry Text="{Binding Name}" Placeholder="Enter asset name" />
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
 
                                 <!-- Category -->
-                                <VerticalStackLayout Spacing="4">
-                                    <Label Text="Category *" Style="{StaticResource FieldLabelStyle}"/>
-                                    <Border Style="{StaticResource InputContainerStyle}">
+                                <controls:FloatingEntry Title="Category *">
+                                    <controls:FloatingEntry.InnerContent>
                                         <Picker Title="-- Select Category --"
-                                                ItemsSource="{Binding Categories}"
-                                                ItemDisplayBinding="{Binding Title}"
-                                                SelectedItem="{Binding SelectedCategory}"
-                                                Style="{StaticResource FormPickerStyle}"/>
-                                    </Border>
-                                </VerticalStackLayout>
+                                            ItemsSource="{Binding Categories}"
+                                            ItemDisplayBinding="{Binding Title}"
+                                            SelectedItem="{Binding SelectedCategory}"
+                                            Style="{StaticResource FormPickerStyle}"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
 
                                 <!-- Purchased From -->
-                                <controls:FloatingEntry Title="Purchased From *"
-                                                        Text="{Binding PurchasedFrom}"
-                                                        Placeholder="Where was this purchased?" />
+                                <controls:FloatingEntry Title="Purchased From *">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <Entry Text="{Binding PurchasedFrom}" Placeholder="Where was this purchased?" />
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
 
                                 <!-- Purchase Date -->
-                                <VerticalStackLayout Spacing="4">
-                                    <Label Text="Purchase Date *" Style="{StaticResource FieldLabelStyle}"/>
-                                    <Border Style="{StaticResource InputContainerStyle}">
+                                <controls:FloatingEntry Title="Purchase Date *">
+                                    <controls:FloatingEntry.InnerContent>
                                         <DatePicker Date="{Binding PurchaseDate}"
-                                                    Format="D"
-                                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                                    BackgroundColor="Transparent"
-                                                    HeightRequest="44"/>
-                                    </Border>
-                                </VerticalStackLayout>
+                                            Format="D"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                            BackgroundColor="Transparent"
+                                            HeightRequest="44"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
 
                             </VerticalStackLayout>
                         </VerticalStackLayout>
@@ -235,40 +237,33 @@
                             </Grid>
 
                             <BoxView HeightRequest="1"
-                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"/>
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
                             <!-- Card Content -->
                             <VerticalStackLayout Padding="16" Spacing="12">
 
                                 <!-- Warranty Type -->
-                                <VerticalStackLayout Spacing="4">
-                                    <Label Text="Warranty Type" Style="{StaticResource FieldLabelStyle}"/>
-                                    <Border Style="{StaticResource InputContainerStyle}">
+                                <controls:FloatingEntry Title="Warranty Type">
+                                    <controls:FloatingEntry.InnerContent>
                                         <Picker Title="-- No Warranty --"
                                                 ItemsSource="{Binding WarrantyTypes}"
                                                 ItemDisplayBinding="{Binding Name}"
                                                 SelectedItem="{Binding SelectedWarrantyType}"
                                                 Style="{StaticResource FormPickerStyle}"/>
-                                    </Border>
-                                </VerticalStackLayout>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
 
                                 <!-- Warranty Expiration -->
-                                <VerticalStackLayout Spacing="4">
-                                    <Label Text="Warranty Expiration" Style="{StaticResource FieldLabelStyle}"/>
-                                    <Border Style="{StaticResource InputContainerStyle}"
-                                            Opacity="{Binding IsWarrantyExpirationEnabled, Converter={StaticResource BoolToOpacityConverter}}">
+                                <controls:FloatingEntry Title="Warranty Expiration">
+                                    <controls:FloatingEntry.InnerContent>
                                         <DatePicker Date="{Binding WarrantyExpiration}"
-                                                    Format="D"
-                                                    IsEnabled="{Binding IsWarrantyExpirationEnabled}"
-                                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                                    BackgroundColor="Transparent"
-                                                    HeightRequest="44"/>
-                                    </Border>
-                                    <Label Text="Select a warranty type to enable this field"
-                                           FontSize="11"
-                                           TextColor="{StaticResource Gray400}"
-                                           IsVisible="{Binding IsWarrantyExpirationEnabled, Converter={StaticResource InvertedBoolConverter}}"/>
-                                </VerticalStackLayout>
+                                                        Format="D"
+                                                        IsEnabled="{Binding IsWarrantyExpirationEnabled}"
+                                                        TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                        BackgroundColor="Transparent"
+                                                        HeightRequest="44"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
 
                             </VerticalStackLayout>
                         </VerticalStackLayout>
@@ -305,17 +300,17 @@
                             </Grid>
 
                             <BoxView HeightRequest="1"
-                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"/>
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
                             <!-- Attributes List -->
                             <VerticalStackLayout Padding="16" Spacing="8" IsVisible="{Binding HasAttributes}">
                                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding Attributes}" Spacing="8">
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate>
-                                            <Frame Padding="12"
+                                            <Frame Padding="0,0,4,0"
                                                    CornerRadius="8"
                                                    HasShadow="False"
-                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}">
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
                                                 <Grid ColumnDefinitions="*, *, Auto" ColumnSpacing="8">
 
                                                     <!-- Attribute Name Entry -->
@@ -360,7 +355,7 @@
                                                             WidthRequest="32"
                                                             HeightRequest="32"
                                                             Padding="0"
-                                                            VerticalOptions="Center"/>
+                                                            VerticalOptions="Center" HorizontalOptions="End"/>
                                                 </Grid>
                                             </Frame>
                                         </DataTemplate>
@@ -417,17 +412,17 @@
                             </Grid>
 
                             <BoxView HeightRequest="1"
-                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray700}}"/>
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
                             <!-- Notes List -->
                             <VerticalStackLayout Padding="16" Spacing="8" IsVisible="{Binding HasNotes}">
                                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding Notes}" Spacing="8">
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate>
-                                            <Frame Padding="12"
+                                            <Frame Padding="0,0,4,0"
                                                    CornerRadius="8"
                                                    HasShadow="False"
-                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray800}}">
+                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
                                                 <VerticalStackLayout Spacing="8">
 
                                                     <!-- Title row -->
@@ -437,7 +432,7 @@
                                                                 StrokeThickness="1"
                                                                 Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
                                                                 StrokeShape="RoundRectangle 6"
-                                                                Padding="8,2">
+                                                                Padding="8,0,0,4">
                                                             <Entry Text="{Binding Title}"
                                                                    Placeholder="Title"
                                                                    FontSize="14"
@@ -471,7 +466,7 @@
                                                                 Placeholder="Note content..."
                                                                 FontSize="14"
                                                                 PlaceholderColor="{StaticResource Gray400}"
-                                                                TextColor="{AppThemeBinding Light={StaticResource Gray700}, Dark={StaticResource Gray300}}"
+                                                                TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
                                                                 BackgroundColor="Transparent"
                                                                 AutoSize="TextChanges"
                                                                 MinimumHeightRequest="80"/>
@@ -497,6 +492,204 @@
                                        FontSize="14"
                                        TextColor="{StaticResource Gray400}"
                                        HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- ═══ Attachments Card ═══ -->
+                    <!-- Attachments Card -->
+                    <Frame Style="{StaticResource CardStyle}">
+                        <VerticalStackLayout>
+
+                            <!-- Card Header — title + carousel navigation controls -->
+                            <Grid Padding="16,12"
+                              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                              ColumnDefinitions="Auto, *, Auto, Auto, Auto">
+
+                                <Label Grid.Column="0"
+                                   mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile}"
+                                   FontSize="20"
+                                   TextColor="{StaticResource Warning}"
+                                   VerticalOptions="Center"
+                                   Margin="0,0,8,0"/>
+
+                                <Label Grid.Column="1"
+                                   Text="Attachments"
+                                   Style="{StaticResource SectionHeaderStyle}"
+                                   VerticalOptions="Center"/>
+
+                                <!-- "1 of N" counter -->
+                                <Label Grid.Column="2"
+                                   Text="{Binding AttachmentCountText}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Gray500}"
+                                   VerticalOptions="Center"
+                                   Margin="0,0,4,0"
+                                   IsVisible="{Binding HasAttachments}"/>
+
+                                <!-- Previous -->
+                                <Button Grid.Column="3"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ChevronLeft}"
+                                    Command="{Binding PreviousAttachmentCommand}"
+                                    IsEnabled="{Binding CanGoPreviousAttachment}"
+                                    IsVisible="{Binding HasAttachments}"
+                                    BackgroundColor="Transparent"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    Padding="0"/>
+
+                                <!-- Next -->
+                                <Button Grid.Column="4"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ChevronRight}"
+                                    Command="{Binding NextAttachmentCommand}"
+                                    IsEnabled="{Binding CanGoNextAttachment}"
+                                    IsVisible="{Binding HasAttachments}"
+                                    BackgroundColor="Transparent"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    Padding="0"/>
+                            </Grid>
+
+                            <BoxView HeightRequest="1"
+                                Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+
+                            <!-- ═══ Add Attachment actions ═══ -->
+
+                            <Button Text="Take Photo"
+                                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Camera}"
+                                Command="{Binding AddAttachmentPhotoCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                Margin="16,12,16,0"
+                                IsVisible="{Binding CanAddAttachments}"/>
+
+                            <Button Text="From Gallery"
+                                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Image}"
+                                Command="{Binding AddAttachmentGalleryCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                Margin="16,12,16,0"
+                                IsVisible="{Binding CanAddAttachments}"/>
+
+                            <!-- ═══ Carousel Content (attachments present) ═══ -->
+                            <VerticalStackLayout IsVisible="{Binding HasAttachments}"
+                             Padding="12,12,12,8"
+                             Spacing="10">
+
+                                <!-- Main preview area — tap to open full viewer -->
+                                <Frame CornerRadius="12"
+                                   HasShadow="False"
+                                   Padding="0"
+                                   IsClippedToBounds="True"
+                                   HeightRequest="200"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding OpenAttachmentCommand}"
+                                            CommandParameter="{Binding CurrentAttachment}"/>
+                                    </Frame.GestureRecognizers>
+
+                                    <Grid>
+                                        <!-- Image preview (shown once bytes are loaded) -->
+                                        <Image Source="{Binding CurrentAttachmentPreviewSource}"
+                                            IsVisible="{Binding HasPreviewImage}"
+                                            Aspect="AspectFill"/>
+
+                                        <!-- Loading spinner while fetching image bytes -->
+                                        <ActivityIndicator IsRunning="{Binding IsLoadingPreview}"
+                                            IsVisible="{Binding IsLoadingPreview}"
+                                            Color="{StaticResource Primary}"
+                                            WidthRequest="48"
+                                            HeightRequest="48"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"/>
+
+                                        <!-- File-icon fallback for non-images or failed previews -->
+                                        <VerticalStackLayout IsVisible="{Binding ShowFileIcon}"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"
+                                            Spacing="6">
+                                        <Label Text="{Binding CurrentAttachmentFileIcon}"
+                                           FontSize="56"
+                                           HorizontalOptions="Center"/>
+                                            <Label Text="{Binding CurrentAttachment.OriginFileName}"
+                                               FontSize="13"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                                               HorizontalOptions="Center"
+                                               HorizontalTextAlignment="Center"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2"
+                                               MaximumWidthRequest="200"/>
+                                        </VerticalStackLayout>
+
+                                        <!-- "Tap to view" hint at the bottom of the preview -->
+                                        <Label Text="Tap to view"
+                                           BackgroundColor="#80000000"
+                                           TextColor="White"
+                                           FontSize="11"
+                                           Padding="0,6"
+                                           HorizontalOptions="Fill"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalOptions="End"/>
+
+                                        <!-- File name + MIME type metadata -->
+                                        <Label FontSize="10"
+                                            TextColor="White" HorizontalTextAlignment="Start"
+                                            VerticalOptions="End" Padding="4,8">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding CurrentAttachmentFileSizeFormatted}"/>
+                                                    <Span Text=" • "/>
+                                                    <Span Text="{Binding CurrentAttachment.ContentType}"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+                                </Frame>
+
+                                <Grid ColumnDefinitions="auto, *" ColumnSpacing="8">
+                                    <!-- Attachment Type Picker -->
+                                    <controls:FloatingEntry Title="Attachment Type" Grid.Column="0">
+                                        <controls:FloatingEntry.InnerContent>
+                                            <Picker Title="-- Select Attachment Type --"
+                                                    ItemsSource="{Binding AttachmentTypes}"
+                                                    ItemDisplayBinding="{Binding Name}"
+                                                    SelectedItem="{Binding CurrentAttachment.AttachmentType}"
+                                                    Style="{StaticResource FormPickerStyle}"
+                                                    />
+                                        </controls:FloatingEntry.InnerContent>
+                                    </controls:FloatingEntry>
+
+                                    <!-- Delete Button -->
+                                    <Button Grid.Column="1" HorizontalOptions="End"
+                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                                        Command="{Binding RemoveAttachmentCommand}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="{StaticResource Error}"
+                                        CornerRadius="16"
+                                        Padding="0"
+                                        VerticalOptions="Center"/>
+
+                                </Grid>
+                            </VerticalStackLayout>
+
+                            <!-- ═══ Empty State (no attachments) ═══ -->
+                            <VerticalStackLayout Padding="24"
+                                IsVisible="{Binding HasAttachments, Converter={StaticResource InvertedBoolConverter}}"
+                                HorizontalOptions="Center">
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}"
+                                   FontSize="32"
+                                   HorizontalOptions="Center"
+                                   Opacity="0.5"/>
+                                <Label Text="No attachments"
+                                   FontSize="14"
+                                   TextColor="{StaticResource Gray400}"
+                                   HorizontalOptions="Center"/>
                             </VerticalStackLayout>
 
                         </VerticalStackLayout>

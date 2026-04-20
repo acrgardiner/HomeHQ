@@ -15,19 +15,6 @@ public partial class AssetEditPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-
-        try
-        {
-            // Reload when the page appears if the asset is not already loaded
-            if (!_viewModel.ShowContent && !string.IsNullOrEmpty(_viewModel.AssetId))
-            {
-                await _viewModel.LoadAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlertAsync("Error", $"Failed to load asset: {ex.Message}", "OK");
-        }
     }
 
     protected override void OnDisappearing()

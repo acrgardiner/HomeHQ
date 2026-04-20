@@ -31,13 +31,17 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
         var attachment = await _entityService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
+        {
             return NotFound();
+        }
 
         var uploadsPath = Path.Combine(_env.ContentRootPath, "appdata", "attachments", attachment.ParentType);
         var filePath = Path.Combine(uploadsPath, attachment.LocalFileName);
 
         if (!System.IO.File.Exists(filePath))
+        {
             return NotFound();
+        }
 
         var contentType = attachment?.ContentType ?? "application/octet-stream";
         return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
@@ -50,13 +54,17 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
         var attachment = await _entityService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
+        {
             return NotFound();
+        }
 
         var uploadsPath = Path.Combine(_env.ContentRootPath, "appdata", "thumbs", attachment.ParentType);
         var filePath = Path.Combine(uploadsPath, attachment.Thumb_LocalFileName);
 
         if (!System.IO.File.Exists(filePath))
+        {
             return NotFound();
+        }
 
         var contentType = attachment?.ContentType ?? "application/octet-stream";
         return PhysicalFile(filePath, contentType, enableRangeProcessing: true);
@@ -72,10 +80,14 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
     public async Task<ActionResult<ApiResponse<Attachment>>> Upload([FromForm] IFormFile file, [FromForm] AttachmentUploadDto metadata)
     {
         if (file == null || file.Length == 0)
+        {
             return BadRequest(ApiResponse<Attachment>.Fail("No file provided"));
+        }
 
         if (!Guid.TryParse(metadata.ParentId, out var parentId))
+        {
             return BadRequest(ApiResponse<Attachment>.Fail("Invalid parent ID"));
+        }
 
         try
         {
@@ -88,11 +100,12 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
             var attachment = new Attachment
             {
                 ParentId = parentId,
-                ParentType = metadata.ParentType ?? "Asset",
+                ParentType = metadata.ParentType ?? nameof(Asset),
                 OriginFileName = metadata.OriginFileName ?? file.FileName,
                 ContentType = metadata.ContentType ?? file.ContentType,
                 Extension = metadata.Extension ?? Path.GetExtension(file.FileName),
-                FileSize = fileBytes.Length
+                FileSize = fileBytes.Length,
+                AttachmentTypeId = metadata.AttachmentTypeId ?? Guid.Empty
             };
 
             // Upload file and generate thumbnails
@@ -120,4 +133,5 @@ public class AttachmentUploadDto
     public string? OriginFileName { get; set; }
     public string? ContentType { get; set; }
     public string? Extension { get; set; }
+    public Guid? AttachmentTypeId { get; set; }
 }

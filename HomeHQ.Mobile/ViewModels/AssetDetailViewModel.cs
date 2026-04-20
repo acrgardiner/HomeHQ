@@ -453,11 +453,24 @@ public class AssetDetailViewModel : BaseViewModel
         try
         {
             IsLoadingPreview = true;
-            var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/data");
-            if (response.IsSuccessStatusCode)
+            //Check local cache first
+            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), CurrentAttachment.LocalFileName);
+            if (File.Exists(localFilePath))
             {
-                var bytes = await response.Content.ReadAsByteArrayAsync();
-                CurrentAttachmentPreviewSource = ImageSource.FromStream(() => new MemoryStream(bytes));
+                CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
+            }
+            else
+            {
+                var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/data");
+                if (response.IsSuccessStatusCode)
+                {
+                    var bytes = await response.Content.ReadAsByteArrayAsync();
+                    CurrentAttachmentPreviewSource = ImageSource.FromStream(() => new MemoryStream(bytes));
+
+                    // Cache the file locally for future preview loads
+                    Directory.CreateDirectory(Path.GetDirectoryName(localFilePath) ?? string.Empty);
+                    await File.WriteAllBytesAsync(localFilePath, bytes);
+                }
             }
         }
         catch

@@ -23,6 +23,12 @@ public partial class AssetDetailPage : ContentPage
             {
                 await _viewModel.LoadAssetAsync();
             }
+
+            // Reload on redirect from edit page to reflect any changes
+            if (_viewModel.Asset != null)
+            {
+                await _viewModel.LoadAssetAsync();
+            }
         }
         catch (Exception ex)
         {

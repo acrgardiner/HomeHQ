@@ -144,6 +144,7 @@
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Info}"
+                                       TextColor="{StaticResource Primary}"
                                        FontSize="20" 
                                        VerticalOptions="Center"
                                        Margin="0,0,8,0"/>
@@ -199,9 +200,9 @@
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
-                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified, IconColor={StaticResource Success}}"
-                                       FontSize="20" 
-                                       TextColor="{Binding WarrantyStatusColor}"
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified}"
+                                       FontSize="20"
+                                       TextColor="{StaticResource Success}"
                                        VerticalOptions="Center"
                                        Margin="0,0,8,0"/>
                                 <Label Grid.Column="1" 
@@ -307,7 +308,8 @@
                                   ColumnDefinitions="Auto, *">
                                 <Label Grid.Column="0" 
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Notes}"
-                                       FontSize="20" 
+                                       FontSize="20"
+                                       TextColor="{StaticResource Warning}"
                                        VerticalOptions="Center"
                                        Margin="0,0,8,0"/>
                                 <Label Grid.Column="1" 
@@ -473,15 +475,11 @@
                                                HorizontalOptions="Fill"
                                                HorizontalTextAlignment="Center"
                                                VerticalOptions="End"/>
-                                    </Grid>
-                                </Frame>
 
-                                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
-
-                                    <!-- File name + MIME type metadata -->
-                                    <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                        <Label FontSize="12"
-                                               TextColor="{StaticResource Gray500}">
+                                        <!-- File name + MIME type metadata -->
+                                        <Label FontSize="10"
+                                            TextColor="White" HorizontalTextAlignment="Start"
+                                            VerticalOptions="End" Padding="4,8">
                                             <Label.FormattedText>
                                                 <FormattedString>
                                                     <Span Text="{Binding CurrentAttachmentFileSizeFormatted}"/>
@@ -490,25 +488,25 @@
                                                 </FormattedString>
                                             </Label.FormattedText>
                                         </Label>
-                                    </VerticalStackLayout>
-                                    <!-- Right: attachment type badge -->
-                                    <Frame Grid.Column="1"
-                                       Padding="8,4"
+                                    </Grid>
+                                </Frame>
+
+                                <!-- Right: attachment type badge -->
+                                <Frame Padding="8,4"
                                        CornerRadius="12"
                                        HasShadow="False"
                                        VerticalOptions="Center"
                                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}">
-                                        <Label FontSize="11"
+                                    <Label FontSize="11"
                                            TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="🏷️ "/>
-                                                    <Span Text="{Binding CurrentAttachment.AttachmentType.Name}"/>
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
-                                    </Frame>
-                                </Grid>
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="🏷️   " />
+                                                <Span Text="{Binding CurrentAttachment.AttachmentType.Name}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </Frame>
                             </VerticalStackLayout>
 
                             <!-- ═══ Empty State (no attachments) ═══ -->
