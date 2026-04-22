@@ -84,13 +84,32 @@
                                Grid.Column="1"
                                Text="1.0.0" />
                     </Grid>
-                    
+
                     <Grid ColumnDefinitions="*, Auto">
                         <Label Text="Build"
                                TextColor="{StaticResource Gray500}"/>
                         <Label Grid.Column="1"
                                Text=".NET MAUI" />
                     </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Tools Section -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                CornerRadius="12"
+                Padding="16"
+                HasShadow="True">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Tools"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"/>
+
+                    <Button x:Name="ClearCacheButton"
+                        Text="Clear File Cache"
+                        Clicked="OnClearCacheClicked"
+                        BackgroundColor="{StaticResource Gray200}"
+                        TextColor="{StaticResource Gray900}"/>
                 </VerticalStackLayout>
             </Frame>
 

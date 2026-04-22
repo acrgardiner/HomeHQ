@@ -48,8 +48,8 @@ public class AddAssetActivity : Activity
                 return;
             }
 
-            // Copy image to cache
-            var (filePath, fileName) = CopySharedFileToCache(fileUri);
+            // Copy shared file to temporary cache
+            var (filePath, fileName) = CopySharedFileToCache(fileUri, nameof(Asset));
             if (string.IsNullOrEmpty(filePath))
             {
                 ShowToast("Failed to process share");
@@ -57,115 +57,20 @@ public class AddAssetActivity : Activity
                 return;
             }
 
-            // Get API settings and auth token
-            var baseUrl = Preferences.Get("api_base_url", "");
-            var token = await SecureStorage.GetAsync("access_token");
-
-            if (string.IsNullOrEmpty(baseUrl) || string.IsNullOrEmpty(token))
+            try
             {
-                // Not configured or not logged in - open app to login
-                ShowToast("Please login to HomeHQ first");
-                StartActivity(new Intent(this, typeof(MainActivity)));
-                Finish();
-                return;
+                var launchIntent = new Intent(this, typeof(MainActivity));
+                launchIntent.AddFlags(ActivityFlags.NewTask | ActivityFlags.ClearTop);
+                // Put extras so MainActivity/MAUI can handle and route to the editor
+                // We want to open the editor for a new asset flow (GUID.Empty)
+                launchIntent.PutExtra("asset_id", Guid.Empty.ToString());
+                StartActivity(launchIntent);
+                //ShowToast("Asset created! Opening editor...");
             }
-
-            ShowToast("Creating asset...");
-
-            using var client = new HttpClient(new HttpClientHandler
+            catch (Exception ex)
             {
-#if DEBUG
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-#endif
-            });
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            // 1. Create the asset with the filename as the default name
-            var assetName = Path.GetFileNameWithoutExtension(fileName) ?? $"Shared {DateTime.Now:yyyy-MM-dd}";
-            var asset = new Asset
-            {
-                Name = assetName,
-                PurchaseDate = DateTime.Today,
-                // Audit fields required for model validation (server overwrites these)
-                CreatedBy = "",
-                CreatedOn = DateTime.UtcNow,
-                LastModifiedBy = "",
-                LastModifiedOn = DateTime.UtcNow
-            };
-
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-            var assetJson = JsonSerializer.Serialize(asset, jsonOptions);
-
-            var assetContent = new StringContent(assetJson, Encoding.UTF8, "application/json");
-            var assetResponse = await client.PostAsync($"{baseUrl}api/assets", assetContent);
-
-            if (!assetResponse.IsSuccessStatusCode)
-            {
-                var error = await assetResponse.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"Asset creation failed: {assetResponse.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"Request body: {assetJson}");
-                System.Diagnostics.Debug.WriteLine($"Response: {error}");
-                ShowToast($"Failed to create asset: {assetResponse.StatusCode}");
-                Finish();
-                return;
+                System.Diagnostics.Debug.WriteLine($"Failed to launch MainActivity: {ex}");
             }
-
-            var assetResponseJson = await assetResponse.Content.ReadAsStringAsync();
-            var assetResult = JsonSerializer.Deserialize<ApiResponse<Asset>>(assetResponseJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            var assetId = assetResult?.Data?.Id;
-            if (assetId == null || assetId == Guid.Empty)
-            {
-                ShowToast("Failed to create asset");
-                Finish();
-                return;
-            }
-
-            // 2. Upload the attachment
-            var fileBytes = await File.ReadAllBytesAsync(filePath);
-            var contentType = Intent.Type ?? "application/octet-stream";
-            var extension = Path.GetExtension(fileName) ?? GetExtensionFromMimeType(contentType);
-
-            using var content = new MultipartFormDataContent();
-            var fileContent = new ByteArrayContent(fileBytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-            content.Add(fileContent, "file", fileName ?? "file.bin");
-            content.Add(new StringContent(assetId.ToString()!), "parentId");
-            content.Add(new StringContent("Asset"), "parentType");
-            content.Add(new StringContent(fileName ?? "file.bin"), "originFileName");
-            content.Add(new StringContent(contentType), "contentType");
-            content.Add(new StringContent(extension), "extension");
-
-            var uploadResponse = await client.PostAsync($"{baseUrl}api/attachments/upload", content);
-
-            if (!uploadResponse.IsSuccessStatusCode)
-            {
-                System.Diagnostics.Debug.WriteLine($"Attachment upload failed: {uploadResponse.StatusCode}");
-                // Continue anyway - asset was created, user can add file later
-            }
-
-            // 3. Open browser to edit page
-            var editUrl = $"{baseUrl}assets/{assetId}/edit";
-            var browserIntent = new Intent(Intent.ActionView, Android.Net.Uri.Parse(editUrl));
-            browserIntent.AddFlags(ActivityFlags.NewTask);
-            StartActivity(browserIntent);
-
-            ShowToast("Asset created! Opening editor...");
-
-            // Clean up temp file
-            try { File.Delete(filePath); } catch { }
-        }
-        catch (HttpRequestException ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Network error: {ex}");
-            ShowToast("Network error - check your connection");
         }
         catch (Exception ex)
         {
@@ -186,7 +91,7 @@ public class AddAssetActivity : Activity
         });
     }
 
-    private (string? path, string? fileName) CopySharedFileToCache(Android.Net.Uri uri)
+    private (string? path, string? fileName) CopySharedFileToCache(Android.Net.Uri uri, string parentType)
     {
         try
         {
@@ -211,13 +116,17 @@ public class AddAssetActivity : Activity
                 fileName = $"shared_file_{DateTime.Now:yyyyMMddHHmmss}{extension}";
             }
 
-            var cachePath = Path.Combine(FileSystem.CacheDirectory, fileName);
+            var cacheDir = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), parentType, Guid.Empty.ToString());
+
+            Directory.CreateDirectory(cacheDir);
 
             using var inputStream = ContentResolver?.OpenInputStream(uri);
             if (inputStream == null)
             {
                 return (null, null);
             }
+
+            var cachePath = Path.Combine(cacheDir, fileName);
 
             using var outputStream = File.Create(cachePath);
             inputStream.CopyTo(outputStream);

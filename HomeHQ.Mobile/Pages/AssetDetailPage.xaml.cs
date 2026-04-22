@@ -18,14 +18,8 @@ public partial class AssetDetailPage : ContentPage
 
         try
         {
-            // Only reload if asset is not already loaded (e.g., when navigating back)
-            if (_viewModel.Asset == null && !string.IsNullOrEmpty(_viewModel.AssetId))
-            {
-                await _viewModel.LoadAssetAsync();
-            }
-
-            // Reload on redirect from edit page to reflect any changes
-            if (_viewModel.Asset != null)
+            // Only reload if asset is not already loaded, or if signaled to refresh
+            if ((_viewModel.Asset == null && !string.IsNullOrEmpty(_viewModel.AssetId)) || (_viewModel.Refresh))
             {
                 await _viewModel.LoadAssetAsync();
             }

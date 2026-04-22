@@ -8,6 +8,7 @@ using System.Windows.Input;
 
 namespace HomeHQ.Mobile.ViewModels;
 
+[QueryProperty(nameof(Refresh), "refresh")]
 [QueryProperty(nameof(AssetId), "assetId")]
 public class AssetDetailViewModel : BaseViewModel
 {
@@ -29,10 +30,12 @@ public class AssetDetailViewModel : BaseViewModel
             if (SetProperty(ref field, value))
             {
                 // Load asset when ID is set
-                _ = LoadAssetAsync();
+                //_ = LoadAssetAsync();
             }
         }
     } = string.Empty;
+
+    public bool Refresh { get; set; } = false;
 
     public Asset? Asset
     {
@@ -454,7 +457,7 @@ public class AssetDetailViewModel : BaseViewModel
         {
             IsLoadingPreview = true;
             //Check local cache first
-            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), CurrentAttachment.LocalFileName);
+            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
             if (File.Exists(localFilePath))
             {
                 CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);

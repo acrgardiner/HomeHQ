@@ -1,8 +1,8 @@
-﻿using HomeHQ.Mobile.Services;
-using HomeHQ.Entities;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Windows.Input;
 using HomeHQ.DTOs;
+using HomeHQ.Entities;
+using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile.ViewModels;
 
@@ -171,6 +171,15 @@ public class AttachmentViewerViewModel : BaseViewModel
     {
         try
         {
+            //Attempt to pull from cache first if it's an image, otherwise we want to ensure we have the latest metadata for PDFs and other files
+            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+
+            if (File.Exists(localFilePath))
+            {
+                ImageSource = ImageSource.FromFile(localFilePath);
+                return;
+            }
+
             var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
             if (response.IsSuccessStatusCode)
             {
@@ -178,7 +187,7 @@ public class AttachmentViewerViewModel : BaseViewModel
                 ImageSource = ImageSource.FromStream(() => new MemoryStream(bytes));
             }
         }
-        catch
+        catch(Exception ex)
         {
             // Image load failed, will show error state
             HasError = true;

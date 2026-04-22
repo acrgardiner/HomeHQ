@@ -31,7 +31,7 @@ public partial class EditUser
 
     private async Task Submit()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (_form.IsValid)
         {
             try

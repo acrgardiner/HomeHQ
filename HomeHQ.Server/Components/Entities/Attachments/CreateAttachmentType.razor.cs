@@ -17,7 +17,7 @@ public partial class CreateAttachmentType
 
     private async Task Submit()
     {
-        await form.Validate();
+        await form.ValidateAsync();
         if (form.IsValid)
         {
             try

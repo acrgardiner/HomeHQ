@@ -48,7 +48,9 @@ public class EntitiesController<TEntity> : ControllerBase where TEntity : IAudit
     public async Task<ActionResult<ApiResponse<TEntity>>> Update(Guid id, [FromBody] TEntity entity)
     {
         if (id == Guid.Empty)
+        {
             return Ok(ApiResponse<TEntity>.Fail("Invalid GUID format for 'id'."));
+        }
 
         if (id != entity.Id)
         {
@@ -69,7 +71,9 @@ public class EntitiesController<TEntity> : ControllerBase where TEntity : IAudit
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         if (id == Guid.Empty)
+        {
             return Ok(ApiResponse.Fail("Invalid GUID format for 'id'."));
+        }
 
         var existing = await _entityService.GetByIdAsync(id);
         if (existing == null)

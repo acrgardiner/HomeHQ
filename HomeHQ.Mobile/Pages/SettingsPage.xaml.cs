@@ -14,6 +14,47 @@ public partial class SettingsPage : ContentPage
         _authService = authService;
     }
 
+    private async void OnClearCacheClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var confirm = await DisplayAlertAsync("Clear Cache", "This will delete all files in the app cache. Continue?", "Yes", "No");
+            if (!confirm)
+            {
+                return;
+            }
+
+            var cacheDir = FileSystem.CacheDirectory;
+            if (!Directory.Exists(cacheDir))
+            {
+                await DisplayAlertAsync("Cache", "Cache is already empty.", "OK");
+                return;
+            }
+
+            //var files = Directory.GetFiles(cacheDir);
+            var files = new DirectoryInfo(cacheDir).EnumerateFiles("*", SearchOption.AllDirectories).ToList();
+            int fileCount = files.Count;
+            long totalSizeBytes = 0;
+
+            foreach (var f in files)
+            {
+                try
+                {
+                    totalSizeBytes += f.Length;
+                    f.Delete();
+                } catch {
+                    /* ignore individual failures */
+                }
+            }
+
+            await DisplayAlertAsync("Cache", $"Cache cleared ({fileCount} files, {totalSizeBytes / (1024.0 * 1024.0):F2} MB).", "OK");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to clear cache: {ex.Message}", "OK");
+        }
+    }
+
     protected override void OnAppearing()
     {
         base.OnAppearing();

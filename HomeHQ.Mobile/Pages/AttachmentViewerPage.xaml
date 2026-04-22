@@ -55,7 +55,8 @@
         </Grid>
 
         <!-- Content Area -->
-        <Grid Grid.Row="1">
+        <!-- Clip the content area so pan/zoom transforms can't draw over the header -->
+        <Grid Grid.Row="1" IsClippedToBounds="True">
             <!-- Loading Indicator -->
             <VerticalStackLayout IsVisible="{Binding IsLoading}"
                                  VerticalOptions="Center"
@@ -99,7 +100,7 @@
 
             <!-- Image Viewer -->
 
-            <controls:PanPinchContainer x:Name="ImageViewerContainer" IsVisible="{Binding IsImage}">
+            <controls:PanPinchContainer x:Name="ImageViewerContainer" IsVisible="{Binding IsImage}" IsClippedToBounds="True">
                 <Image Source="{Binding ImageSource}" />
             </controls:PanPinchContainer>     
 

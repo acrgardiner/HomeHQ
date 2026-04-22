@@ -8,7 +8,7 @@
              xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
              x:DataType="vm:AssetEditViewModel"
              x:Name="ThisPage"
-             Title="Edit Asset"
+             Title="{Binding PageTitle}"
              Shell.NavBarIsVisible="False">
 
     <ContentPage.Resources>
@@ -83,7 +83,7 @@
             <VerticalStackLayout Grid.Column="1"
                                  VerticalOptions="Center"
                                  Padding="8,0">
-                <Label Text="Edit Asset"
+                <Label Text="{Binding PageTitle}"
                        FontSize="18"
                        FontAttributes="Bold"
                        TextColor="{StaticResource Primary}"

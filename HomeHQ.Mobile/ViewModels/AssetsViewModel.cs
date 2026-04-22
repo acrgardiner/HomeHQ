@@ -168,13 +168,23 @@ public class AssetsViewModel : BaseViewModel
     {
         try
         {
-            // Open the web create page in the browser
-            var createUrl = $"{_settingsService.ApiBaseUrl}/assets/create";
-            await Browser.OpenAsync(createUrl, BrowserLaunchMode.External);
+            // Navigate to the in-app AssetEdit page without an assetId to create a new asset
+            await SafeExecuteAsync(
+                () => Shell.Current.GoToAsync($"AssetEdit?assetId={Guid.Empty}"),
+                onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Could not open browser: {ex.Message}";
+            // Fallback: open the web create page in the browser
+            try
+            {
+                var createUrl = $"{_settingsService.ApiBaseUrl}/assets/create";
+                await Browser.OpenAsync(createUrl, BrowserLaunchMode.External);
+            }
+            catch (Exception inner)
+            {
+                ErrorMessage = $"Could not open create page: {ex.Message}; {inner.Message}";
+            }
         }
     }
 

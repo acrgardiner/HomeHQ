@@ -1,11 +1,12 @@
-﻿using HomeHQ.Mobile.Services;
+﻿using System.Collections.ObjectModel;
+using System.Net.Http.Json;
+using System.Net.Mail;
+using System.Windows.Input;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
-using System.Collections.ObjectModel;
-using System.Net.Http.Json;
-using System.Windows.Input;
 using HomeHQ.Helpers;
-using System.Runtime.InteropServices;
+using HomeHQ.Mobile.Services;
+using Attachment = HomeHQ.Entities.Attachment;
 
 namespace HomeHQ.Mobile.ViewModels;
 
@@ -69,6 +70,10 @@ public class AssetEditViewModel : BaseViewModel
     }
 
     public bool ShowContent => !IsLoading && !HasError;
+
+    public bool IsNew => _loadedAsset == null || _loadedAsset.Id == Guid.Empty;
+
+    public string PageTitle => IsNew ? "New Asset" : "Edit Asset";
 
     // ── Basic information fields ───────────────────────────────────────────────
 
@@ -297,10 +302,6 @@ public class AssetEditViewModel : BaseViewModel
 
     public async Task LoadAsync()
     {
-        if (string.IsNullOrEmpty(AssetId) || !Guid.TryParse(AssetId, out var assetGuid))
-        {
-            return;
-        }
 
         try
         {
@@ -313,6 +314,15 @@ public class AssetEditViewModel : BaseViewModel
                 _categoryCache.EnsureLoadedAsync(),
                 _attachmentTypeCache.EnsureLoadedAsync(),
                 _warrantyTypeCache.EnsureLoadedAsync());
+
+            await PopulatePickerDataAsync();
+
+            // If no AssetId provided, initialize form for creating a new asset.
+            if (string.IsNullOrEmpty(AssetId) || !Guid.TryParse(AssetId, out var assetGuid) || AssetId == Guid.Empty.ToString())
+            {
+                await InitializeNewAssetAsync();
+                return;
+            }
 
             // Load asset
             var response = await _apiClient.GetAsync($"api/assets/{AssetId}");
@@ -368,11 +378,29 @@ public class AssetEditViewModel : BaseViewModel
 
     private async Task PopulateFormFromAsset(Asset asset)
     {
+        _loadedAsset = asset;
         Name = asset.Name ?? string.Empty;
         PurchasedFrom = asset.PurchasedFrom ?? string.Empty;
         PurchaseDate = asset.PurchaseDate ?? DateTime.Today;
 
-        //TODO: Move out
+        // Resolve selected items
+        SelectedCategory = asset.CategoryId.HasValue
+            ? Categories.FirstOrDefault(c => c.Id == asset.CategoryId.Value)
+            : null;
+
+        SelectedWarrantyType = asset.WarrantyTypeId.HasValue
+            ? WarrantyTypes.FirstOrDefault(w => w.Id == asset.WarrantyTypeId.Value)
+            : null;
+
+        WarrantyExpiration = asset.WarrantyExpiration ?? DateTime.Today;
+
+        // Notify that PageTitle/IsNew may have changed now that we have a loaded asset
+        OnPropertyChanged(nameof(IsNew));
+        OnPropertyChanged(nameof(PageTitle));
+    }
+
+    private async Task PopulatePickerDataAsync()
+    {
         // Populate picker collections from cache
         Categories.Clear();
         foreach (var cat in (await _categoryCache.GetAllAsync()))
@@ -401,17 +429,67 @@ public class AssetEditViewModel : BaseViewModel
                 _defaultAttachmentType = at;
             }
         }
+    }
 
-        // Resolve selected items
-        SelectedCategory = asset.CategoryId.HasValue
-            ? Categories.FirstOrDefault(c => c.Id == asset.CategoryId.Value)
-            : null;
+    private async Task InitializeNewAssetAsync()
+    {
+        _loadedAsset = new Asset { Id = Guid.Empty };
 
-        SelectedWarrantyType = asset.WarrantyTypeId.HasValue
-            ? WarrantyTypes.FirstOrDefault(w => w.Id == asset.WarrantyTypeId.Value)
-            : null;
+        // Defaults
+        Name = string.Empty;
+        PurchasedFrom = string.Empty;
+        PurchaseDate = DateTime.Today;
+        SelectedCategory = null;
+        SelectedWarrantyType = _defaultWarrantyType;
 
-        WarrantyExpiration = asset.WarrantyExpiration ?? DateTime.Today;
+        //If files exist in Guid.Empty directory, then auto load as attachments
+
+        var cacheDirectory = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId);
+        if (Directory.Exists(cacheDirectory))
+        {
+            var files = Directory.GetFiles(cacheDirectory);
+            foreach (var file in files)
+            {
+                //Get file ContentType
+                var contentType = Path.GetExtension(file).ToLower() switch
+                {
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".png" => "image/png",
+                    ".gif" => "image/gif",
+                    ".bmp" => "image/bmp",
+                    ".pdf" => "application/pdf",
+                    ".doc" or ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    ".xls" or ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    _ => "application/octet-stream"
+                };
+
+                Attachments.Add(new Attachment
+                {
+                    Id = Guid.Empty, // New attachment; ID will be assigned by server
+                    OriginFileName = Path.GetFileName(file),
+                    LocalFileName = file,
+                    ContentType = contentType,
+                    FileSize = new FileInfo(file).Length,
+                    AttachmentTypeId = _defaultAttachmentTypeId,
+                    AttachmentType = _defaultAttachmentType
+                });
+            }
+
+            if (files.Length > 0)
+            {
+                CurrentAttachmentIndex = 0;
+                NotifyAttachmentCarouselChanged();
+                CurrentAttachmentPreviewSource = null;
+                IsLoadingPreview = false;
+                if (Attachments.Count > 0)
+                {
+                    _ = LoadCurrentAttachmentPreviewAsync();
+                }
+            }
+        }
+
+        OnPropertyChanged(nameof(IsNew));
+        OnPropertyChanged(nameof(PageTitle));
     }
 
     private async Task LoadAttributesAsync(Guid assetId)
@@ -541,13 +619,38 @@ public class AssetEditViewModel : BaseViewModel
             _loadedAsset.CategoryId = SelectedCategory?.Id;
             _loadedAsset.WarrantyTypeId = SelectedWarrantyType?.Id;
             _loadedAsset.WarrantyExpiration = SelectedWarrantyType != null ? WarrantyExpiration : null;
+            _loadedAsset.CreatedBy = string.Empty;
+            _loadedAsset.CreatedOn = DateTime.UtcNow;
+            _loadedAsset.LastModifiedBy = string.Empty;
+            _loadedAsset.LastModifiedOn = DateTime.UtcNow;
 
             // Update asset
-            var assetResponse = await _apiClient.PutAsJsonAsync($"api/assets/{_loadedAsset.Id}", _loadedAsset);
-            if (!assetResponse.IsSuccessStatusCode)
+            HttpResponseMessage assetResponse;
+            if (_loadedAsset.Id == Guid.Empty)
             {
-                await Shell.Current.DisplayAlertAsync("Error", "Failed to save asset.", "OK");
-                return;
+                // New asset — POST
+                assetResponse = await _apiClient.PostAsJsonAsync("api/assets", _loadedAsset);
+                if (!assetResponse.IsSuccessStatusCode)
+                {
+                    await Shell.Current.DisplayAlertAsync("Error", "Failed to create asset.", "OK");
+                    return;
+                }
+
+                var created = await assetResponse.Content.ReadFromJsonAsync<ApiResponse<Asset>>();
+                if (created?.Data != null)
+                {
+                    _loadedAsset.Id = created.Data.Id;
+                    //AssetId = _loadedAsset.Id.ToString();
+                }
+            }
+            else
+            {
+                assetResponse = await _apiClient.PutAsJsonAsync($"api/assets/{_loadedAsset.Id}", _loadedAsset);
+                if (!assetResponse.IsSuccessStatusCode)
+                {
+                    await Shell.Current.DisplayAlertAsync("Error", "Failed to save asset.", "OK");
+                    return;
+                }
             }
 
             // Save attributes
@@ -634,11 +737,21 @@ public class AssetEditViewModel : BaseViewModel
                     // New attachment — POST
                     attachment.ParentId = assetId;
                     attachment.ParentType = nameof(Asset);
-                    attachment.AttachmentTypeId = attachment.AttachmentType.Id;
+                    attachment.AttachmentTypeId = attachment.AttachmentType?.Id;
 
-                    //Upload file
-                    byte[] fileBytes = File.ReadAllBytes(Path.Combine(FileSystem.CacheDirectory, attachment.LocalFileName));
-                    await _apiClient.UploadAttachmentAsync(fileBytes, attachment);
+                    //Upload file — handle LocalFileName being a full path or just a filename
+                    var filePath = Path.IsPathRooted(attachment.LocalFileName)
+                        ? attachment.LocalFileName
+                        : Path.Combine(FileSystem.CacheDirectory, attachment.LocalFileName);
+
+                    if (File.Exists(filePath))
+                    {
+                        byte[] fileBytes = File.ReadAllBytes(filePath);
+                        await _apiClient.UploadAttachmentAsync(fileBytes, attachment);
+
+                        //now remove file from cache
+                        File.Delete(filePath);
+                    }
                 }
                 else
                 {
@@ -705,12 +818,24 @@ public class AssetEditViewModel : BaseViewModel
     {
         try
         {
-            if (CurrentAttachment == null)
+            if (CurrentAttachment is null)
             {
                 return;
             }
 
-            if (CurrentAttachment.Id != Guid.Empty)
+            if (CurrentAttachment.Id == Guid.Empty)
+            {
+                var filePath = Path.IsPathRooted(CurrentAttachment.LocalFileName)
+                    ? CurrentAttachment.LocalFileName
+                    : Path.Combine(FileSystem.CacheDirectory, CurrentAttachment.LocalFileName);
+
+                if (File.Exists(filePath))
+                {
+                    //now remove file from cache
+                    File.Delete(filePath);
+                }
+            }
+            else
             {
                 try
                 {
@@ -776,14 +901,12 @@ public class AssetEditViewModel : BaseViewModel
     {
         try
         {
-            if (withUpdate)
+            var parameters = new Dictionary<string, object>
             {
-                await Shell.Current.Navigation.PopAsync();
-            }
-            else
-            {
-                await Shell.Current.GoToAsync("..");
-            }
+                { "refresh", withUpdate }
+            };
+
+            await Shell.Current.GoToAsync("..", parameters);
         }
         catch (Exception ex)
         {
@@ -808,7 +931,8 @@ public class AssetEditViewModel : BaseViewModel
                 if (photo != null)
                 {
                     // save the file into local storage
-                    string localFilePath = Path.Combine(FileSystem.CacheDirectory, photo.FileName);
+                    var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, photo.FileName);
+                    Directory.CreateDirectory(Path.GetDirectoryName(localFilePath) ?? string.Empty);
 
                     using Stream sourceStream = await photo.OpenReadAsync();
                     using FileStream localFileStream = File.OpenWrite(localFilePath);
@@ -819,14 +943,17 @@ public class AssetEditViewModel : BaseViewModel
                     {
                         Id = Guid.Empty, // New attachment; ID will be assigned by server
                         OriginFileName = photo.FileName,
-                        LocalFileName = photo.FileName,
-                        ContentType = "image/jpeg", // Assuming JPEG from camera; adjust if needed
+                        LocalFileName = localFilePath,
+                        ContentType = photo.ContentType,
                         FileSize = sourceStream.Length,
                         AttachmentTypeId = _defaultAttachmentTypeId, // Optionally set a default type
                         AttachmentType = _defaultAttachmentType
                     });
 
                     CurrentAttachmentIndex = Attachments.Count - 1; // Move carousel to the newly added attachment
+
+                    NotifyAttachmentCarouselChanged();
+                    _ = LoadCurrentAttachmentPreviewAsync();
                 }
             }
         }
@@ -850,9 +977,9 @@ public class AssetEditViewModel : BaseViewModel
                 // Default is 1; set to 0 for no limit
                 SelectionLimit = 10,
                 // Optional processing for images
-                MaximumWidth = 1024,
-                MaximumHeight = 768,
-                CompressionQuality = 85,
+                MaximumWidth = 2048,
+                MaximumHeight = 2048,
+                CompressionQuality = 95,
                 RotateImage = true,
                 PreserveMetaData = true,
             });
@@ -861,7 +988,8 @@ public class AssetEditViewModel : BaseViewModel
             {
                 using var stream = await file.OpenReadAsync();
                 // Process the stream
-                string localFilePath = Path.Combine(FileSystem.CacheDirectory, file.FileName);
+                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, file.FileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(localFilePath) ?? string.Empty);
 
                 using Stream sourceStream = await file.OpenReadAsync();
                 using FileStream localFileStream = File.OpenWrite(localFilePath);
@@ -872,15 +1000,18 @@ public class AssetEditViewModel : BaseViewModel
                 {
                     Id = Guid.Empty, // New attachment; ID will be assigned by server
                     OriginFileName = file.FileName,
-                    LocalFileName = file.FileName,
+                    LocalFileName = localFilePath,
                     ContentType = file.ContentType,
                     FileSize = sourceStream.Length,
-                    AttachmentTypeId = _defaultAttachmentTypeId, // Optionally set a default type
+                    AttachmentTypeId = _defaultAttachmentTypeId,
                     AttachmentType = _defaultAttachmentType
                 });
 
                 CurrentAttachmentIndex = Attachments.Count - 1; // Move carousel to the newly added attachment
             }
+
+            NotifyAttachmentCarouselChanged();
+            _ = LoadCurrentAttachmentPreviewAsync();
         }
         catch (Exception ex)
         {
@@ -927,7 +1058,10 @@ public class AssetEditViewModel : BaseViewModel
             if (CurrentAttachment.Id == Guid.Empty)
             {
                 // This is a new attachment that hasn't been saved yet; load from local cache
-                var localFilePath = Path.Combine(FileSystem.CacheDirectory, CurrentAttachment.LocalFileName);
+                var localFilePath = Path.IsPathRooted(CurrentAttachment.LocalFileName)
+                    ? CurrentAttachment.LocalFileName
+                    : Path.Combine(FileSystem.CacheDirectory, CurrentAttachment.LocalFileName);
+
                 if (File.Exists(localFilePath))
                 {
                     CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
@@ -936,7 +1070,7 @@ public class AssetEditViewModel : BaseViewModel
             else // Existing attachment — load from API
             {
                 //Check local cache first
-                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), CurrentAttachment.LocalFileName);
+                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
                 if (File.Exists(localFilePath))
                 {
                     CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
