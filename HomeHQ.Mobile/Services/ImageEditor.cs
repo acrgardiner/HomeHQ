@@ -1,55 +1,27 @@
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-
 namespace HomeHQ.Mobile.Services;
 
 /// <summary>
-/// In-memory rotate/crop for attachment preview editing.
+/// Pixel rectangle in bitmap coordinates (used by crop).
 /// </summary>
-public static class ImageEditor
+public readonly record struct ImageCropRectangle(int X, int Y, int Width, int Height);
+
+/// <summary>
+/// In-memory rotate/crop using each platform's bitmap APIs — no extra NuGet packages.
+/// </summary>
+public static partial class ImageEditor
 {
-    public static (int Width, int Height) GetDimensions(byte[] bytes)
-    {
-        using var image = Image.Load<Rgba32>(bytes);
-        return (image.Width, image.Height);
-    }
+    public static (int Width, int Height) GetDimensions(byte[] bytes) =>
+        PlatformGetDimensions(bytes);
 
-    public static byte[] RotateClockwise90(byte[] bytes, string? contentType)
-    {
-        using var image = Image.Load<Rgba32>(bytes);
-        image.Mutate(ctx => ctx.Rotate(RotateMode.Rotate90));
-        return Encode(image, contentType);
-    }
+    public static byte[] RotateClockwise90(byte[] bytes, string? contentType) =>
+        PlatformRotateClockwise90(bytes, contentType);
 
-    public static byte[] Crop(byte[] bytes, Rectangle crop, string? contentType)
-    {
-        using var image = Image.Load<Rgba32>(bytes);
-        var bounds = new Rectangle(0, 0, image.Width, image.Height);
-        crop = Rectangle.Intersect(crop, bounds);
-        if (crop.Width < 1 || crop.Height < 1)
-        {
-            throw new ArgumentException("Crop rectangle is empty or outside the image.", nameof(crop));
-        }
+    public static byte[] Crop(byte[] bytes, ImageCropRectangle crop, string? contentType) =>
+        PlatformCrop(bytes, crop, contentType);
 
-        image.Mutate(ctx => ctx.Crop(crop));
-        return Encode(image, contentType);
-    }
+    private static partial (int Width, int Height) PlatformGetDimensions(byte[] bytes);
 
-    private static byte[] Encode(Image<Rgba32> image, string? contentType)
-    {
-        using var ms = new MemoryStream();
-        var asPng = contentType?.Contains("png", StringComparison.OrdinalIgnoreCase) == true;
-        if (asPng)
-        {
-            image.SaveAsPng(ms);
-        }
-        else
-        {
-            image.SaveAsJpeg(ms, new JpegEncoder { Quality = 92 });
-        }
+    private static partial byte[] PlatformRotateClockwise90(byte[] bytes, string? contentType);
 
-        return ms.ToArray();
-    }
+    private static partial byte[] PlatformCrop(byte[] bytes, ImageCropRectangle crop, string? contentType);
 }

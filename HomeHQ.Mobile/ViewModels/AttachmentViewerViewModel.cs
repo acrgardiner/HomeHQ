@@ -3,7 +3,6 @@ using System.Windows.Input;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
-using SixLabors.ImageSharp;
 
 namespace HomeHQ.Mobile.ViewModels;
 
@@ -289,7 +288,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             var cw = right - x;
             var ch = bottom - y;
 
-            var rect = new Rectangle(x, y, cw, ch);
+            var rect = new ImageCropRectangle(x, y, cw, ch);
             var cropped = ImageEditor.Crop(_rawImageBytes, rect, Attachment.ContentType);
             await ReplaceImageBytesAsync(cropped);
             IsCropMode = false;
