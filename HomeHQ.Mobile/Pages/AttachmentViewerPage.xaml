@@ -10,7 +10,7 @@
              Shell.NavBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark=Black}">
 
-    <Grid RowDefinitions="Auto, *">
+    <Grid RowDefinitions="Auto, Auto, *">
         <!-- Custom Header -->
         <Grid Grid.Row="0" 
               Padding="8"
@@ -54,9 +54,52 @@
                     HeightRequest="40"/>
         </Grid>
 
+        <!-- Image edit toolbar -->
+        <HorizontalStackLayout Grid.Row="1"
+                               IsVisible="{Binding ShowImageToolbar}"
+                               Padding="12,8"
+                               Spacing="10"
+                               HorizontalOptions="Fill"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}">
+            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateRight}"
+                    Command="{Binding RotateClockwiseCommand}"
+                    IsVisible="{Binding ShowRotateButton}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Crop}"
+                    Command="{Binding StartCropCommand}"
+                    IsVisible="{Binding ShowStartCropButton}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+            <Button Text="Apply"
+                    Command="{Binding ApplyCropCommand}"
+                    IsVisible="{Binding IsCropMode}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    Padding="16,8"/>
+            <Button Text="Cancel"
+                    Command="{Binding CancelCropCommand}"
+                    IsVisible="{Binding IsCropMode}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray600}}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    Padding="16,8"/>
+            <ActivityIndicator IsVisible="{Binding IsImageEditBusy}"
+                               IsRunning="{Binding IsImageEditBusy}"
+                               Color="{StaticResource Primary}"
+                               VerticalOptions="Center"/>
+        </HorizontalStackLayout>
+
         <!-- Content Area -->
         <!-- Clip the content area so pan/zoom transforms can't draw over the header -->
-        <Grid Grid.Row="1" IsClippedToBounds="True">
+        <Grid Grid.Row="2" IsClippedToBounds="True">
             <!-- Loading Indicator -->
             <VerticalStackLayout IsVisible="{Binding IsLoading}"
                                  VerticalOptions="Center"
@@ -100,9 +143,22 @@
 
             <!-- Image Viewer -->
 
-            <controls:PanPinchContainer x:Name="ImageViewerContainer" IsVisible="{Binding IsImage}" IsClippedToBounds="True">
-                <Image Source="{Binding ImageSource}" />
-            </controls:PanPinchContainer>     
+            <Grid IsVisible="{Binding IsImage}" IsClippedToBounds="True">
+                <controls:PanPinchContainer x:Name="ImageViewerContainer"
+                                            GesturesEnabled="{Binding PanZoomEnabled}"
+                                            IsClippedToBounds="True">
+                    <Image Source="{Binding ImageSource}" Aspect="AspectFit" />
+                </controls:PanPinchContainer>
+                <controls:ImageCropOverlay x:Name="CropOverlay"
+                                           IsVisible="{Binding IsCropMode}"
+                                           InputTransparent="False"
+                                           SourceImageWidth="{Binding ImagePixelWidth}"
+                                           SourceImageHeight="{Binding ImagePixelHeight}"
+                                           CropRelativeX="{Binding CropRelativeX, Mode=TwoWay}"
+                                           CropRelativeY="{Binding CropRelativeY, Mode=TwoWay}"
+                                           CropRelativeWidth="{Binding CropRelativeWidth, Mode=TwoWay}"
+                                           CropRelativeHeight="{Binding CropRelativeHeight, Mode=TwoWay}" />
+            </Grid>
 
             <!-- Non-Image File Preview -->
             <VerticalStackLayout IsVisible="{Binding IsOtherFile}"

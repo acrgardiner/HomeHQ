@@ -22,6 +22,42 @@ public class PanPinchContainer : ContentView
 
     private double _startScale = 1;
 
+    /// <summary>
+    /// When false, pan/pinch/double-tap zoom are ignored (e.g. during crop mode).
+    /// </summary>
+    public static readonly BindableProperty GesturesEnabledProperty = BindableProperty.Create(
+        nameof(GesturesEnabled),
+        typeof(bool),
+        typeof(PanPinchContainer),
+        true);
+
+    public bool GesturesEnabled
+    {
+        get => (bool)GetValue(GesturesEnabledProperty);
+        set => SetValue(GesturesEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Clears scale and translation (e.g. before cropping).
+    /// </summary>
+    public void ResetTransform()
+    {
+        if (Content == null)
+        {
+            return;
+        }
+
+        Content.Scale = 1;
+        Content.TranslationX = 0;
+        Content.TranslationY = 0;
+        Content.AnchorX = 0;
+        Content.AnchorY = 0;
+        _currentScale = 1;
+        _startScale = 1;
+        _panX = 0;
+        _panY = 0;
+    }
+
     public PanPinchContainer()
     {
         _panGestureRecognizer = new PanGestureRecognizer();
@@ -130,6 +166,11 @@ public class PanPinchContainer : ContentView
 
     private async void DoubleTappedAsync(object? sender, TappedEventArgs e)
     {
+        if (!GesturesEnabled)
+        {
+            return;
+        }
+
         _startScale = Content.Scale;
         _currentScale = _startScale;
         _panX = Content.TranslationX;
@@ -163,7 +204,7 @@ public class PanPinchContainer : ContentView
 
     private async void OnPanUpdatedAsync(object? sender, PanUpdatedEventArgs e)
     {
-        if (!_isPanEnabled)
+        if (!GesturesEnabled || !_isPanEnabled)
         {
             return;
         }
@@ -201,6 +242,11 @@ public class PanPinchContainer : ContentView
 
     private async void OnPinchUpdatedAsync(object? sender, PinchGestureUpdatedEventArgs e)
     {
+        if (!GesturesEnabled)
+        {
+            return;
+        }
+
         if (e.Status == GestureStatus.Started)
         {
             _isPanEnabled = false;

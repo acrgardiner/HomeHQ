@@ -3,6 +3,7 @@ using System.Windows.Input;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
+using SixLabors.ImageSharp;
 
 namespace HomeHQ.Mobile.ViewModels;
 
@@ -36,6 +37,7 @@ public class AttachmentViewerViewModel : BaseViewModel
                 OnPropertyChanged(nameof(IsPdf));
                 OnPropertyChanged(nameof(IsOtherFile));
                 OnPropertyChanged(nameof(FileTypeIcon));
+                NotifyImageToolbarProps();
             }
         }
     }
@@ -45,6 +47,93 @@ public class AttachmentViewerViewModel : BaseViewModel
         get;
         set => SetProperty(ref field, value);
     }
+
+    private int _imagePixelWidth;
+    private int _imagePixelHeight;
+    private bool _isCropMode;
+    private double _cropRelativeX;
+    private double _cropRelativeY;
+    private double _cropRelativeWidth = 1;
+    private double _cropRelativeHeight = 1;
+
+    /// <summary>Decoded bitmap width for crop coordinate mapping.</summary>
+    public int ImagePixelWidth
+    {
+        get => _imagePixelWidth;
+        private set => SetProperty(ref _imagePixelWidth, value);
+    }
+
+    /// <summary>Decoded bitmap height for crop coordinate mapping.</summary>
+    public int ImagePixelHeight
+    {
+        get => _imagePixelHeight;
+        private set => SetProperty(ref _imagePixelHeight, value);
+    }
+
+    public bool IsCropMode
+    {
+        get => _isCropMode;
+        set
+        {
+            if (SetProperty(ref _isCropMode, value))
+            {
+                NotifyImageToolbarProps();
+                RefreshEditCommandStates();
+            }
+        }
+    }
+
+    private bool _isImageEditBusy;
+
+    public bool IsImageEditBusy
+    {
+        get => _isImageEditBusy;
+        set
+        {
+            if (SetProperty(ref _isImageEditBusy, value))
+            {
+                RefreshEditCommandStates();
+            }
+        }
+    }
+
+    public double CropRelativeX
+    {
+        get => _cropRelativeX;
+        set => SetProperty(ref _cropRelativeX, value);
+    }
+
+    public double CropRelativeY
+    {
+        get => _cropRelativeY;
+        set => SetProperty(ref _cropRelativeY, value);
+    }
+
+    public double CropRelativeWidth
+    {
+        get => _cropRelativeWidth;
+        set => SetProperty(ref _cropRelativeWidth, value);
+    }
+
+    public double CropRelativeHeight
+    {
+        get => _cropRelativeHeight;
+        set => SetProperty(ref _cropRelativeHeight, value);
+    }
+
+    /// <summary>Toolbar for rotate/crop when an image preview is showing.</summary>
+    public bool ShowImageToolbar => ShowContent && IsImage;
+
+    /// <summary>Pan/zoom on the viewer is disabled while adjusting the crop rectangle.</summary>
+    public bool PanZoomEnabled => !IsCropMode;
+
+    /// <summary>Hides "Crop" while already in crop mode.</summary>
+    public bool ShowStartCropButton => ShowImageToolbar && !IsCropMode;
+
+    /// <summary>Rotate is hidden during crop mode to avoid stacked transforms.</summary>
+    public bool ShowRotateButton => ShowImageToolbar && !IsCropMode;
+
+    private byte[]? _rawImageBytes;
     public string? PdfUrl
     {
         get;
@@ -58,6 +147,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         {
             SetProperty(ref field, value);
             OnPropertyChanged(nameof(ShowContent));
+            NotifyImageToolbarProps();
         }
     }
 
@@ -68,6 +158,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         {
             SetProperty(ref field, value);
             OnPropertyChanged(nameof(ShowContent));
+            NotifyImageToolbarProps();
         }
     }
 
@@ -99,6 +190,10 @@ public class AttachmentViewerViewModel : BaseViewModel
     public ICommand GoBackCommand { get; }
     public ICommand OpenExternallyCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand RotateClockwiseCommand { get; }
+    public ICommand StartCropCommand { get; }
+    public ICommand ApplyCropCommand { get; }
+    public ICommand CancelCropCommand { get; }
 
     public AttachmentViewerViewModel(ApiClient apiClient, SettingsService settingsService)
     {
@@ -108,6 +203,147 @@ public class AttachmentViewerViewModel : BaseViewModel
         GoBackCommand = new Command(async () => await GoBackAsync());
         OpenExternallyCommand = new Command(async () => await OpenExternallyAsync());
         RefreshCommand = new Command(async () => await LoadAttachmentAsync());
+        RotateClockwiseCommand = new Command(async () => await RotateClockwiseAsync(), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
+        StartCropCommand = new Command(() => StartCrop(), () => ShowStartCropButton && !IsImageEditBusy);
+        ApplyCropCommand = new Command(async () => await ApplyCropAsync(), () => IsCropMode && !IsImageEditBusy);
+        CancelCropCommand = new Command(() => CancelCrop(), () => IsCropMode && !IsImageEditBusy);
+    }
+
+    private void RefreshEditCommandStates()
+    {
+        ((Command)RotateClockwiseCommand).ChangeCanExecute();
+        ((Command)StartCropCommand).ChangeCanExecute();
+        ((Command)ApplyCropCommand).ChangeCanExecute();
+        ((Command)CancelCropCommand).ChangeCanExecute();
+    }
+
+    private void NotifyImageToolbarProps()
+    {
+        OnPropertyChanged(nameof(ShowImageToolbar));
+        OnPropertyChanged(nameof(PanZoomEnabled));
+        OnPropertyChanged(nameof(ShowStartCropButton));
+        OnPropertyChanged(nameof(ShowRotateButton));
+    }
+
+    private void StartCrop()
+    {
+        if (_rawImageBytes == null || !IsImage)
+        {
+            return;
+        }
+
+        CropRelativeX = 0;
+        CropRelativeY = 0;
+        CropRelativeWidth = 1;
+        CropRelativeHeight = 1;
+        IsCropMode = true;
+        RefreshEditCommandStates();
+    }
+
+    private void CancelCrop()
+    {
+        IsCropMode = false;
+        RefreshEditCommandStates();
+    }
+
+    private async Task RotateClockwiseAsync()
+    {
+        if (_rawImageBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsImageEditBusy = true;
+            var rotated = ImageEditor.RotateClockwise90(_rawImageBytes, Attachment.ContentType);
+            await ReplaceImageBytesAsync(rotated);
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+        finally
+        {
+            IsImageEditBusy = false;
+        }
+    }
+
+    private async Task ApplyCropAsync()
+    {
+        if (_rawImageBytes == null || Attachment == null || ImagePixelWidth <= 0 || ImagePixelHeight <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            IsImageEditBusy = true;
+
+            var w = ImagePixelWidth;
+            var h = ImagePixelHeight;
+            var x = Math.Clamp((int)Math.Floor(CropRelativeX * w), 0, Math.Max(0, w - 1));
+            var y = Math.Clamp((int)Math.Floor(CropRelativeY * h), 0, Math.Max(0, h - 1));
+            var right = Math.Clamp((int)Math.Ceiling((CropRelativeX + CropRelativeWidth) * w), x + 1, w);
+            var bottom = Math.Clamp((int)Math.Ceiling((CropRelativeY + CropRelativeHeight) * h), y + 1, h);
+            var cw = right - x;
+            var ch = bottom - y;
+
+            var rect = new Rectangle(x, y, cw, ch);
+            var cropped = ImageEditor.Crop(_rawImageBytes, rect, Attachment.ContentType);
+            await ReplaceImageBytesAsync(cropped);
+            IsCropMode = false;
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Crop failed", ex.Message, "OK");
+        }
+        finally
+        {
+            IsImageEditBusy = false;
+        }
+    }
+
+    private async Task ReplaceImageBytesAsync(byte[] newBytes)
+    {
+        _rawImageBytes = newBytes;
+        var dims = ImageEditor.GetDimensions(newBytes);
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            ImagePixelWidth = dims.Width;
+            ImagePixelHeight = dims.Height;
+            ImageSource = ImageSource.FromStream(() => new MemoryStream(newBytes));
+        });
+
+        if (Attachment != null)
+        {
+            var path = GetLocalCachePath();
+            try
+            {
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                await File.WriteAllBytesAsync(path, newBytes);
+            }
+            catch
+            {
+                // Preview still updated in memory; cache write is best-effort.
+            }
+        }
+    }
+
+    private string GetLocalCachePath()
+    {
+        if (Attachment == null)
+        {
+            return string.Empty;
+        }
+
+        return Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
     }
 
     public async Task LoadAttachmentAsync()
@@ -169,27 +405,52 @@ public class AttachmentViewerViewModel : BaseViewModel
 
     private async Task LoadImageAsync()
     {
+        if (Attachment == null)
+        {
+            return;
+        }
+
         try
         {
-            //Attempt to pull from cache first if it's an image, otherwise we want to ensure we have the latest metadata for PDFs and other files
+            IsCropMode = false;
+            _rawImageBytes = null;
+            ImagePixelWidth = 0;
+            ImagePixelHeight = 0;
+
             var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
 
+            byte[] bytes;
             if (File.Exists(localFilePath))
             {
-                ImageSource = ImageSource.FromFile(localFilePath);
-                return;
+                bytes = await File.ReadAllBytesAsync(localFilePath);
+            }
+            else
+            {
+                var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+                if (!response.IsSuccessStatusCode)
+                {
+                    HasError = true;
+                    ErrorMessage = "Failed to download image";
+                    return;
+                }
+
+                bytes = await response.Content.ReadAsByteArrayAsync();
             }
 
-            var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
-            if (response.IsSuccessStatusCode)
+            _rawImageBytes = bytes;
+            var dims = ImageEditor.GetDimensions(bytes);
+            await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var bytes = await response.Content.ReadAsByteArrayAsync();
+                ImagePixelWidth = dims.Width;
+                ImagePixelHeight = dims.Height;
                 ImageSource = ImageSource.FromStream(() => new MemoryStream(bytes));
-            }
+            });
+
+            RefreshEditCommandStates();
+            NotifyImageToolbarProps();
         }
-        catch(Exception ex)
+        catch (Exception)
         {
-            // Image load failed, will show error state
             HasError = true;
             ErrorMessage = "Failed to load image";
         }
