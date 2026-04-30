@@ -253,6 +253,8 @@ public class AssetEditViewModel : BaseViewModel
     public ICommand NextAttachmentCommand { get; }
     public ICommand SelectAttachmentCommand { get; }
 
+    public ICommand OpenAttachmentCommand { get; }
+
     // ── Constructor ────────────────────────────────────────────────────────────
 
     public AssetEditViewModel(
@@ -296,6 +298,8 @@ public class AssetEditViewModel : BaseViewModel
                 CurrentAttachmentIndex = index;
             }
         });
+
+        OpenAttachmentCommand = new Command<Attachment>(async (attachment) => await OpenAttachmentAsync(attachment));
     }
 
     // ── Load ───────────────────────────────────────────────────────────────────
@@ -1024,7 +1028,7 @@ public class AssetEditViewModel : BaseViewModel
     }
 
     /// <summary>Fires all property-change notifications related to the carousel state.</summary>
-    private void NotifyAttachmentCarouselChanged()
+    public void NotifyAttachmentCarouselChanged()
     {
         OnPropertyChanged(nameof(CurrentAttachment));
         OnPropertyChanged(nameof(CurrentAttachmentIndex));
@@ -1043,7 +1047,7 @@ public class AssetEditViewModel : BaseViewModel
     /// Downloads the raw bytes for the current attachment from the API and
     /// exposes them as an <see cref="ImageSource"/> (images only).
     /// </summary>
-    private async Task LoadCurrentAttachmentPreviewAsync()
+    public async Task LoadCurrentAttachmentPreviewAsync()
     {
         CurrentAttachmentPreviewSource = null;
 
@@ -1113,4 +1117,22 @@ public class AssetEditViewModel : BaseViewModel
         var ct when ct?.Contains("zip") == true || ct?.Contains("compressed") == true => "📦",
         _ => "📎"
     };
+
+    private async Task OpenAttachmentAsync(Attachment? attachment)
+    {
+        if (attachment == null)
+        {
+            return;
+        }
+
+        var param = new Dictionary<string, object>
+        {
+            { "attachmentId", attachment.Id.ToString() },
+            { "editable", false }
+        };
+
+        await SafeExecuteAsync(
+            () => Shell.Current.GoToAsync("AttachmentViewer", param),
+            onError: ex => ErrorMessage = $"Could not open attachment: {ex.Message}");
+    }
 }

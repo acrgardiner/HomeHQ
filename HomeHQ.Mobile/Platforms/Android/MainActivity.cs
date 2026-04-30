@@ -54,7 +54,12 @@ namespace HomeHQ.Mobile
                         // Navigate to AssetEdit passing the assetId (may be Guid.Empty)
                         try
                         {
-                            await Shell.Current.GoToAsync($"AssetEdit?assetId={assetId}");
+                            var param = new Dictionary<string, object>
+                            {
+                                { "assetId", assetId }
+                            };
+
+                            await Shell.Current.GoToAsync($"AssetEdit", param);
                         }
                         catch
                         {

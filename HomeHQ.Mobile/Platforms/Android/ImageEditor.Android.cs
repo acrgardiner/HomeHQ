@@ -1,4 +1,4 @@
-using Android.Graphics;
+﻿using Android.Graphics;
 
 namespace HomeHQ.Mobile.Services;
 
@@ -11,12 +11,12 @@ public static partial class ImageEditor
         return (opts.OutWidth, opts.OutHeight);
     }
 
-    private static partial byte[] PlatformRotateClockwise90(byte[] bytes, string? contentType)
+    private static partial byte[] PlatformRotate(byte[] bytes, int degrees, string? contentType)
     {
         using var src = BitmapFactory.DecodeByteArray(bytes, 0, bytes.Length)
             ?? throw new InvalidOperationException("Could not decode image.");
         using var matrix = new Matrix();
-        matrix.PostRotate(90);
+        matrix.PostRotate(degrees);
         using var rotated = Bitmap.CreateBitmap(src, 0, 0, src.Width, src.Height, matrix, true)
             ?? throw new InvalidOperationException("Rotate failed.");
         return EncodeBitmap(rotated, contentType);

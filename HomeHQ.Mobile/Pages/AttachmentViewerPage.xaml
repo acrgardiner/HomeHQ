@@ -61,6 +61,14 @@
                                Spacing="10"
                                HorizontalOptions="Fill"
                                BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}">
+            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateLeft}"
+                    Command="{Binding RotateCounterClockwiseCommand}"
+                    IsVisible="{Binding ShowRotateButton}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
             <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateRight}"
                     Command="{Binding RotateClockwiseCommand}"
                     IsVisible="{Binding ShowRotateButton}"

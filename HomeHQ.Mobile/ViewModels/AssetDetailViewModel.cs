@@ -522,8 +522,13 @@ public class AssetDetailViewModel : BaseViewModel
             return;
         }
 
+        var param = new Dictionary<string, object>
+        {
+            { "assetId", Asset.Id.ToString() }
+        };
+
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync($"AssetEdit?assetId={Asset.Id}"),
+            () => Shell.Current.GoToAsync($"AssetEdit", param),
             onError: ex =>
             {
                 HasError = true;
@@ -574,8 +579,13 @@ public class AssetDetailViewModel : BaseViewModel
             return;
         }
 
+        var param = new Dictionary<string, object>
+        {
+            { "attachmentId", attachment.Id.ToString() }
+        };
+
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync($"AttachmentViewer?attachmentId={attachment.Id}"),
+            () => Shell.Current.GoToAsync("AttachmentViewer", param),
             onError: ex => ErrorMessage = $"Could not open attachment: {ex.Message}");
     }
 }

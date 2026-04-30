@@ -167,8 +167,13 @@ public class DashboardViewModel : BaseViewModel
             return;
         }
 
+        var param = new Dictionary<string, object>
+        {
+            { "assetId", asset.Id.ToString() }
+        };
+
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}"),
+            () => Shell.Current.GoToAsync("AssetDetail", param),
             onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 

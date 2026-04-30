@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices.WindowsRuntime;
+﻿using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 
@@ -15,13 +15,20 @@ public static partial class ImageEditor
         return ((int)decoder.PixelWidth, (int)decoder.PixelHeight);
     }
 
-    private static partial byte[] PlatformRotateClockwise90(byte[] bytes, string? contentType)
+    private static partial byte[] PlatformRotate(byte[] bytes, int degrees, string? contentType)
     {
+        //TODO: Fix
         using var input = new InMemoryRandomAccessStream();
         input.WriteAsync(bytes.AsBuffer()).AsTask().GetAwaiter().GetResult();
         input.Seek(0);
         var decoder = BitmapDecoder.CreateAsync(input).AsTask().GetAwaiter().GetResult();
-        var transform = new BitmapTransform { Rotation = BitmapRotation.Clockwise90Degrees };
+        var transform = new BitmapTransform { Rotation = degrees switch
+        {
+            90 => BitmapRotation.Clockwise90Degrees,
+            180 => BitmapRotation.Clockwise180Degrees,
+            270 => BitmapRotation.Clockwise270Degrees,
+            _ => BitmapRotation.None
+        }};
         return EncodeWithTransform(decoder, transform, contentType);
     }
 
@@ -47,39 +54,42 @@ public static partial class ImageEditor
 
     private static byte[] EncodeWithTransform(BitmapDecoder decoder, BitmapTransform transform, string? contentType)
     {
-        var pixelProvider = decoder.GetPixelDataAsync(
-                BitmapPixelFormat.Bgra8,
-                BitmapAlphaMode.Premultiplied,
-                transform,
-                ExifOrientationMode.RespectExifOrientation,
-                ColorManagementMode.DoNotColorManage)
-            .AsTask()
-            .GetAwaiter()
-            .GetResult();
+        throw new NotImplementedException("This method is not implemented yet. It needs to be tested and verified before use.");
 
-        var (pixelWidth, pixelHeight) = GetTransformedPixelDimensions(decoder, transform);
+        //var pixelProvider = decoder.GetPixelDataAsync(
+        //        BitmapPixelFormat.Bgra8,
+        //        BitmapAlphaMode.Premultiplied,
+        //        transform,
+        //        ExifOrientationMode.RespectExifOrientation,
+        //        ColorManagementMode.DoNotColorManage)
+        //    .AsTask()
+        //    .GetAwaiter()
+        //    .GetResult();
 
-        using var bitmap = SoftwareBitmap.CreateCopyFromBuffer(
-            pixelProvider.DetachPixelData(),
-            BitmapPixelFormat.Bgra8,
-            pixelWidth,
-            pixelHeight,
-            BitmapAlphaMode.Premultiplied);
+        //var (pixelWidth, pixelHeight) = GetTransformedPixelDimensions(decoder, transform);
 
-        using var output = new InMemoryRandomAccessStream();
-        var png = contentType?.Contains("png", StringComparison.OrdinalIgnoreCase) == true;
-        var encoderId = png ? BitmapEncoder.PngEncoderId : BitmapEncoder.JpegEncoderId;
-        var encoder = BitmapEncoder.CreateAsync(encoderId, output).AsTask().GetAwaiter().GetResult();
-        encoder.SetSoftwareBitmap(bitmap);
-        encoder.FlushAsync().AsTask().GetAwaiter().GetResult();
+        ////TODO: Fix?
+        ////using var bitmap = SoftwareBitmap.CreateCopyFromBuffer(
+        ////    pixelProvider.DetachPixelData(),
+        ////    BitmapPixelFormat.Bgra8,
+        ////    pixelWidth,
+        ////    pixelHeight,
+        ////    BitmapAlphaMode.Premultiplied);
 
-        output.Seek(0);
-        using var reader = new DataReader(output);
-        var size = (uint)output.Size;
-        reader.LoadAsync(size).AsTask().GetAwaiter().GetResult();
-        var result = new byte[size];
-        reader.ReadBytes(result);
-        return result;
+        //using var output = new InMemoryRandomAccessStream();
+        //var png = contentType?.Contains("png", StringComparison.OrdinalIgnoreCase) == true;
+        //var encoderId = png ? BitmapEncoder.PngEncoderId : BitmapEncoder.JpegEncoderId;
+        //var encoder = BitmapEncoder.CreateAsync(encoderId, output).AsTask().GetAwaiter().GetResult();
+        //encoder.SetSoftwareBitmap(bitmap);
+        //encoder.FlushAsync().AsTask().GetAwaiter().GetResult();
+
+        //output.Seek(0);
+        //using var reader = new DataReader(output);
+        //var size = (uint)output.Size;
+        //reader.LoadAsync(size).AsTask().GetAwaiter().GetResult();
+        //var result = new byte[size];
+        //reader.ReadBytes(result);
+        //return result;
     }
 
     /// <summary>

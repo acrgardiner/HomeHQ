@@ -159,8 +159,13 @@ public class AssetsViewModel : BaseViewModel
             return;
         }
 
+        var parameters = new Dictionary<string, object>
+        {
+            { "assetId", asset.Id.ToString() }
+        };
+
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync($"AssetDetail?assetId={asset.Id}"),
+            () => Shell.Current.GoToAsync("AssetDetail", parameters),
             onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
     }
 
@@ -168,9 +173,13 @@ public class AssetsViewModel : BaseViewModel
     {
         try
         {
+            var param  = new Dictionary<string, object>
+            {
+                { "assetId", Guid.Empty.ToString() }
+            };
             // Navigate to the in-app AssetEdit page without an assetId to create a new asset
             await SafeExecuteAsync(
-                () => Shell.Current.GoToAsync($"AssetEdit?assetId={Guid.Empty}"),
+                () => Shell.Current.GoToAsync("AssetEdit", param),
                 onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
         }
         catch (Exception ex)

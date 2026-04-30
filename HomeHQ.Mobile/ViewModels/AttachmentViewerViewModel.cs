@@ -7,6 +7,7 @@ using HomeHQ.Mobile.Services;
 namespace HomeHQ.Mobile.ViewModels;
 
 [QueryProperty(nameof(AttachmentId), "attachmentId")]
+[QueryProperty(nameof(Editable), "editable")]
 public class AttachmentViewerViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
@@ -23,6 +24,12 @@ public class AttachmentViewerViewModel : BaseViewModel
             }
         }
     } = string.Empty;
+
+    public bool Editable
+    {
+        get;
+        set;
+    } = false;
 
     public Attachment? Attachment
     {
@@ -47,34 +54,26 @@ public class AttachmentViewerViewModel : BaseViewModel
         set => SetProperty(ref field, value);
     }
 
-    private int _imagePixelWidth;
-    private int _imagePixelHeight;
-    private bool _isCropMode;
-    private double _cropRelativeX;
-    private double _cropRelativeY;
-    private double _cropRelativeWidth = 1;
-    private double _cropRelativeHeight = 1;
-
     /// <summary>Decoded bitmap width for crop coordinate mapping.</summary>
     public int ImagePixelWidth
     {
-        get => _imagePixelWidth;
-        private set => SetProperty(ref _imagePixelWidth, value);
+        get;
+        private set => SetProperty(ref field, value);
     }
 
     /// <summary>Decoded bitmap height for crop coordinate mapping.</summary>
     public int ImagePixelHeight
     {
-        get => _imagePixelHeight;
-        private set => SetProperty(ref _imagePixelHeight, value);
+        get;
+        private set => SetProperty(ref field, value);
     }
 
     public bool IsCropMode
     {
-        get => _isCropMode;
+        get;
         set
         {
-            if (SetProperty(ref _isCropMode, value))
+            if (SetProperty(ref field, value))
             {
                 NotifyImageToolbarProps();
                 RefreshEditCommandStates();
@@ -82,14 +81,12 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
-    private bool _isImageEditBusy;
-
     public bool IsImageEditBusy
     {
-        get => _isImageEditBusy;
+        get;
         set
         {
-            if (SetProperty(ref _isImageEditBusy, value))
+            if (SetProperty(ref field, value))
             {
                 RefreshEditCommandStates();
             }
@@ -98,30 +95,30 @@ public class AttachmentViewerViewModel : BaseViewModel
 
     public double CropRelativeX
     {
-        get => _cropRelativeX;
-        set => SetProperty(ref _cropRelativeX, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
     public double CropRelativeY
     {
-        get => _cropRelativeY;
-        set => SetProperty(ref _cropRelativeY, value);
+        get;
+        set => SetProperty(ref field, value);
     }
 
     public double CropRelativeWidth
     {
-        get => _cropRelativeWidth;
-        set => SetProperty(ref _cropRelativeWidth, value);
-    }
+        get;
+        set => SetProperty(ref field, value);
+    } = 1;
 
     public double CropRelativeHeight
     {
-        get => _cropRelativeHeight;
-        set => SetProperty(ref _cropRelativeHeight, value);
-    }
+        get;
+        set => SetProperty(ref field, value);
+    } = 1;
 
     /// <summary>Toolbar for rotate/crop when an image preview is showing.</summary>
-    public bool ShowImageToolbar => ShowContent && IsImage;
+    public bool ShowImageToolbar => ShowContent && IsImage && Editable;
 
     /// <summary>Pan/zoom on the viewer is disabled while adjusting the crop rectangle.</summary>
     public bool PanZoomEnabled => !IsCropMode;
@@ -168,7 +165,7 @@ public class AttachmentViewerViewModel : BaseViewModel
     }
 
     public bool ShowContent => !IsLoading && !HasError && Attachment != null;
-    public string FileName => Attachment?.OriginFileName ?? "Attachment";
+    public string FileName => Attachment?.LocalFileName ?? "Attachment";
 
     public bool IsImage => Attachment?.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true;
     public bool IsPdf => Attachment?.ContentType?.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) == true;
@@ -190,6 +187,7 @@ public class AttachmentViewerViewModel : BaseViewModel
     public ICommand OpenExternallyCommand { get; }
     public ICommand RefreshCommand { get; }
     public ICommand RotateClockwiseCommand { get; }
+    public ICommand RotateCounterClockwiseCommand { get; }
     public ICommand StartCropCommand { get; }
     public ICommand ApplyCropCommand { get; }
     public ICommand CancelCropCommand { get; }
@@ -199,10 +197,13 @@ public class AttachmentViewerViewModel : BaseViewModel
         _apiClient = apiClient;
         _settingsService = settingsService;
 
+        IsImageEditBusy = false;
+
         GoBackCommand = new Command(async () => await GoBackAsync());
         OpenExternallyCommand = new Command(async () => await OpenExternallyAsync());
         RefreshCommand = new Command(async () => await LoadAttachmentAsync());
-        RotateClockwiseCommand = new Command(async () => await RotateClockwiseAsync(), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
+        RotateClockwiseCommand = new Command(async () => await RotateAsync(90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
+        RotateCounterClockwiseCommand = new Command(async () => await RotateAsync(-90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
         StartCropCommand = new Command(() => StartCrop(), () => ShowStartCropButton && !IsImageEditBusy);
         ApplyCropCommand = new Command(async () => await ApplyCropAsync(), () => IsCropMode && !IsImageEditBusy);
         CancelCropCommand = new Command(() => CancelCrop(), () => IsCropMode && !IsImageEditBusy);
@@ -211,6 +212,7 @@ public class AttachmentViewerViewModel : BaseViewModel
     private void RefreshEditCommandStates()
     {
         ((Command)RotateClockwiseCommand).ChangeCanExecute();
+        ((Command)RotateCounterClockwiseCommand).ChangeCanExecute();
         ((Command)StartCropCommand).ChangeCanExecute();
         ((Command)ApplyCropCommand).ChangeCanExecute();
         ((Command)CancelCropCommand).ChangeCanExecute();
@@ -245,8 +247,13 @@ public class AttachmentViewerViewModel : BaseViewModel
         RefreshEditCommandStates();
     }
 
-    private async Task RotateClockwiseAsync()
+    private async Task RotateAsync(int degrees)
     {
+        _ = ShowImageToolbar;
+        _ = !IsCropMode;
+        _ = !IsImageEditBusy;
+        _ = ShowStartCropButton;
+
         if (_rawImageBytes == null || Attachment == null)
         {
             return;
@@ -255,7 +262,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         try
         {
             IsImageEditBusy = true;
-            var rotated = ImageEditor.RotateClockwise90(_rawImageBytes, Attachment.ContentType);
+            var rotated = ImageEditor.Rotate(_rawImageBytes, degrees, Attachment.ContentType);
             await ReplaceImageBytesAsync(rotated);
         }
         catch (Exception ex)
@@ -328,8 +335,9 @@ public class AttachmentViewerViewModel : BaseViewModel
 
                 await File.WriteAllBytesAsync(path, newBytes);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Failed to write edited image to cache: {ex.Message}");
                 // Preview still updated in memory; cache write is best-effort.
             }
         }
@@ -399,6 +407,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         finally
         {
             IsLoading = false;
+            RefreshEditCommandStates();
         }
     }
 

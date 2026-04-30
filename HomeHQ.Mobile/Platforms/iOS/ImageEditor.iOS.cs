@@ -1,4 +1,4 @@
-using CoreGraphics;
+﻿using CoreGraphics;
 using Foundation;
 using UIKit;
 
@@ -13,7 +13,7 @@ public static partial class ImageEditor
         return (cg.Width, cg.Height);
     }
 
-    private static partial byte[] PlatformRotateClockwise90(byte[] bytes, string? contentType)
+    private static partial byte[] PlatformRotate(byte[] bytes, int degrees, string? contentType)
     {
         using var image = UIImage.LoadFromData(NSData.FromArray(bytes));
         if (image == null)
@@ -21,7 +21,7 @@ public static partial class ImageEditor
             throw new InvalidOperationException("Could not decode image.");
         }
 
-        using var rotated = RotateCw90(image);
+        using var rotated = Rotate(image, degrees);
         return EncodeUIImage(rotated, contentType);
     }
 
@@ -40,8 +40,9 @@ public static partial class ImageEditor
         return EncodeUIImage(cropped, contentType);
     }
 
-    private static UIImage RotateCw90(UIImage image)
+    private static UIImage Rotate(UIImage image, int degrees)
     {
+        //TODO: Fix
         var size = image.Size;
         UIGraphics.BeginImageContextWithOptions(new CGSize(size.Height, size.Width), false, image.CurrentScale);
         var ctx = UIGraphics.GetCurrentContext();
@@ -52,7 +53,7 @@ public static partial class ImageEditor
         }
 
         ctx.TranslateCTM(size.Height, 0);
-        ctx.Rotate((float)(Math.PI / 2));
+        ctx.RotateCTM((nfloat)(degrees * Math.PI / 180));
         image.Draw(new CGRect(0, 0, size.Width, size.Height));
         var result = UIGraphics.GetImageFromCurrentImageContext();
         UIGraphics.EndImageContext();
