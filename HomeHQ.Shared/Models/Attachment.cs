@@ -23,6 +23,10 @@ public class Attachment : AuditableEntity, IEntity, IPolymorphicEntity
     public string Thumb_Extension { get; set; } = string.Empty;
     public float Thumb_FileSize { get; set; }
 
+    /// <summary>Client-only: raw file bytes for attachments not yet uploaded (not persisted server-side).</summary>
+    [NotMapped]
+    public byte[]? PendingUploadBytes { get; set; }
+
     public Attachment() { }
 
     public Attachment(Attachment attachment)

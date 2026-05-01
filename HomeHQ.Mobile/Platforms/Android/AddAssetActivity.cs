@@ -64,6 +64,12 @@ public class AddAssetActivity : Activity
                 // Put extras so MainActivity/MAUI can handle and route to the editor
                 // We want to open the editor for a new asset flow (GUID.Empty)
                 launchIntent.PutExtra("asset_id", Guid.Empty.ToString());
+                // Authoritative MIME from the share intent (filename/extension may be missing or generic)
+                if (!string.IsNullOrEmpty(type))
+                {
+                    launchIntent.PutExtra("share_mime_type", type);
+                }
+
                 StartActivity(launchIntent);
                 //ShowToast("Asset created! Opening editor...");
             }

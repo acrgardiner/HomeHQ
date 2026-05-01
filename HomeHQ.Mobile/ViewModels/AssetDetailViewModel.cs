@@ -17,6 +17,7 @@ public class AssetDetailViewModel : BaseViewModel
     private readonly CacheService<WarrantyType> _warrantyTypeCache;
     private readonly CacheService<AttachmentType> _attachmentTypeCache;
     private readonly SettingsService _settingsService;
+    private readonly AttachmentViewerNavigation _attachmentViewerNavigation;
 
     public ObservableCollection<AttributeValue> Attributes { get; } = [];
     public ObservableCollection<Note> Notes { get; } = [];
@@ -214,6 +215,7 @@ public class AssetDetailViewModel : BaseViewModel
         , CacheService<AttachmentType> attachmentTypeCache
         , CacheService<WarrantyType> warrantyTypeCache
         , SettingsService settingsService
+        , AttachmentViewerNavigation attachmentViewerNavigation
     )
     {
         _apiClient = apiClient;
@@ -223,6 +225,7 @@ public class AssetDetailViewModel : BaseViewModel
         _warrantyTypeCache = warrantyTypeCache;
 
         _settingsService = settingsService;
+        _attachmentViewerNavigation = attachmentViewerNavigation;
 
         GoBackCommand = new Command(async () => await GoBackAsync());
         EditCommand = new Command(async () => await EditAssetAsync());
@@ -579,13 +582,8 @@ public class AssetDetailViewModel : BaseViewModel
             return;
         }
 
-        var param = new Dictionary<string, object>
-        {
-            { "attachmentId", attachment.Id.ToString() }
-        };
-
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync("AttachmentViewer", param),
+            () => _attachmentViewerNavigation.PresentAsync(attachment.Id.ToString()),
             onError: ex => ErrorMessage = $"Could not open attachment: {ex.Message}");
     }
 }

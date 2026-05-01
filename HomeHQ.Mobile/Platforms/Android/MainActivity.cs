@@ -59,6 +59,15 @@ namespace HomeHQ.Mobile
                                 { "assetId", assetId }
                             };
 
+                            if (intent.HasExtra("share_mime_type"))
+                            {
+                                var mime = intent.GetStringExtra("share_mime_type");
+                                if (!string.IsNullOrEmpty(mime))
+                                {
+                                    param["shareMimeType"] = mime;
+                                }
+                            }
+
                             await Shell.Current.GoToAsync($"AssetEdit", param);
                         }
                         catch

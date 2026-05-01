@@ -18,11 +18,9 @@ public partial class AssetEditPage : ContentPage
 
         try
         {
-            // Refresh the current attachment preview in case it was modified in
-            // the attachment viewer page when navigating back.
-            //await _viewModel.LoadCurrentAttachmentPreviewAsync();
-            //_viewModel.NotifyAttachmentCarouselChanged();
-
+            // Refresh carousel preview after attachment viewer (rotate/crop updates PendingUploadBytes).
+            await _viewModel.LoadCurrentAttachmentPreviewAsync();
+            _viewModel.NotifyAttachmentCarouselChanged();
         }
         catch (Exception ex)
         {

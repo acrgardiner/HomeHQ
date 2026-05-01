@@ -11,12 +11,14 @@ using Attachment = HomeHQ.Entities.Attachment;
 namespace HomeHQ.Mobile.ViewModels;
 
 [QueryProperty(nameof(AssetId), "assetId")]
+[QueryProperty(nameof(ShareMimeType), "shareMimeType")]
 public class AssetEditViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
     private readonly CacheService<Category> _categoryCache;
     private readonly CacheService<WarrantyType> _warrantyTypeCache;
     private readonly CacheService<AttachmentType> _attachmentTypeCache;
+    private readonly AttachmentViewerNavigation _attachmentViewerNavigation;
 
     // The raw loaded asset (kept for Id reference during save)
     private Asset? _loadedAsset;
@@ -31,6 +33,19 @@ public class AssetEditViewModel : BaseViewModel
             if (SetProperty(ref field, value))
             {
                 _ = LoadAsync();
+            }
+        }
+    } = string.Empty;
+
+    /// <summary>Android share intent MIME type (e.g. image/jpeg); used to correct <see cref="Attachment.ContentType"/> for staged files.</summary>
+    public string ShareMimeType
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                ApplyShareMimeToStagedAttachments();
             }
         }
     } = string.Empty;
@@ -262,6 +277,7 @@ public class AssetEditViewModel : BaseViewModel
         , CacheService<Category> categoryCache
         , CacheService<AttachmentType> attachmentTypeCache
         , CacheService<WarrantyType> warrantyTypeCache
+        , AttachmentViewerNavigation attachmentViewerNavigation
     )
     {
         _apiClient = apiClient;
@@ -269,6 +285,7 @@ public class AssetEditViewModel : BaseViewModel
         _categoryCache = categoryCache;
         _warrantyTypeCache = warrantyTypeCache;
         _attachmentTypeCache = attachmentTypeCache;
+        _attachmentViewerNavigation = attachmentViewerNavigation;
 
         GoBackCommand = new Command(async () => await GoBackAsync());
         SaveCommand = new Command(async () => await SaveAsync(), () => !IsSaving);
@@ -452,32 +469,45 @@ public class AssetEditViewModel : BaseViewModel
         if (Directory.Exists(cacheDirectory))
         {
             var files = Directory.GetFiles(cacheDirectory);
-            foreach (var file in files)
-            {
-                //Get file ContentType
-                var contentType = Path.GetExtension(file).ToLower() switch
+                foreach (var file in files)
                 {
-                    ".jpg" or ".jpeg" => "image/jpeg",
-                    ".png" => "image/png",
-                    ".gif" => "image/gif",
-                    ".bmp" => "image/bmp",
-                    ".pdf" => "application/pdf",
-                    ".doc" or ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    ".xls" or ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    _ => "application/octet-stream"
-                };
+                    //Get file ContentType
+                    var contentType = Path.GetExtension(file).ToLower() switch
+                    {
+                        ".jpg" or ".jpeg" => "image/jpeg",
+                        ".png" => "image/png",
+                        ".gif" => "image/gif",
+                        ".bmp" => "image/bmp",
+                        ".webp" => "image/webp",
+                        ".heic" or ".heif" => "image/heic",
+                        ".pdf" => "application/pdf",
+                        ".doc" or ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        ".xls" or ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        _ => "application/octet-stream"
+                    };
 
-                Attachments.Add(new Attachment
-                {
-                    Id = Guid.Empty, // New attachment; ID will be assigned by server
-                    OriginFileName = Path.GetFileName(file),
-                    LocalFileName = file,
-                    ContentType = contentType,
-                    FileSize = new FileInfo(file).Length,
-                    AttachmentTypeId = _defaultAttachmentTypeId,
-                    AttachmentType = _defaultAttachmentType
-                });
-            }
+                    var bytes = await File.ReadAllBytesAsync(file);
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch
+                    {
+                        // Best-effort cleanup of staged cache files
+                    }
+
+                    Attachments.Add(new Attachment
+                    {
+                        Id = Guid.Empty, // New attachment; ID will be assigned by server
+                        OriginFileName = Path.GetFileName(file),
+                        LocalFileName = Path.GetFileName(file),
+                        ContentType = contentType,
+                        FileSize = bytes.Length,
+                        PendingUploadBytes = bytes,
+                        AttachmentTypeId = _defaultAttachmentTypeId,
+                        AttachmentType = _defaultAttachmentType
+                    });
+                }
 
             if (files.Length > 0)
             {
@@ -487,6 +517,7 @@ public class AssetEditViewModel : BaseViewModel
                 IsLoadingPreview = false;
                 if (Attachments.Count > 0)
                 {
+                    ApplyShareMimeToStagedAttachments();
                     _ = LoadCurrentAttachmentPreviewAsync();
                 }
             }
@@ -494,6 +525,25 @@ public class AssetEditViewModel : BaseViewModel
 
         OnPropertyChanged(nameof(IsNew));
         OnPropertyChanged(nameof(PageTitle));
+    }
+
+    /// <summary>
+    /// Applies <see cref="ShareMimeType"/> from Android ACTION_SEND so shared images/PDFs match intent MIME
+    /// when extension-based guessing is wrong or missing.
+    /// </summary>
+    private void ApplyShareMimeToStagedAttachments()
+    {
+        if (Attachments.Count != 1 || string.IsNullOrWhiteSpace(ShareMimeType))
+        {
+            return;
+        }
+
+        var mime = ShareMimeType.Trim();
+        if (mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+            || mime.Equals("application/pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            Attachments[0].ContentType = mime;
+        }
     }
 
     private async Task LoadAttributesAsync(Guid assetId)
@@ -743,18 +793,31 @@ public class AssetEditViewModel : BaseViewModel
                     attachment.ParentType = nameof(Asset);
                     attachment.AttachmentTypeId = attachment.AttachmentType?.Id;
 
-                    //Upload file — handle LocalFileName being a full path or just a filename
-                    var filePath = Path.IsPathRooted(attachment.LocalFileName)
-                        ? attachment.LocalFileName
-                        : Path.Combine(FileSystem.CacheDirectory, attachment.LocalFileName);
-
-                    if (File.Exists(filePath))
+                    byte[]? fileBytes = attachment.PendingUploadBytes;
+                    if (fileBytes == null || fileBytes.Length == 0)
                     {
-                        byte[] fileBytes = File.ReadAllBytes(filePath);
-                        await _apiClient.UploadAttachmentAsync(fileBytes, attachment);
+                        var filePath = Path.IsPathRooted(attachment.LocalFileName)
+                            ? attachment.LocalFileName
+                            : Path.Combine(FileSystem.CacheDirectory, attachment.LocalFileName);
 
-                        //now remove file from cache
-                        File.Delete(filePath);
+                        if (File.Exists(filePath))
+                        {
+                            fileBytes = await File.ReadAllBytesAsync(filePath);
+                        }
+                    }
+
+                    if (fileBytes != null && fileBytes.Length > 0)
+                    {
+                        await _apiClient.UploadAttachmentAsync(fileBytes, attachment);
+                        attachment.PendingUploadBytes = null;
+
+                        var cachePath = Path.IsPathRooted(attachment.LocalFileName)
+                            ? attachment.LocalFileName
+                            : Path.Combine(FileSystem.CacheDirectory, attachment.LocalFileName);
+                        if (File.Exists(cachePath))
+                        {
+                            File.Delete(cachePath);
+                        }
                     }
                 }
                 else
@@ -829,13 +892,14 @@ public class AssetEditViewModel : BaseViewModel
 
             if (CurrentAttachment.Id == Guid.Empty)
             {
+                CurrentAttachment.PendingUploadBytes = null;
+
                 var filePath = Path.IsPathRooted(CurrentAttachment.LocalFileName)
                     ? CurrentAttachment.LocalFileName
                     : Path.Combine(FileSystem.CacheDirectory, CurrentAttachment.LocalFileName);
 
                 if (File.Exists(filePath))
                 {
-                    //now remove file from cache
                     File.Delete(filePath);
                 }
             }
@@ -934,22 +998,19 @@ public class AssetEditViewModel : BaseViewModel
 
                 if (photo != null)
                 {
-                    // save the file into local storage
-                    var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, photo.FileName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(localFilePath) ?? string.Empty);
-
-                    using Stream sourceStream = await photo.OpenReadAsync();
-                    using FileStream localFileStream = File.OpenWrite(localFilePath);
-
-                    await sourceStream.CopyToAsync(localFileStream);
+                    await using Stream sourceStream = await photo.OpenReadAsync();
+                    using var ms = new MemoryStream();
+                    await sourceStream.CopyToAsync(ms);
+                    var bytes = ms.ToArray();
 
                     Attachments.Add(new Attachment
                     {
                         Id = Guid.Empty, // New attachment; ID will be assigned by server
                         OriginFileName = photo.FileName,
-                        LocalFileName = localFilePath,
-                        ContentType = photo.ContentType,
-                        FileSize = sourceStream.Length,
+                        LocalFileName = photo.FileName,
+                        ContentType = photo.ContentType ?? "image/jpeg",
+                        FileSize = bytes.Length,
+                        PendingUploadBytes = bytes,
                         AttachmentTypeId = _defaultAttachmentTypeId, // Optionally set a default type
                         AttachmentType = _defaultAttachmentType
                     });
@@ -990,23 +1051,19 @@ public class AssetEditViewModel : BaseViewModel
 
             foreach (var file in results)
             {
-                using var stream = await file.OpenReadAsync();
-                // Process the stream
-                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, file.FileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(localFilePath) ?? string.Empty);
-
-                using Stream sourceStream = await file.OpenReadAsync();
-                using FileStream localFileStream = File.OpenWrite(localFilePath);
-
-                await sourceStream.CopyToAsync(localFileStream);
+                await using Stream sourceStream = await file.OpenReadAsync();
+                using var ms = new MemoryStream();
+                await sourceStream.CopyToAsync(ms);
+                var bytes = ms.ToArray();
 
                 Attachments.Add(new Attachment
                 {
                     Id = Guid.Empty, // New attachment; ID will be assigned by server
                     OriginFileName = file.FileName,
-                    LocalFileName = localFilePath,
-                    ContentType = file.ContentType,
-                    FileSize = sourceStream.Length,
+                    LocalFileName = file.FileName,
+                    ContentType = file.ContentType ?? "application/octet-stream",
+                    FileSize = bytes.Length,
+                    PendingUploadBytes = bytes,
                     AttachmentTypeId = _defaultAttachmentTypeId,
                     AttachmentType = _defaultAttachmentType
                 });
@@ -1059,9 +1116,18 @@ public class AssetEditViewModel : BaseViewModel
         try
         {
             IsLoadingPreview = true;
+
+            // Viewer rotate/crop and new uploads use in-memory bytes first.
+            var pending = CurrentAttachment.PendingUploadBytes;
+            if (pending != null && pending.Length > 0)
+            {
+                CurrentAttachmentPreviewSource = ImageSource.FromStream(() => new MemoryStream(pending));
+                return;
+            }
+
             if (CurrentAttachment.Id == Guid.Empty)
             {
-                // This is a new attachment that hasn't been saved yet; load from local cache
+                // Legacy: preview from cache path
                 var localFilePath = Path.IsPathRooted(CurrentAttachment.LocalFileName)
                     ? CurrentAttachment.LocalFileName
                     : Path.Combine(FileSystem.CacheDirectory, CurrentAttachment.LocalFileName);
@@ -1125,14 +1191,8 @@ public class AssetEditViewModel : BaseViewModel
             return;
         }
 
-        var param = new Dictionary<string, object>
-        {
-            { "attachmentId", attachment.Id.ToString() },
-            { "editable", false }
-        };
-
         await SafeExecuteAsync(
-            () => Shell.Current.GoToAsync("AttachmentViewer", param),
+            () => _attachmentViewerNavigation.PresentForAssetEditAsync(attachment, editable: true),
             onError: ex => ErrorMessage = $"Could not open attachment: {ex.Message}");
     }
 }

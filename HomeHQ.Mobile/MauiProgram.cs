@@ -32,6 +32,7 @@ public static class MauiProgram
             new CacheService<AttachmentType>(sp.GetRequiredService<ApiClient>(), "api/attachmenttypes"));
         builder.Services.AddSingleton(sp =>
             new CacheService<WarrantyType>(sp.GetRequiredService<ApiClient>(), "api/warrantytypes"));
+        builder.Services.AddSingleton<AttachmentViewerNavigation>();
 
         // Register ViewModels
         builder.Services.AddTransient<LoginViewModel>();
