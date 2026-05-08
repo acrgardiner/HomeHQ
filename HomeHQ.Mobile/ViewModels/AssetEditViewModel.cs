@@ -762,7 +762,15 @@ public class AssetEditViewModel : BaseViewModel
                     // New attribute — POST
                     attr.ParentId = assetId;
                     attr.ParentType = nameof(Asset);
-                    await _apiClient.PostAsJsonAsync("api/attributes", attr);
+                    var response = await _apiClient.PostAsJsonAsync("api/attributes", attr);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var wrapped = await response.Content.ReadFromJsonAsync<ApiResponse<Entities.Attribute>>();
+                        if (wrapped?.Success == true && wrapped.Data != null && wrapped.Data.Id != Guid.Empty)
+                        {
+                            attr.Id = wrapped.Data.Id;
+                        }
+                    }
                 }
                 else
                 {
@@ -779,18 +787,29 @@ public class AssetEditViewModel : BaseViewModel
 
     private async Task SaveNotesAsync(Guid assetId)
     {
-        foreach (var noteModel in Notes.Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content)))
+        foreach (var noteVm in Notes.Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content)))
         {
             try
             {
-                Note note = noteModel.Model;
+                Note note = noteVm.Model;
+                // Flush view-model text (Entry/Editor may not have pushed to source yet without focus loss).
+                note.Title = noteVm.Title;
+                note.Content = noteVm.Content;
+
                 if (note.Id == Guid.Empty)
                 {
                     // New note — POST
                     note.ParentId = assetId;
                     note.ParentType = nameof(Asset);
                     var response = await _apiClient.PostAsJsonAsync("api/notes", note);
-                    _ = response;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var wrapped = await response.Content.ReadFromJsonAsync<ApiResponse<Note>>();
+                        if (wrapped?.Success == true && wrapped.Data != null && wrapped.Data.Id != Guid.Empty)
+                        {
+                            note.Id = wrapped.Data.Id;
+                        }
+                    }
                 }
                 else
                 {
@@ -800,7 +819,7 @@ public class AssetEditViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
-                await Shell.Current.DisplayAlertAsync("Error", $"Error saving attribute: {ex.Message}", "OK");
+                await Shell.Current.DisplayAlertAsync("Error", $"Error saving note: {ex.Message}", "OK");
             }
         }
     }

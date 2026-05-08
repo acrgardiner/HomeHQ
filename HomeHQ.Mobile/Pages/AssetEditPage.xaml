@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
              xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
              x:Class="HomeHQ.Mobile.Pages.AssetEditPage"
              xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
@@ -309,7 +310,7 @@
                                             Margin="16"
                                             ItemSizingStrategy="MeasureAllItems">
                                 <CollectionView.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="models:AttributeViewModel">
                                         <Frame Padding="0,0,4,0"
                                                CornerRadius="8"
                                                HasShadow="False"
@@ -426,7 +427,7 @@
                                             Margin="16"
                                             ItemSizingStrategy="MeasureAllItems">
                                 <CollectionView.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate x:DataType="models:NoteViewModel">
                                         <Frame Padding="0,0,4,0"
                                                CornerRadius="8"
                                                HasShadow="False"
