@@ -8,7 +8,7 @@
 @attribute [Authorize()]
 
 @inject ISnackbar Snackbar
-@inject IEntityService<AttributeValue> AttributeService
+@inject IEntityService<HomeHQ.Entities.Attribute> AttributeService
 @inject IDialogService DialogService
 @inject ILogger<AttributeList_view> Logger
 
@@ -19,7 +19,7 @@
         foreach (var attr in _attributes)
         {
             <MudStack Row="true" Spacing="2" Class="mb-2">
-                <MudTextField @bind-Value="attr.Attribute" Label="Attribute" Required="true" ReadOnly=true/>
+                <MudTextField @bind-Value="attr.Key" Label="Key" Required="true" ReadOnly=true/>
                 <MudTextField @bind-Value="attr.Value" Label="Value" Required="true" ReadOnly=true  />
             </MudStack>
         }

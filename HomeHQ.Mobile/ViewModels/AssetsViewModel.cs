@@ -1,4 +1,5 @@
 ﻿using HomeHQ.Mobile.Services;
+using System.Linq;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -17,10 +18,19 @@ public class AssetsViewModel : BaseViewModel
     private readonly SettingsService _settingsService;
 
     public ObservableCollection<Asset> Assets { get; } = [];
+    // Backing store for all loaded assets used for local filtering
+    private List<Asset> _allAssets = new();
     public string SearchText
     {
         get;
-        set => SetProperty(ref field, value);
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                // Apply local filter as the user types
+                ApplyFilter();
+            }
+        }
     } = string.Empty;
 
     public bool IsLoading
@@ -103,7 +113,9 @@ public class AssetsViewModel : BaseViewModel
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Asset>>>();
 
+                // Clear previous lists
                 Assets.Clear();
+                _allAssets.Clear();
 
                 if (apiResponse?.Data?.Count > 0)
                 {
@@ -113,10 +125,11 @@ public class AssetsViewModel : BaseViewModel
                         a => a.CategoryId,
                         (a, c) => a.Category = c);
 
-                    foreach (var asset in apiResponse.Data)
-                    {
-                        Assets.Add(asset);
-                    }
+                    // Keep a full in-memory copy for filtering
+                    _allAssets = apiResponse.Data.ToList();
+
+                    // Apply any active filter to populate the visible collection
+                    ApplyFilter();
                 }
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -148,8 +161,30 @@ public class AssetsViewModel : BaseViewModel
 
     private async Task SearchAssetsAsync()
     {
-        // Filter locally for now, or implement server-side search
-        await LoadAssetsAsync();
+        // Apply local filter
+        ApplyFilter();
+        await Task.CompletedTask;
+    }
+
+    private void ApplyFilter()
+    {
+        var list = _allAssets ?? new List<Asset>();
+
+        var results = string.IsNullOrWhiteSpace(SearchText)
+            ? list
+            : list.Where(a =>
+                (!string.IsNullOrEmpty(a.Name) && a.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(a.PurchasedFrom) && a.PurchasedFrom.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
+                (a.Category != null && !string.IsNullOrEmpty(a.Category.Title) && a.Category.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+
+        Assets.Clear();
+        foreach (var a in results)
+        {
+            Assets.Add(a);
+        }
+
+        UpdateVisibility();
     }
 
     private async Task OnAssetSelected(Asset? asset)

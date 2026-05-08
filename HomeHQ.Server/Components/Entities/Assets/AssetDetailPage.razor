@@ -11,7 +11,7 @@
 @attribute [Authorize()]
 
 @inject IEntityService<Asset> AssetService
-@inject IEntityService<AttributeValue> AttributeService
+@inject IEntityService<HomeHQ.Entities.Attribute> AttributeService
 @inject IEntityService<Note> NoteService
 
 @inject ISnackbar Snackbar
@@ -195,7 +195,7 @@
                                         <MudCardContent Class="px-4 pt-1 pb-1">
                                             <MudGrid Spacing="2">
                                                 <MudItem xs="12" sm="5">
-                                                    <MudText Typo="Typo.body1" Class="entity-value">@attr.Attribute</MudText>
+                                                    <MudText Typo="Typo.body1" Class="entity-value">@attr.Key</MudText>
                                                 </MudItem>
                                                 <MudItem xs="10" sm="5">
                                                     <MudText Typo="Typo.body1" Class="entity-value">@attr.Value</MudText>
@@ -272,7 +272,7 @@
     [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
 
     private Asset? asset;
-    private List<AttributeValue> _attributes = new();
+    private List<HomeHQ.Entities.Attribute> _attributes = new();
     private List<Note> _notes = new();
     private bool _loading = true;
     

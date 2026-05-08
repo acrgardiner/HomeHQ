@@ -18,7 +18,7 @@ public partial class AssetCreatePage
     private List<HomeHQ.Entities.WarrantyType> _warrantyTypes = new();
     private static readonly Guid? NullGuid = null;
 
-    private List<AttributeValue> _attributes = new();
+    private List<HomeHQ.Entities.Attribute> _attributes = new();
     private List<Note> _notes = new();
     private List<string> _validationErrors = new();
 
@@ -47,7 +47,7 @@ public partial class AssetCreatePage
             _asset.WarrantyTypeId = _defaultWarrantyTypeId;
             SetWarrantyExpiration();
 
-            _attributes.Add(new AttributeValue()); // Add initial empty attribute
+            _attributes.Add(new HomeHQ.Entities.Attribute()); // Add initial empty attribute
             _notes.Add(new Note()); // Add initial empty note
         }
         catch (Exception ex)
@@ -59,7 +59,7 @@ public partial class AssetCreatePage
 
     private void AddAttribute()
     {
-        _attributes.Add(new AttributeValue());
+        _attributes.Add(new HomeHQ.Entities.Attribute());
     }
 
     private void AddNote()
@@ -71,7 +71,7 @@ public partial class AssetCreatePage
     {
         try
         {
-            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
+            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Key)))
             {
                 attr.ParentId = Id;
                 attr.ParentType = nameof(Asset);

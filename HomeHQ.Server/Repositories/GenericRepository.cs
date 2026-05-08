@@ -304,7 +304,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : AuditableEnt
             _applicationContext.Notes.RemoveRange(notes);
         }
 
-        // Delete all AttributeValues linked to this parent
+        // Delete all Attributes linked to this parent
         var attributes = _applicationContext.Attributes
             .Where(a => a.ParentId == parentId && a.ParentType == parentType)
             .ToList();

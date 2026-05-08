@@ -18,7 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<WarrantyType> WarrantyTypes { get; set; }
     public DbSet<Attachment> Attachments { get; set; }
     public DbSet<AttachmentType> AttachmentTypes { get; set; }
-    public DbSet<AttributeValue> Attributes { get; set; }
+    public DbSet<Entities.Attribute> Attributes { get; set; }
     public DbSet<Note> Notes { get; set; }
 
     private readonly ICurrentUserService _currentUserService;
@@ -114,7 +114,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
             .Ignore(n => n.Parent);
         modelBuilder.Entity<Attachment>()
             .Ignore(a => a.Parent);
-        modelBuilder.Entity<AttributeValue>()
+        modelBuilder.Entity<Entities.Attribute>()
             .Ignore(a => a.Parent);
 
         // Optional: Add indexes for better query performance
@@ -124,7 +124,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         modelBuilder.Entity<Attachment>()
             .HasIndex(a => new { a.ParentId, a.ParentType })
             .HasDatabaseName("IX_Attachments_Parent");
-        modelBuilder.Entity<AttributeValue>()
+        modelBuilder.Entity<Entities.Attribute>()
             .HasIndex(a => new { a.ParentId, a.ParentType })
             .HasDatabaseName("IX_AttributeValue_Parent");
     }

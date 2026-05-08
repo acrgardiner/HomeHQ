@@ -20,7 +20,7 @@ public partial class AssetEditPage
     private List<HomeHQ.Entities.WarrantyType> _warrantyTypes = new();
     private static readonly Guid? nullGuid = null;
 
-    private List<HomeHQ.Entities.AttributeValue> _attributes = new();
+    private List<HomeHQ.Entities.Attribute> _attributes = new();
     private List<HomeHQ.Entities.Note> _notes = new();
     private List<string> _validationErrors = new();
 
@@ -64,7 +64,7 @@ public partial class AssetEditPage
         }
     }
 
-    private async Task Remove(AttributeValue item)
+    private async Task Remove(HomeHQ.Entities.Attribute item)
     {
         _attributes.Remove(item);
         if (item.Id != Guid.Empty)
@@ -84,7 +84,7 @@ public partial class AssetEditPage
 
     private void AddAttribute()
     {
-        _attributes.Add(new AttributeValue());
+        _attributes.Add(new HomeHQ.Entities.Attribute());
     }
 
     private void AddNote()
@@ -171,7 +171,7 @@ public partial class AssetEditPage
     {
         try
         {
-            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
+            foreach (var attr in _attributes.Where(a => !string.IsNullOrWhiteSpace(a.Key)))
             {
                 if (attr.Id == Guid.Empty)
                 {

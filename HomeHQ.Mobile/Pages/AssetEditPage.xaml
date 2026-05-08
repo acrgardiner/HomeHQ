@@ -95,9 +95,9 @@
             </VerticalStackLayout>
 
             <!-- Save Button -->
-            <Button Grid.Column="2"
+            <Button x:Name="SaveButton" Grid.Column="2"
                     mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Save}"
-                    Command="{Binding SaveCommand}"
+                    Clicked="OnSaveButtonClicked"
                     BackgroundColor="{StaticResource Primary}"
                     CornerRadius="20"
                     WidthRequest="40"
@@ -302,66 +302,71 @@
                             <BoxView HeightRequest="1"
                                      Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
-                            <!-- Attributes List -->
-                            <VerticalStackLayout Padding="16" Spacing="8" IsVisible="{Binding HasAttributes}">
-                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Attributes}" Spacing="8">
-                                    <BindableLayout.ItemTemplate>
-                                        <DataTemplate>
-                                            <Frame Padding="0,0,4,0"
-                                                   CornerRadius="8"
-                                                   HasShadow="False"
-                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
-                                                <Grid ColumnDefinitions="*, *, Auto" ColumnSpacing="8">
+                            <!-- Attributes List (CollectionView for editable items) -->
+                            <CollectionView ItemsSource="{Binding Attributes}"
+                                            IsVisible="{Binding HasAttributes}"
+                                            SelectionMode="None"
+                                            Margin="16"
+                                            ItemSizingStrategy="MeasureAllItems">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Frame Padding="0,0,4,0"
+                                               CornerRadius="8"
+                                               HasShadow="False"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                               Margin="0,0,0,8">
+                                            <Grid ColumnDefinitions="*, *, Auto" ColumnSpacing="8">
 
-                                                    <!-- Attribute Name Entry -->
-                                                    <Border Grid.Column="0"
-                                                            BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
-                                                            StrokeThickness="1"
-                                                            Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
-                                                            StrokeShape="RoundRectangle 6"
-                                                            Padding="8,2">
-                                                        <Entry Text="{Binding Attribute}"
-                                                               Placeholder="Name"
-                                                               FontSize="14"
-                                                               PlaceholderColor="{StaticResource Gray400}"
-                                                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                                               BackgroundColor="Transparent"
-                                                               HeightRequest="40"/>
-                                                    </Border>
+                                                <!-- Attribute Name Entry -->
+                                                <Border Grid.Column="0"
+                                                        BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                        StrokeThickness="1"
+                                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        Padding="8,2">
+                                                    <Entry Text="{Binding Key, Mode=TwoWay}"
+                                                           TextChanged="OnAttributeTextChanged"
+                                                           Placeholder="Name"
+                                                           FontSize="14"
+                                                           PlaceholderColor="{StaticResource Gray400}"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                           BackgroundColor="Transparent"
+                                                           HeightRequest="40"/>
+                                                </Border>
 
-                                                    <!-- Attribute Value Entry -->
-                                                    <Border Grid.Column="1"
-                                                            BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
-                                                            StrokeThickness="1"
-                                                            Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
-                                                            StrokeShape="RoundRectangle 6"
-                                                            Padding="8,2">
-                                                        <Entry Text="{Binding Value}"
-                                                               Placeholder="Value"
-                                                               FontSize="14"
-                                                               PlaceholderColor="{StaticResource Gray400}"
-                                                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                                               BackgroundColor="Transparent"
-                                                               HeightRequest="40"/>
-                                                    </Border>
+                                                <!-- Attribute Value Entry -->
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                        StrokeThickness="1"
+                                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        Padding="8,2">
+                                                    <Entry Text="{Binding Value, Mode=TwoWay}"
+                                                           TextChanged="OnAttributeValueTextChanged"
+                                                           Placeholder="Value"
+                                                           FontSize="14"
+                                                           PlaceholderColor="{StaticResource Gray400}"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                           BackgroundColor="Transparent"
+                                                           HeightRequest="40"/>
+                                                </Border>
 
-                                                    <!-- Delete Button -->
-                                                    <Button Grid.Column="2"
-                                                            mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
-                                                            Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveAttributeCommand}"
-                                                            CommandParameter="{Binding .}"
-                                                            BackgroundColor="{StaticResource Error}"
-                                                            CornerRadius="16"
-                                                            WidthRequest="32"
-                                                            HeightRequest="32"
-                                                            Padding="0"
-                                                            VerticalOptions="Center" HorizontalOptions="End"/>
-                                                </Grid>
-                                            </Frame>
-                                        </DataTemplate>
-                                    </BindableLayout.ItemTemplate>
-                                </VerticalStackLayout>
-                            </VerticalStackLayout>
+                                                <!-- Delete Button -->
+                                                <Button Grid.Column="2"
+                                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveAttributeCommand}"
+                                                        CommandParameter="{Binding .}"
+                                                        BackgroundColor="{StaticResource Error}"
+                                                        CornerRadius="16"
+                                                        WidthRequest="32"
+                                                        HeightRequest="32"
+                                                        Padding="0"
+                                                        VerticalOptions="Center" HorizontalOptions="End"/>
+                                            </Grid>
+                                        </Frame>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
 
                             <!-- Empty State -->
                             <VerticalStackLayout Padding="24"
@@ -414,70 +419,75 @@
                             <BoxView HeightRequest="1"
                                      Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
-                            <!-- Notes List -->
-                            <VerticalStackLayout Padding="16" Spacing="8" IsVisible="{Binding HasNotes}">
-                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Notes}" Spacing="8">
-                                    <BindableLayout.ItemTemplate>
-                                        <DataTemplate>
-                                            <Frame Padding="0,0,4,0"
-                                                   CornerRadius="8"
-                                                   HasShadow="False"
-                                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
-                                                <VerticalStackLayout Spacing="8">
+                            <!-- Notes List (CollectionView for editable items) -->
+                            <CollectionView ItemsSource="{Binding Notes}"
+                                            IsVisible="{Binding HasNotes}"
+                                            SelectionMode="None"
+                                            Margin="16"
+                                            ItemSizingStrategy="MeasureAllItems">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Frame Padding="0,0,4,0"
+                                               CornerRadius="8"
+                                               HasShadow="False"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                               Margin="0,0,0,8">
+                                            <VerticalStackLayout Spacing="8">
 
-                                                    <!-- Title row -->
-                                                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
-                                                        <Border Grid.Column="0"
-                                                                BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
-                                                                StrokeThickness="1"
-                                                                Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
-                                                                StrokeShape="RoundRectangle 6"
-                                                                Padding="8,0,0,4">
-                                                            <Entry Text="{Binding Title}"
-                                                                   Placeholder="Title"
-                                                                   FontSize="14"
-                                                                   FontAttributes="Bold"
-                                                                   PlaceholderColor="{StaticResource Gray400}"
-                                                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                                                   BackgroundColor="Transparent"
-                                                                   HeightRequest="40"/>
-                                                        </Border>
-
-                                                        <!-- Delete Button -->
-                                                        <Button Grid.Column="1"
-                                                                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
-                                                                Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveNoteCommand}"
-                                                                CommandParameter="{Binding .}"
-                                                                BackgroundColor="{StaticResource Error}"
-                                                                CornerRadius="16"
-                                                                WidthRequest="32"
-                                                                HeightRequest="32"
-                                                                Padding="0"
-                                                                VerticalOptions="Center"/>
-                                                    </Grid>
-
-                                                    <!-- Content Editor -->
-                                                    <Border BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                <!-- Title row -->
+                                                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                                                    <Border Grid.Column="0"
+                                                            BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
                                                             StrokeThickness="1"
                                                             Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
                                                             StrokeShape="RoundRectangle 6"
-                                                            Padding="8,4">
-                                                        <Editor Text="{Binding Content}"
-                                                                Placeholder="Note content..."
-                                                                FontSize="14"
-                                                                PlaceholderColor="{StaticResource Gray400}"
-                                                                TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
-                                                                BackgroundColor="Transparent"
-                                                                AutoSize="TextChanges"
-                                                                MinimumHeightRequest="80"/>
+                                                            Padding="8,0,0,4">
+                                                        <Entry Text="{Binding Title, Mode=TwoWay}"
+                                                               TextChanged="OnNoteTitleTextChanged"
+                                                               Placeholder="Title"
+                                                               FontSize="14"
+                                                               FontAttributes="Bold"
+                                                               PlaceholderColor="{StaticResource Gray400}"
+                                                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                               BackgroundColor="Transparent"
+                                                               HeightRequest="40"/>
                                                     </Border>
 
-                                                </VerticalStackLayout>
-                                            </Frame>
-                                        </DataTemplate>
-                                    </BindableLayout.ItemTemplate>
-                                </VerticalStackLayout>
-                            </VerticalStackLayout>
+                                                    <!-- Delete Button -->
+                                                    <Button Grid.Column="1"
+                                                            mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                                                            Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveNoteCommand}"
+                                                            CommandParameter="{Binding .}"
+                                                            BackgroundColor="{StaticResource Error}"
+                                                            CornerRadius="16"
+                                                            WidthRequest="32"
+                                                            HeightRequest="32"
+                                                            Padding="0"
+                                                            VerticalOptions="Center"/>
+                                                </Grid>
+
+                                                <!-- Content Editor -->
+                                                <Border BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                        StrokeThickness="1"
+                                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        Padding="8,4">
+                                                    <Editor Text="{Binding Content, Mode=TwoWay}"
+                                                            TextChanged="OnNoteContentTextChanged"
+                                                            Placeholder="Note content..."
+                                                            FontSize="14"
+                                                            PlaceholderColor="{StaticResource Gray400}"
+                                                            TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                            BackgroundColor="Transparent"
+                                                            AutoSize="TextChanges"
+                                                            MinimumHeightRequest="80"/>
+                                                </Border>
+
+                                            </VerticalStackLayout>
+                                        </Frame>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
 
                             <!-- Empty State -->
                             <VerticalStackLayout Padding="24"

@@ -267,7 +267,7 @@
                             <VerticalStackLayout Padding="16" IsVisible="{Binding HasAttributes}">
                                 <CollectionView ItemsSource="{Binding Attributes}">
                                     <CollectionView.ItemTemplate>
-                                        <DataTemplate x:DataType="entities:AttributeValue">
+                                        <DataTemplate x:DataType="entities:Attribute">
                                             <Grid ColumnDefinitions="*, *" 
                                                   Padding="0,8"
                                                   ColumnSpacing="16">
@@ -326,7 +326,7 @@
                                 <CollectionView ItemsSource="{Binding Notes}">
                                     <CollectionView.ItemTemplate>
                                         <DataTemplate x:DataType="entities:Note">
-                                            <Frame Padding="12" 
+                                            <Frame Padding="0" 
                                                    Margin="0,0,0,8"
                                                    CornerRadius="8"
                                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"

@@ -19,7 +19,7 @@ public class AssetDetailViewModel : BaseViewModel
     private readonly SettingsService _settingsService;
     private readonly AttachmentViewerNavigation _attachmentViewerNavigation;
 
-    public ObservableCollection<AttributeValue> Attributes { get; } = [];
+    public ObservableCollection<Entities.Attribute> Attributes { get; } = [];
     public ObservableCollection<Note> Notes { get; } = [];
     public ObservableCollection<Attachment> Attachments { get; } = [];
 
@@ -340,10 +340,10 @@ public class AssetDetailViewModel : BaseViewModel
     {
         try
         {
-            var response = await _apiClient.GetAsync($"api/attributevalues/by-parent/Asset/{assetId}");
+            var response = await _apiClient.GetAsync($"api/attributes/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AttributeValue>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Entities.Attribute>>>();
                 Attributes.Clear();
                 if (apiResponse?.Data != null)
                 {

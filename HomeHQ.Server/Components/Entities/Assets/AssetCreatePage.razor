@@ -7,7 +7,7 @@
 @inject IEntityService<HomeHQ.Entities.Asset> AssetService
 @inject IEntityService<Category> CategoryService
 @inject IEntityService<WarrantyType> WarrantyTypeService
-@inject IEntityService<AttributeValue> AttributeService
+@inject IEntityService<HomeHQ.Entities.Attribute> AttributeService
 @inject IEntityService<Note> NoteService
 
 @inject ICurrentUserService CurrentUser
@@ -199,7 +199,7 @@
                                         <MudCardContent Class="px-4 pt-1 pb-1">
                                             <MudGrid Spacing="2">
                                                 <MudItem xs="11" sm="5">
-                                                    <MudTextField @bind-Value="attr.Attribute"
+                                                    <MudTextField @bind-Value="attr.Key"
                                                                 Label="Attribute"
                                                                 Variant="Variant.Outlined"
                                                                 Margin="Margin.Dense" />
@@ -209,8 +209,8 @@
                                                         Label="Value"
                                                         Variant="Variant.Outlined"
                                                         Margin="Margin.Dense"
-                                                        Required="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
-                                                        Error="@(!string.IsNullOrWhiteSpace(attr.Attribute) && string.IsNullOrWhiteSpace(attr.Value))"
+                                                        Required="@(!string.IsNullOrWhiteSpace(attr.Key) && string.IsNullOrWhiteSpace(attr.Value))"
+                                                        Error="@(!string.IsNullOrWhiteSpace(attr.Key) && string.IsNullOrWhiteSpace(attr.Value))"
                                                         ErrorText="Value is required if Attribute is set." />
                                                 </MudItem>
                                                 <MudItem xs="1" sm="1" Class="d-flex justify-end">

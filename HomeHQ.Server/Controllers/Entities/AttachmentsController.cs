@@ -28,7 +28,7 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
     [Authorize]
     public async Task<IActionResult> GetFile(string attachmentId)
     {
-        var attachment = await _entityService.GetByIdAsync(Guid.Parse(attachmentId));
+        var attachment = await EntityService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
         {
@@ -51,7 +51,7 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
     [Authorize]
     public async Task<IActionResult> GetFilePreview(string attachmentId)
     {
-        var attachment = await _entityService.GetByIdAsync(Guid.Parse(attachmentId));
+        var attachment = await EntityService.GetByIdAsync(Guid.Parse(attachmentId));
 
         if (attachment == null)
         {
@@ -112,7 +112,7 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
             await _fileStorageService.UploadAsync<Asset>(fileBytes, attachment);
 
             // Save attachment entity
-            var savedAttachment = await _entityService.AddAsync(attachment);
+            var savedAttachment = await EntityService.AddAsync(attachment);
 
             return Ok(ApiResponse<Attachment>.Ok(savedAttachment, "Attachment uploaded successfully"));
         }

@@ -1,11 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using System.Net.Http.Json;
-using System.Net.Mail;
 using System.Windows.Input;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Helpers;
+using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
+using Microsoft.Maui.ApplicationModel;
 using Attachment = HomeHQ.Entities.Attachment;
 
 namespace HomeHQ.Mobile.ViewModels;
@@ -164,9 +165,9 @@ public class AssetEditViewModel : BaseViewModel
 
     // ── Attributes & Notes ────────────────────────────────────────────────────
 
-    public ObservableCollection<AttributeValue> Attributes { get; } = [];
+    public ObservableCollection<AttributeViewModel> Attributes { get; } = [];
     public ObservableCollection<Attachment> Attachments { get; } = [];
-    public ObservableCollection<Note> Notes { get; } = [];
+    public ObservableCollection<NoteViewModel> Notes { get; } = [];
 
     public bool HasAttributes => Attributes.Count > 0;
     public bool HasNotes => Notes.Count > 0;
@@ -291,16 +292,16 @@ public class AssetEditViewModel : BaseViewModel
         SaveCommand = new Command(async () => await SaveAsync(), () => !IsSaving);
         AddAttributeCommand = new Command(() =>
         {
-            Attributes.Add(new AttributeValue());
+            Attributes.Add(new AttributeViewModel(new Entities.Attribute()));
             OnPropertyChanged(nameof(HasAttributes));
         });
-        RemoveAttributeCommand = new Command<AttributeValue>(async attr => await RemoveAttributeAsync(attr));
+        RemoveAttributeCommand = new Command<AttributeViewModel>(async attr => await RemoveAttributeAsync(attr));
         AddNoteCommand = new Command(() =>
         {
-            Notes.Add(new Note());
+            Notes.Add(new NoteViewModel(new Note()));
             OnPropertyChanged(nameof(HasNotes));
         });
-        RemoveNoteCommand = new Command<Note>(async note => await RemoveNoteAsync(note));
+        RemoveNoteCommand = new Command<NoteViewModel>(async note => await RemoveNoteAsync(note));
         AddAttachmentPhotoCommand = new Command(async () => await AddAttachmentPhoto());
         AddAttachmentGalleryCommand = new Command(async () => await AddAttachmentGallery());
         RemoveAttachmentCommand = new Command(async () => await RemoveAttachmentAsync());
@@ -469,45 +470,45 @@ public class AssetEditViewModel : BaseViewModel
         if (Directory.Exists(cacheDirectory))
         {
             var files = Directory.GetFiles(cacheDirectory);
-                foreach (var file in files)
+            foreach (var file in files)
+            {
+                //Get file ContentType
+                var contentType = Path.GetExtension(file).ToLower() switch
                 {
-                    //Get file ContentType
-                    var contentType = Path.GetExtension(file).ToLower() switch
-                    {
-                        ".jpg" or ".jpeg" => "image/jpeg",
-                        ".png" => "image/png",
-                        ".gif" => "image/gif",
-                        ".bmp" => "image/bmp",
-                        ".webp" => "image/webp",
-                        ".heic" or ".heif" => "image/heic",
-                        ".pdf" => "application/pdf",
-                        ".doc" or ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        ".xls" or ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        _ => "application/octet-stream"
-                    };
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".png" => "image/png",
+                    ".gif" => "image/gif",
+                    ".bmp" => "image/bmp",
+                    ".webp" => "image/webp",
+                    ".heic" or ".heif" => "image/heic",
+                    ".pdf" => "application/pdf",
+                    ".doc" or ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    ".xls" or ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    _ => "application/octet-stream"
+                };
 
-                    var bytes = await File.ReadAllBytesAsync(file);
-                    try
-                    {
-                        File.Delete(file);
-                    }
-                    catch
-                    {
-                        // Best-effort cleanup of staged cache files
-                    }
-
-                    Attachments.Add(new Attachment
-                    {
-                        Id = Guid.Empty, // New attachment; ID will be assigned by server
-                        OriginFileName = Path.GetFileName(file),
-                        LocalFileName = Path.GetFileName(file),
-                        ContentType = contentType,
-                        FileSize = bytes.Length,
-                        PendingUploadBytes = bytes,
-                        AttachmentTypeId = _defaultAttachmentTypeId,
-                        AttachmentType = _defaultAttachmentType
-                    });
+                var bytes = await File.ReadAllBytesAsync(file);
+                try
+                {
+                    File.Delete(file);
                 }
+                catch
+                {
+                    // Best-effort cleanup of staged cache files
+                }
+
+                Attachments.Add(new Attachment
+                {
+                    Id = Guid.Empty, // New attachment; ID will be assigned by server
+                    OriginFileName = Path.GetFileName(file),
+                    LocalFileName = Path.GetFileName(file),
+                    ContentType = contentType,
+                    FileSize = bytes.Length,
+                    PendingUploadBytes = bytes,
+                    AttachmentTypeId = _defaultAttachmentTypeId,
+                    AttachmentType = _defaultAttachmentType
+                });
+            }
 
             if (files.Length > 0)
             {
@@ -550,18 +551,26 @@ public class AssetEditViewModel : BaseViewModel
     {
         try
         {
-            var response = await _apiClient.GetAsync($"api/attributevalues/by-parent/Asset/{assetId}");
+            var response = await _apiClient.GetAsync($"api/attributes/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AttributeValue>>>();
-                Attributes.Clear();
-                if (apiResponse?.Data != null)
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Entities.Attribute>>>();
+                var attrs = apiResponse?.Data;
+
+                // Ensure collection modifications run on UI thread
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    foreach (var attr in apiResponse.Data)
+                    Attributes.Clear();
+                    if (attrs != null)
                     {
-                        Attributes.Add(attr);
+                        foreach (var attr in attrs)
+                        {
+                            Attributes.Add(new AttributeViewModel(attr));
+                        }
                     }
-                }
+
+                    OnPropertyChanged(nameof(HasAttributes));
+                });
             }
         }
         catch
@@ -570,7 +579,7 @@ public class AssetEditViewModel : BaseViewModel
         }
         finally
         {
-            OnPropertyChanged(nameof(HasAttributes));
+            MainThread.BeginInvokeOnMainThread(() => OnPropertyChanged(nameof(HasAttributes)));
         }
     }
 
@@ -582,14 +591,22 @@ public class AssetEditViewModel : BaseViewModel
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Note>>>();
-                Notes.Clear();
-                if (apiResponse?.Data != null)
+                var notes = apiResponse?.Data;
+
+                // Ensure collection modifications and property notifications run on the UI thread
+                MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    foreach (var note in apiResponse.Data)
+                    Notes.Clear();
+                    if (notes != null)
                     {
-                        Notes.Add(note);
+                        foreach (var note in notes)
+                        {
+                            Notes.Add(new NoteViewModel(note));
+                        }
                     }
-                }
+
+                    OnPropertyChanged(nameof(HasNotes));
+                });
             }
         }
         catch
@@ -598,7 +615,8 @@ public class AssetEditViewModel : BaseViewModel
         }
         finally
         {
-            OnPropertyChanged(nameof(HasNotes));
+            // Ensure HasNotes is raised on the UI thread even if the fetch failed
+            MainThread.BeginInvokeOnMainThread(() => OnPropertyChanged(nameof(HasNotes)));
         }
     }
 
@@ -730,42 +748,49 @@ public class AssetEditViewModel : BaseViewModel
 
     private async Task SaveAttributesAsync(Guid assetId)
     {
-        foreach (var attr in Attributes.Where(a => !string.IsNullOrWhiteSpace(a.Attribute)))
+        foreach (var vm in Attributes.Where(a => !string.IsNullOrWhiteSpace(a.Key)))
         {
             try
             {
+                var attr = vm.Model;
+                // Ensure model reflects current vm
+                attr.Key = vm.Key;
+                attr.Value = vm.Value;
+
                 if (attr.Id == Guid.Empty)
                 {
                     // New attribute — POST
                     attr.ParentId = assetId;
                     attr.ParentType = nameof(Asset);
-                    await _apiClient.PostAsJsonAsync("api/attributevalues", attr);
+                    await _apiClient.PostAsJsonAsync("api/attributes", attr);
                 }
                 else
                 {
                     // Existing attribute — PUT
-                    await _apiClient.PutAsJsonAsync($"api/attributevalues/{attr.Id}", attr);
+                    await _apiClient.PutAsJsonAsync($"api/attributes/{attr.Id}", attr);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Continue saving remaining items
+                await Shell.Current.DisplayAlertAsync("Error", $"Error saving attribute: {ex.Message}", "OK");
             }
         }
     }
 
     private async Task SaveNotesAsync(Guid assetId)
     {
-        foreach (var note in Notes.Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content)))
+        foreach (var noteModel in Notes.Where(n => !string.IsNullOrWhiteSpace(n.Title) || !string.IsNullOrWhiteSpace(n.Content)))
         {
             try
             {
+                Note note = noteModel.Model;
                 if (note.Id == Guid.Empty)
                 {
                     // New note — POST
                     note.ParentId = assetId;
                     note.ParentType = nameof(Asset);
-                    await _apiClient.PostAsJsonAsync("api/notes", note);
+                    var response = await _apiClient.PostAsJsonAsync("api/notes", note);
+                    _ = response;
                 }
                 else
                 {
@@ -773,9 +798,9 @@ public class AssetEditViewModel : BaseViewModel
                     await _apiClient.PutAsJsonAsync($"api/notes/{note.Id}", note);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Continue saving remaining items
+                await Shell.Current.DisplayAlertAsync("Error", $"Error saving attribute: {ex.Message}", "OK");
             }
         }
     }
@@ -796,6 +821,7 @@ public class AssetEditViewModel : BaseViewModel
                     byte[]? fileBytes = attachment.PendingUploadBytes;
                     if (fileBytes == null || fileBytes.Length == 0)
                     {
+                        //TODO: Validate if still needed
                         var filePath = Path.IsPathRooted(attachment.LocalFileName)
                             ? attachment.LocalFileName
                             : Path.Combine(FileSystem.CacheDirectory, attachment.LocalFileName);
@@ -820,9 +846,30 @@ public class AssetEditViewModel : BaseViewModel
                         }
                     }
                 }
+                else if (attachment.PendingUploadBytes != null)
+                {
+                    //if edited, flag old for deletion and re-upload
+                    byte[]? fileBytes = attachment.PendingUploadBytes;
+
+                    if (fileBytes != null && fileBytes.Length > 0)
+                    {
+                        var newAttachment = new Attachment(attachment);
+
+                        await _apiClient.UploadAttachmentAsync(fileBytes, newAttachment);
+                        await _apiClient.DeleteAsync($"api/attachments/{attachment.Id}");
+
+                        //TODO: Remove cache for old file
+                        var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, attachment.LocalFileName);
+                        if (File.Exists(localFilePath))
+                        {
+                            CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
+                        }
+                    }
+                }
                 else
                 {
-                    // Existing attachment — PUT
+                    // Existing attachment with no file changes
+                    // TODO: optimize to prevent unneeded calls
                     await _apiClient.PutAsJsonAsync($"api/attachments/{attachment.Id}", attachment);
                 }
             }
@@ -836,38 +883,39 @@ public class AssetEditViewModel : BaseViewModel
 
     // ── Remove helpers ─────────────────────────────────────────────────────────
 
-    private async Task RemoveAttributeAsync(AttributeValue attr)
+    private async Task RemoveAttributeAsync(AttributeViewModel attrViewModel)
     {
-        if (attr == null)
+        if (attrViewModel == null)
         {
             return;
         }
 
-        Attributes.Remove(attr);
-        OnPropertyChanged(nameof(HasAttributes));
+        Entities.Attribute attr = attrViewModel.Model;
 
         if (attr.Id != Guid.Empty)
         {
             try
             {
-                await _apiClient.DeleteAsync($"api/attributevalues/{attr.Id}");
+                await _apiClient.DeleteAsync($"api/attributes/{attr.Id}");
             }
             catch
             {
                 // Silently fail — item already removed from UI
             }
         }
+
+        Attributes.Remove(attrViewModel);
+        OnPropertyChanged(nameof(HasAttributes));
     }
 
-    private async Task RemoveNoteAsync(Note note)
+    private async Task RemoveNoteAsync(NoteViewModel noteViewModel)
     {
-        if (note == null)
+        if (noteViewModel == null)
         {
             return;
         }
 
-        Notes.Remove(note);
-        OnPropertyChanged(nameof(HasNotes));
+        Note note = noteViewModel.Model;
 
         if (note.Id != Guid.Empty)
         {
@@ -880,6 +928,9 @@ public class AssetEditViewModel : BaseViewModel
                 // Silently fail — item already removed from UI
             }
         }
+
+        Notes.Remove(noteViewModel);
+        OnPropertyChanged(nameof(HasNotes));
     }
     private async Task RemoveAttachmentAsync()
     {

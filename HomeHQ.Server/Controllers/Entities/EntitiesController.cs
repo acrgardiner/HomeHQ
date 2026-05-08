@@ -7,17 +7,17 @@ namespace HomeHQ.Api.Controllers;
 
 public class EntitiesController<TEntity> : ControllerBase where TEntity : IAuditableEntity, IEntity<Guid>
 {
-    internal readonly IEntityService<TEntity> _entityService;
+    internal readonly IEntityService<TEntity> EntityService;
 
     public EntitiesController(IEntityService<TEntity> entityService)
     {
-        _entityService = entityService;
+        EntityService = entityService;
     }
 
     [HttpGet]
     public async Task<ActionResult<ApiResponse<IEnumerable<TEntity>>>> GetAll()
     {
-        var entities = await _entityService.GetAllAsync();
+        var entities = await EntityService.GetAllAsync();
         return Ok(ApiResponse<IEnumerable<TEntity>>.Ok(entities));
     }
 
@@ -25,9 +25,11 @@ public class EntitiesController<TEntity> : ControllerBase where TEntity : IAudit
     public async Task<ActionResult<ApiResponse<TEntity>>> GetById(Guid id)
     {
         if (id == Guid.Empty)
+        {
             return Ok(ApiResponse<TEntity>.Fail("Invalid GUID format for 'id'."));
+        }
 
-        var entity = await _entityService.GetByIdAsync(id);
+        var entity = await EntityService.GetByIdAsync(id);
 
         if (entity == null)
         {
@@ -40,7 +42,7 @@ public class EntitiesController<TEntity> : ControllerBase where TEntity : IAudit
     [HttpPost]
     public async Task<ActionResult<ApiResponse<TEntity>>> Create([FromBody] TEntity entity)
     {
-        var created = await _entityService.AddAsync(entity);
+        var created = await EntityService.AddAsync(entity);
         return Ok(ApiResponse<TEntity>.Ok(created, $"{typeof(TEntity)} created successfully"));
     }
 
@@ -57,13 +59,13 @@ public class EntitiesController<TEntity> : ControllerBase where TEntity : IAudit
             return Ok(ApiResponse<TEntity>.Fail("ID mismatch"));
         }
 
-        var existing = await _entityService.GetByIdAsync(id);
+        var existing = await EntityService.GetByIdAsync(id);
         if (existing == null)
         {
             return Ok(ApiResponse<TEntity>.Fail($"{typeof(TEntity)} not found"));
         }
 
-        var updated = await _entityService.UpdateAsync(entity);
+        var updated = await EntityService.UpdateAsync(entity);
         return Ok(ApiResponse<TEntity>.Ok(updated, $"{typeof(TEntity)} updated successfully"));
     }
 
@@ -75,13 +77,13 @@ public class EntitiesController<TEntity> : ControllerBase where TEntity : IAudit
             return Ok(ApiResponse.Fail("Invalid GUID format for 'id'."));
         }
 
-        var existing = await _entityService.GetByIdAsync(id);
+        var existing = await EntityService.GetByIdAsync(id);
         if (existing == null)
         {
             return Ok(ApiResponse.Fail($"{typeof(TEntity)} not found"));
         }
 
-        await _entityService.DeleteAsync(id);
+        await EntityService.DeleteAsync(id);
         return Ok(ApiResponse.Ok($"{typeof(TEntity)} deleted successfully"));
     }
 }

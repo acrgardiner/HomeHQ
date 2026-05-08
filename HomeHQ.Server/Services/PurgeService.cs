@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using HomeHQ.Contracts;
 using HomeHQ.Data;
 using HomeHQ.Entities;
@@ -34,7 +34,7 @@ public class PurgeService : IPurgeService
             result["Categories"] = await PurgeEntityAsync<Category>(deletedBefore);
             result["WarrantyTypes"] = await PurgeEntityAsync<WarrantyType>(deletedBefore);
             result["AttachmentTypes"] = await PurgeEntityAsync<AttachmentType>(deletedBefore);
-            result["Attributes"] = await PurgeEntityAsync<AttributeValue>(deletedBefore);
+            result["Attributes"] = await PurgeEntityAsync<Entities.Attribute>(deletedBefore);
             result["Notes"] = await PurgeEntityAsync<Note>(deletedBefore);
 
             //Also need to delete files (including thumbnails) associated with Attachments
@@ -63,7 +63,7 @@ public class PurgeService : IPurgeService
             result["WarrantyTypes"] = await GetSoftDeletedCountAsync<WarrantyType>();
             result["Attachments"] = await GetSoftDeletedCountAsync<Attachment>();
             result["AttachmentTypes"] = await GetSoftDeletedCountAsync<AttachmentType>();
-            result["Attributes"] = await GetSoftDeletedCountAsync<AttributeValue>();
+            result["Attributes"] = await GetSoftDeletedCountAsync<Entities.Attribute>();
             result["Notes"] = await GetSoftDeletedCountAsync<Note>();
 
             return result;

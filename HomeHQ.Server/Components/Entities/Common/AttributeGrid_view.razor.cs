@@ -8,7 +8,7 @@ public partial class AttributeGrid_view
 {
     [Parameter] public Guid? ParentId { get; set; }
 
-    private List<AttributeValue> _attributes { get; set; } = new();
+    private List<HomeHQ.Entities.Attribute> _attributes { get; set; } = new();
 
     private bool _loading = true;
 

@@ -19,9 +19,11 @@ public class PolymorphicEntitiesController<TEntity> : EntitiesController<TEntity
     public async Task<ActionResult<ApiResponse<IEnumerable<TEntity>>>> GetByParent(string parentType, string parentId)
     {
         if (!Guid.TryParse(parentId, out var parentGuid))
+        {
             return BadRequest(ApiResponse<IEnumerable<TEntity>>.Fail("Invalid parentId format. Must be a valid GUID."));
+        }
 
-        var entities = await _entityService.GetAsync(n => n.ParentType == parentType && n.ParentId == parentGuid);
+        var entities = await EntityService.GetAsync(n => n.ParentType == parentType && n.ParentId == parentGuid);
         return Ok(ApiResponse<IEnumerable<TEntity>>.Ok(entities));
     }
 }
