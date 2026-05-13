@@ -2,6 +2,7 @@
 
 /// <summary>
 /// Darkened overlay with a draggable, resizable crop rectangle. Crop values are 0–1 relative to the bitmap.
+/// Opens with no visible crop; the user presses on the image and drags to define a rectangle, then can move or resize it.
 /// </summary>
 public class ImageCropOverlay : ContentView
 {
@@ -34,12 +35,18 @@ public class ImageCropOverlay : ContentView
     private PanGestureRecognizer _panBR = null!;
     private PanGestureRecognizer _selectionPan = null!;
     private TapGestureRecognizer _tap = null!;
+#if !ANDROID
+    private PointerGestureRecognizer _rubberBandPointer = null!;
+#endif
 
     private bool _isSelecting;
     private bool _hasSelection;
     private double _selectStartViewX;
     private double _selectStartViewY;
     private bool _nativeTouchAttached;
+    private bool _rubberBandStartPendingValid;
+    private double _rubberBandStartPendingX;
+    private double _rubberBandStartPendingY;
 
     private double _dragStartCropX;
     private double _dragStartCropY;
@@ -100,43 +107,72 @@ public class ImageCropOverlay : ContentView
 
     private void OnTapped()
     {
+        if (!_hasSelection)
+        {
+            return;
+        }
+
+        // Clear crop with a tap (rubber-band is press + drag only).
+        _hasSelection = false;
+        CropRelativeX = 0;
+        CropRelativeY = 0;
+        CropRelativeWidth = 0;
+        CropRelativeHeight = 0;
+        Arrange();
+    }
+
+#if !ANDROID
+    private void OnRubberBandPointerPressed(object? sender, PointerEventArgs e)
+    {
+        if (_isSelecting)
+        {
+            return;
+        }
+
         if (!TryGetImageDisplayRect(out var disp))
+        {
+            return;
+        }
+
+        Point? pt = e.GetPosition(this);
+        if (pt is null)
+        {
+            return;
+        }
+
+        double px = pt.Value.X;
+        double py = pt.Value.Y;
+        if (!disp.Contains(px, py))
         {
             return;
         }
 
         if (_hasSelection)
         {
-            // Toggle off selection on tap
-            _hasSelection = false;
-            CropRelativeWidth = 0;
-            CropRelativeHeight = 0;
-            Arrange();
-            return;
+            double vx = disp.X + CropRelativeX * disp.Width;
+            double vy = disp.Y + CropRelativeY * disp.Height;
+            double vw = CropRelativeWidth * disp.Width;
+            double vh = CropRelativeHeight * disp.Height;
+            var cropRect = new Rect(vx, vy, vw, vh);
+            if (cropRect.Contains(px, py))
+            {
+                return;
+            }
         }
 
-        // Create a small centered selection
-        double centerX = disp.X + disp.Width / 2;
-        double centerY = disp.Y + disp.Height / 2;
-        double size = Math.Min(disp.Width, disp.Height) * 0.25;
-        double left = centerX - size / 2;
-        double top = centerY - size / 2;
-
-        double nx = (left - disp.X) / disp.Width;
-        double ny = (top - disp.Y) / disp.Height;
-        double nw = size / disp.Width;
-        double nh = size / disp.Height;
-
-        nx = Math.Clamp(nx, 0, 1 - nw);
-        ny = Math.Clamp(ny, 0, 1 - nh);
-
-        CropRelativeX = nx;
-        CropRelativeY = ny;
-        CropRelativeWidth = Math.Max(nw, MinFraction);
-        CropRelativeHeight = Math.Max(nh, MinFraction);
-        _hasSelection = true;
-        Arrange();
+        _rubberBandStartPendingValid = true;
+        _rubberBandStartPendingX = px;
+        _rubberBandStartPendingY = py;
     }
+
+    private void OnRubberBandPointerReleased(object? sender, PointerEventArgs e)
+    {
+        if (!_isSelecting)
+        {
+            _rubberBandStartPendingValid = false;
+        }
+    }
+#endif
 
     private void AttachNativeTouchIfNeeded()
     {
@@ -303,7 +339,14 @@ public class ImageCropOverlay : ContentView
         _movePan.PanUpdated += (_, e) => MainThread.BeginInvokeOnMainThread(() => OnMovePan(e));
         _cropFrame.GestureRecognizers.Add(_movePan);
 
-        // Pan on the overall root to start a new selection when the overlay has no selection
+#if !ANDROID
+        _rubberBandPointer = new PointerGestureRecognizer();
+        _rubberBandPointer.PointerPressed += (_, e) => MainThread.BeginInvokeOnMainThread(() => OnRubberBandPointerPressed(_, e));
+        _rubberBandPointer.PointerReleased += (_, e) => MainThread.BeginInvokeOnMainThread(() => OnRubberBandPointerReleased(_, e));
+        _root.GestureRecognizers.Add(_rubberBandPointer);
+#endif
+
+        // Pan on the overall root to rubber-band a new crop from the press location (non-Android: paired with pointer capture above).
         _selectionPan = new PanGestureRecognizer();
         _selectionPan.PanUpdated += (_, e) => MainThread.BeginInvokeOnMainThread(() => OnSelectionPan(e));
         _root.GestureRecognizers.Add(_selectionPan);
@@ -352,12 +395,13 @@ public class ImageCropOverlay : ContentView
     {
         if (bindable is ImageCropOverlay overlay)
         {
-            // Show selection only when it's meaningfully smaller than the full image and above the minimum size.
-            // This avoids treating a default full-image crop (1.0) as an active selection.
+            // Show chrome when there is a real crop, or while the user is dragging out a new rectangle (sizes may be zero briefly).
+            // Full-image values (1×1) from the page VM mean "no crop chosen yet" — same as no selection.
             bool isFull = Math.Abs(overlay.CropRelativeWidth - 1.0) < 1e-6 && Math.Abs(overlay.CropRelativeHeight - 1.0) < 1e-6;
-            overlay._hasSelection = !isFull &&
-                                     overlay.CropRelativeWidth >= MinFraction &&
-                                     overlay.CropRelativeHeight >= MinFraction;
+            bool hasSizedSelection = !isFull &&
+                                      overlay.CropRelativeWidth >= MinFraction &&
+                                      overlay.CropRelativeHeight >= MinFraction;
+            overlay._hasSelection = overlay._isSelecting || hasSizedSelection;
             overlay.Arrange();
         }
     }
@@ -445,6 +489,14 @@ public class ImageCropOverlay : ContentView
 
     private void OnSelectionPan(PanUpdatedEventArgs e)
     {
+#if ANDROID
+        if (_nativeTouchAttached)
+        {
+            // Down/move/up with real coordinates are handled in OnNativeTouch.
+            return;
+        }
+#endif
+
         if (!TryGetImageDisplayRect(out var disp))
         {
             return;
@@ -453,44 +505,67 @@ public class ImageCropOverlay : ContentView
         switch (e.StatusType)
         {
             case GestureStatus.Started:
-                // If there's already a selection and the user started inside it, do not begin a new selection
-                // PanUpdated doesn't provide initial pointer location directly; use the current translation as delta from start
-                // We capture the starting touch position using the gesture's touch origin: the easiest approach is to use the current translation
-                // as starting at the current position on the view. To get a reliable start point, use the position of the pan on the root by
-                // checking the touch via the event args' TotalX/TotalY being zero at start and using remaining code to compute positions.
-                // Instead, read the last known touch by using a small helper: we'll capture position from the LayoutBounds of the pan container
-
-                // Use the current pointer position relative to the view by requesting the object's bounds and using center as a fallback.
-                // For MAUI PanUpdated we don't receive the pointer position on Started, so we derive it as the previous touch: use GestureOrigin at center of view
-                _selectStartViewX = Math.Clamp(disp.X + disp.Width / 2, disp.X, disp.X + disp.Width);
-                _selectStartViewY = Math.Clamp(disp.Y + disp.Height / 2, disp.Y, disp.Y + disp.Height);
-
-                // If existing selection and start point is inside, ignore selection start
-                if (_hasSelection)
                 {
-                    double vx = disp.X + CropRelativeX * disp.Width;
-                    double vy = disp.Y + CropRelativeY * disp.Height;
-                    double vw = CropRelativeWidth * disp.Width;
-                    double vh = CropRelativeHeight * disp.Height;
-                    var cropRect = new Rect(vx, vy, vw, vh);
-                    if (cropRect.Contains(_selectStartViewX, _selectStartViewY))
+                    bool fromPointer = _rubberBandStartPendingValid;
+                    double startX;
+                    double startY;
+                    if (fromPointer)
                     {
-                        _isSelecting = false;
-                        break;
+                        startX = Math.Clamp(_rubberBandStartPendingX, disp.X, disp.X + disp.Width);
+                        startY = Math.Clamp(_rubberBandStartPendingY, disp.Y, disp.Y + disp.Height);
                     }
-                }
+#if ANDROID
+                    else
+                    {
+                        // Rare fallback if native touch failed to attach.
+                        startX = Math.Clamp(disp.X + disp.Width / 2, disp.X, disp.X + disp.Width);
+                        startY = Math.Clamp(disp.Y + disp.Height / 2, disp.Y, disp.Y + disp.Height);
+                    }
+#else
+                    else
+                    {
+                        // Without a pointer-press anchor, pan alone would pick the wrong origin.
+                        return;
+                    }
+#endif
 
-                _isSelecting = true;
-                // initialize crop to zero area at the start point
-                double relX = (_selectStartViewX - disp.X) / disp.Width;
-                double relY = (_selectStartViewY - disp.Y) / disp.Height;
-                CropRelativeX = relX;
-                CropRelativeY = relY;
-                CropRelativeWidth = 0;
-                CropRelativeHeight = 0;
-                _hasSelection = true;
-                Arrange();
-                break;
+                    if (_hasSelection)
+                    {
+                        double vx = disp.X + CropRelativeX * disp.Width;
+                        double vy = disp.Y + CropRelativeY * disp.Height;
+                        double vw = CropRelativeWidth * disp.Width;
+                        double vh = CropRelativeHeight * disp.Height;
+                        var cropRect = new Rect(vx, vy, vw, vh);
+                        if (cropRect.Contains(startX, startY))
+                        {
+                            if (fromPointer)
+                            {
+                                _rubberBandStartPendingValid = false;
+                            }
+
+                            _isSelecting = false;
+                            break;
+                        }
+                    }
+
+                    if (fromPointer)
+                    {
+                        _rubberBandStartPendingValid = false;
+                    }
+
+                    _isSelecting = true;
+                    _selectStartViewX = startX;
+                    _selectStartViewY = startY;
+
+                    double relX = (_selectStartViewX - disp.X) / disp.Width;
+                    double relY = (_selectStartViewY - disp.Y) / disp.Height;
+                    CropRelativeX = relX;
+                    CropRelativeY = relY;
+                    CropRelativeWidth = 0;
+                    CropRelativeHeight = 0;
+                    Arrange();
+                    break;
+                }
 
             case GestureStatus.Running:
                 if (!_isSelecting)
@@ -498,11 +573,8 @@ public class ImageCropOverlay : ContentView
                     return;
                 }
 
-                // Current pointer = start + total translation
                 double curX = _selectStartViewX + e.TotalX;
                 double curY = _selectStartViewY + e.TotalY;
-
-                // Clamp inside image display
                 curX = Math.Clamp(curX, disp.X, disp.X + disp.Width);
                 curY = Math.Clamp(curY, disp.Y, disp.Y + disp.Height);
 
@@ -518,11 +590,9 @@ public class ImageCropOverlay : ContentView
                 double nw = (right - left) / disp.Width;
                 double nh = (bottom - top) / disp.Height;
 
-                // enforce minimum fraction
                 nw = Math.Max(nw, MinFraction);
                 nh = Math.Max(nh, MinFraction);
 
-                // ensure within bounds
                 nx = Math.Clamp(nx, 0, 1 - nw);
                 ny = Math.Clamp(ny, 0, 1 - nh);
 
@@ -535,6 +605,7 @@ public class ImageCropOverlay : ContentView
             case GestureStatus.Completed:
             case GestureStatus.Canceled:
                 _isSelecting = false;
+                _rubberBandStartPendingValid = false;
                 break;
         }
     }
