@@ -20,6 +20,8 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "HomeHQ.Server")
+    .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File(formatter: new CustomJsonFormatter(),
         path: "appdata/logs/log-.json",
@@ -239,6 +241,10 @@ try
     });
 
     var app = builder.Build();
+
+    // Add request correlation and global exception handling middleware
+    app.UseMiddleware<HomeHQ.Server.Middleware.RequestCorrelationMiddleware>();
+    app.UseMiddleware<HomeHQ.Server.Middleware.ExceptionHandlingMiddleware>();
 
     //Prepare Database
     using (var scope = app.Services.CreateScope())
