@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 
 namespace HomeHQ.Mobile.Services;
@@ -12,6 +12,13 @@ public class AuthDelegatingHandler(AuthService authService) : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        const string CORRELATION_HEADER = "X-Correlation-ID";
+        if (!request.Headers.Contains(CORRELATION_HEADER))
+        {
+            var correlationId = System.Diagnostics.Activity.Current?.Id ?? Guid.NewGuid().ToString();
+            request.Headers.Add(CORRELATION_HEADER, correlationId);
+        }
+
         // Skip auth for login/register endpoints
         var requestPath = request.RequestUri?.PathAndQuery ?? string.Empty;
         var isAnonymousEndpoint = AnonymousEndpoints.Any(e => requestPath.Contains(e, StringComparison.OrdinalIgnoreCase));

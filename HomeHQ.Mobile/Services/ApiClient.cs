@@ -143,6 +143,14 @@ public class ApiClient
     {
         var isAnonymous = AnonymousEndpoints.Any(e => endpoint.Contains(e, StringComparison.OrdinalIgnoreCase));
 
+        // Ensure we propagate a correlation id for server-side logging/troubleshooting
+        const string CORRELATION_HEADER = "X-Correlation-ID";
+        if (!request.Headers.Contains(CORRELATION_HEADER))
+        {
+            var correlationId = System.Diagnostics.Activity.Current?.Id ?? Guid.NewGuid().ToString();
+            request.Headers.Add(CORRELATION_HEADER, correlationId);
+        }
+
         // Add auth header if not anonymous
         if (!isAnonymous)
         {

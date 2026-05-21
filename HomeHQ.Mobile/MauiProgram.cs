@@ -24,6 +24,12 @@ public static class MauiProgram
         // Register Services (order matters - SettingsService first)
         builder.Services.AddSingleton<SettingsService>();
         builder.Services.AddSingleton<AuthService>();
+
+        // Handlers
+        builder.Services.AddTransient<AuthDelegatingHandler>();
+        builder.Services.AddTransient<CorrelationDelegatingHandler>();
+
+        // Keep ApiClient as simple singleton for now (no HttpClientFactory on some MAUI platforms)
         builder.Services.AddSingleton<ApiClient>();
         // Reference-data cache services (one singleton per entity type)
         builder.Services.AddSingleton(sp =>
@@ -51,9 +57,9 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<DashboardPage>();
 
-#if DEBUG
-        builder.Logging.AddDebug();
-#endif
+//#if DEBUG
+//        builder.Logging.AddDebug();
+//#endif
 
         return builder.Build();
     }
