@@ -1,4 +1,4 @@
-﻿using HomeHQ.Contracts;
+using HomeHQ.Contracts;
 using HomeHQ.Repositories;
 using System.Linq.Expressions;
 
@@ -32,7 +32,7 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
 
     public async Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null)
     {
-        return await _repository.GetAllAsync( includes);
+        return await _repository.GetAllAsync(includes);
     }
 
     public async Task<T?> GetByIdAsync(Guid id, List<Expression<Func<T, object>>>? includes = null)
@@ -59,12 +59,12 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
     public async Task<IEnumerable<T>> UpdateAsync(IEnumerable<T> entities)
     {
         var entityList = entities.ToList();
-        
+
         foreach (var entity in entityList)
         {
             _repository.Update(entity);
         }
-        
+
         await _repository.SaveChangesAsync();
 
         return entityList;
@@ -91,7 +91,7 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
         Func<IQueryable<TResult>, Task<TResult>> aggregateFunc
     )
     {
-        return await _repository.AggregateAsync<TResult>(filter, selector, aggregateFunc);
+        return await _repository.AggregateAsync(filter, selector, aggregateFunc);
     }
 
     public async Task<Dictionary<string, int>> GetCountByPropertyAsync<TKey>(Expression<Func<T, TKey>> propertySelector, Expression<Func<T, bool>>? filter = null)
@@ -143,5 +143,4 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
             async query => await Task.FromResult(query.Sum())
         );
     }
-
 }

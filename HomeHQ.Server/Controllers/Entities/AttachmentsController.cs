@@ -1,4 +1,5 @@
-﻿using HomeHQ.DTOs;
+﻿using HomeHQ.Application.Mapping;
+using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.FileStorage;
 using HomeHQ.Services;
@@ -10,7 +11,7 @@ namespace HomeHQ.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "BearerAndCookies")]
-public class AttachmentsController : PolymorphicEntitiesController<Attachment>
+public class AttachmentsController : PolymorphicEntitiesController<Attachment, AttachmentDto, CreateAttachmentRequest, UpdateAttachmentRequest>
 {
     private readonly IWebHostEnvironment _env;
     private readonly IFileStorageService _fileStorageService;
@@ -18,7 +19,7 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
     public AttachmentsController(
         IWebHostEnvironment env,
         IEntityService<Attachment> attachmentService,
-        IFileStorageService fileStorageService) : base(attachmentService)
+        IFileStorageService fileStorageService) : base(attachmentService, EntityMappings.Attachment)
     {
         _env = env;
         _fileStorageService = fileStorageService;
@@ -77,16 +78,16 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
     [HttpPost("upload")]
     [Authorize]
     [RequestSizeLimit(15 * 1024 * 1024)] // 15 MB limit
-    public async Task<ActionResult<ApiResponse<Attachment>>> Upload([FromForm] IFormFile file, [FromForm] AttachmentUploadDto metadata)
+    public async Task<ActionResult<ApiResponse<AttachmentDto>>> Upload([FromForm] IFormFile file, [FromForm] AttachmentUploadRequest metadata)
     {
         if (file == null || file.Length == 0)
         {
-            return BadRequest(ApiResponse<Attachment>.Fail("No file provided"));
+            return BadRequest(ApiResponse<AttachmentDto>.Fail("No file provided"));
         }
 
         if (!Guid.TryParse(metadata.ParentId, out var parentId))
         {
-            return BadRequest(ApiResponse<Attachment>.Fail("Invalid parent ID"));
+            return BadRequest(ApiResponse<AttachmentDto>.Fail("Invalid parent ID"));
         }
 
         try
@@ -114,24 +115,11 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment>
             // Save attachment entity
             var savedAttachment = await EntityService.AddAsync(attachment);
 
-            return Ok(ApiResponse<Attachment>.Ok(savedAttachment, "Attachment uploaded successfully"));
+            return Ok(ApiResponse<AttachmentDto>.Ok(EntityMappings.ToDto(savedAttachment), "Attachment uploaded successfully"));
         }
         catch (Exception ex)
         {
-            return StatusCode(500, ApiResponse<Attachment>.Fail($"Upload failed: {ex.Message}"));
+            return StatusCode(500, ApiResponse<AttachmentDto>.Fail($"Upload failed: {ex.Message}"));
         }
     }
-}
-
-/// <summary>
-/// DTO for attachment upload metadata
-/// </summary>
-public class AttachmentUploadDto
-{
-    public string? ParentId { get; set; }
-    public string? ParentType { get; set; }
-    public string? OriginFileName { get; set; }
-    public string? ContentType { get; set; }
-    public string? Extension { get; set; }
-    public Guid? AttachmentTypeId { get; set; }
 }

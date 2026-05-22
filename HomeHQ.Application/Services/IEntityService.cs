@@ -1,4 +1,4 @@
-﻿using HomeHQ.Contracts;
+using HomeHQ.Contracts;
 using System.Linq.Expressions;
 
 namespace HomeHQ.Services;
@@ -28,5 +28,4 @@ public interface IEntityService<T> where T : IAuditableEntity, IEntity
     Task<float> SumAsync(Expression<Func<T, float>> selector, Expression<Func<T, bool>>? filter = null);
     Task<double> SumAsync(Expression<Func<T, double>> selector, Expression<Func<T, bool>>? filter = null);
     Task<decimal> SumAsync(Expression<Func<T, decimal>> selector, Expression<Func<T, bool>>? filter = null);
-
 }

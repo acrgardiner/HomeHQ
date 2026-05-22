@@ -1,4 +1,4 @@
-﻿using HomeHQ.Entities;
+﻿using HomeHQ.DTOs;
 using HomeHQ.Mobile.Pages;
 using HomeHQ.Mobile.Services;
 using HomeHQ.Mobile.ViewModels;
@@ -33,11 +33,11 @@ public static class MauiProgram
         builder.Services.AddSingleton<ApiClient>();
         // Reference-data cache services (one singleton per entity type)
         builder.Services.AddSingleton(sp =>
-            new CacheService<Category>(sp.GetRequiredService<ApiClient>(), "api/categories"));
+            new CacheService<CategoryDto>(sp.GetRequiredService<ApiClient>(), "api/categories"));
         builder.Services.AddSingleton(sp =>
-            new CacheService<AttachmentType>(sp.GetRequiredService<ApiClient>(), "api/attachmenttypes"));
+            new CacheService<AttachmentTypeDto>(sp.GetRequiredService<ApiClient>(), "api/attachmenttypes"));
         builder.Services.AddSingleton(sp =>
-            new CacheService<WarrantyType>(sp.GetRequiredService<ApiClient>(), "api/warrantytypes"));
+            new CacheService<WarrantyTypeDto>(sp.GetRequiredService<ApiClient>(), "api/warrantytypes"));
         builder.Services.AddSingleton<AttachmentViewerNavigation>();
 
         // Register ViewModels

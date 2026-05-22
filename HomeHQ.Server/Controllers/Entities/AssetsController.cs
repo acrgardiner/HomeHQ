@@ -1,4 +1,5 @@
-﻿using HomeHQ.DTOs;
+﻿using HomeHQ.Application.Mapping;
+using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -9,10 +10,12 @@ namespace HomeHQ.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "BearerAndCookies")]
-public class AssetsController : EntitiesController<Asset>
+public class AssetsController : EntitiesController<Asset, AssetDto, CreateAssetRequest, UpdateAssetRequest>
 {
     private readonly IAssetImportService _assetImportService;
-    public AssetsController(IEntityService<Asset> entityService, IAssetImportService assetImportService) : base(entityService)
+
+    public AssetsController(IEntityService<Asset> entityService, IAssetImportService assetImportService)
+        : base(entityService, EntityMappings.Asset)
     {
         _assetImportService = assetImportService;
     }

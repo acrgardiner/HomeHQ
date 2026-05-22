@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
+using HomeHQ.Application.Mapping;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 
@@ -14,7 +15,7 @@ public class AssetsViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
     private readonly AuthService _authService;
-    private readonly CacheService<Category> _categoryCache;
+    private readonly CacheService<CategoryDto> _categoryCache;
     private readonly SettingsService _settingsService;
 
     public ObservableCollection<Asset> Assets { get; } = [];
@@ -78,7 +79,7 @@ public class AssetsViewModel : BaseViewModel
     public ICommand AssetSelectedCommand { get; }
     public ICommand AddAssetCommand { get; }
 
-    public AssetsViewModel(ApiClient apiClient, AuthService authService, CacheService<Category> categoryCache, SettingsService settingsService)
+    public AssetsViewModel(ApiClient apiClient, AuthService authService, CacheService<CategoryDto> categoryCache, SettingsService settingsService)
     {
         _apiClient = apiClient;
         _authService = authService;
@@ -111,7 +112,7 @@ public class AssetsViewModel : BaseViewModel
 
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Asset>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AssetDto>>>();
 
                 // Clear previous lists
                 Assets.Clear();
@@ -119,14 +120,14 @@ public class AssetsViewModel : BaseViewModel
 
                 if (apiResponse?.Data?.Count > 0)
                 {
-                    // Populate Category navigation property on each asset from the cache.
+                    var assets = apiResponse.Data.Select(EntityMappings.ToEntity).ToList();
                     _categoryCache.PopulateAll(
-                        apiResponse.Data,
+                        assets,
                         a => a.CategoryId,
-                        (a, c) => a.Category = c);
+                        (a, c) => a.Category = c is null ? null : EntityMappings.ToEntity(c));
 
                     // Keep a full in-memory copy for filtering
-                    _allAssets = apiResponse.Data.ToList();
+                    _allAssets = assets;
 
                     // Apply any active filter to populate the visible collection
                     ApplyFilter();

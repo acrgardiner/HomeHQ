@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using MudBlazor;
 using MudBlazor.Services;
 using MudBlazor.Template.Components.Account;
@@ -10,8 +9,9 @@ using HomeHQ.Server.Components;
 using HomeHQ.Data;
 using HomeHQ.FileStorage;
 using HomeHQ.Identity;
+using HomeHQ.Application;
+using HomeHQ.Infrastructure;
 using HomeHQ.Logging;
-using HomeHQ.Repositories;
 using HomeHQ.Services;
 using Serilog;
 using Microsoft.AspNetCore.Authentication.BearerToken;
@@ -95,20 +95,13 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-    builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-    builder.Services.AddScoped(typeof(IEntityService<>), typeof(EntityService<>));
+    builder.Services.AddHomeHQApplication();
+    builder.Services.AddHomeHQInfrastructure();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddScoped<IFileStorageService, FileStorageService>();
     builder.Services.AddScoped<IAssetImportService, AssetImportService>();
     builder.Services.AddScoped<IThumbnailService, ThumbnailService>();
     builder.Services.AddScoped<IPurgeService, PurgeService>();
-
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        {
-            options.UseSqlite("Data Source=appdata/db/app.db");
-            options.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
-        }
-    );
 
     // Configure Identity with both cookie auth (for Blazor web) and bearer token auth (for mobile API)
     builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options => {

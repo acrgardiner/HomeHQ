@@ -1,6 +1,7 @@
 ﻿using System.Net.Http;
 using System.Net.Http.Json;
 using System.Windows.Input;
+using HomeHQ.Application.Mapping;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
@@ -301,7 +302,7 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<Attachment>>();
+            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AttachmentDto>>();
             if (apiResponse?.Data == null)
             {
                 HasError = true;
@@ -309,7 +310,7 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            MergeAttachmentMetadata(apiResponse.Data, _assetEditLinkedAttachment);
+            MergeAttachmentMetadata(EntityMappings.ToEntity(apiResponse.Data), _assetEditLinkedAttachment);
             Attachment = _assetEditLinkedAttachment;
 
             if (IsImage)
@@ -517,7 +518,7 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<Attachment>>();
+            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AttachmentDto>>();
             if (apiResponse?.Data == null)
             {
                 HasError = true;
@@ -525,7 +526,7 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            Attachment = apiResponse.Data;
+            Attachment = EntityMappings.ToEntity(apiResponse.Data);
 
             // Load the actual file data based on type
             if (IsImage)

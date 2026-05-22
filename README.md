@@ -34,9 +34,6 @@ Track your key household information in one secure location. Built with .NET and
   </ol>
 </details>
 
-
-
-<!-- ABOUT THE PROJECT -->
 ## ❔ About The Project
 
 This project was started as a way for me to hone my software development skills while solving a personal need. 
@@ -54,7 +51,6 @@ Yes there are other solutions out there, but I wanted something lightweight, sel
 - Notes
 - Inbuilt basic image editing for attachments
 
-
 ![Dashboard](docs/Dashboard.png)
 
 ![Asset](docs/Asset-list.png)
@@ -64,7 +60,6 @@ Yes there are other solutions out there, but I wanted something lightweight, sel
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-<!-- GETTING STARTED -->
 ## 🚀 Getting Started
 
 This is an example of how you may give instructions on setting up your project locally.
@@ -135,7 +130,54 @@ Assets will be created for each file found in the imports directory and the sour
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- CONTRIBUTING -->
+
+## 🏢 Architecture
+
+The architecture of HomeHQ is designed to be modular and scalable. The main components include:
+
+- **Hosts**: The entry point of the application, responsible for hosting the web server and handling incoming requests.
+- **Infrastructure**: Contains the implementation of data access, file storage, and other external services.
+- **Application**: Contains the business logic and application services.
+- **Domain**: Represents the core business entities and rules.
+- **Contracts**: Defines the interfaces and data structures used for communication between components.
+
+<!-- TODO: Add Mermaid diagram following Hosts/Infrastructure/Application/Domain/Contracts -->
+```mermaid
+flowchart TB
+  subgraph hosts["Hosts (composition root)"]
+    Server["HomeHQ.Server\nBlazor + API + DI"]
+    Mobile["HomeHQ.Mobile"]
+  end
+
+  subgraph app["Application"]
+    App["HomeHQ.Application\nUse cases, handlers, DTOs"]
+  end
+
+  subgraph domain["Domain"]
+    Dom["HomeHQ.Domain\nEntities, rules, ports"]
+  end
+
+  subgraph infra["Infrastructure"]
+    Inf["HomeHQ.Infrastructure\nEF, files, Identity impl"]
+  end
+
+  subgraph contracts["Contracts"]
+    Api["HomeHQ.Api.Contracts\nRequest/response only"]
+  end
+
+  Server --> App
+  Server --> Inf
+  Mobile --> Api
+  Mobile -.->|optional| App
+  App --> Dom
+  Inf --> App
+  Inf --> Dom
+  Api --> Dom
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 ## 🤝 Contributing
 
 Contributions are welcome! 
@@ -146,15 +188,13 @@ Or for developers looking to contribute code, please check and follow our [contr
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+
 ### Top contributors:
 
 <a href="https://github.com/acrgardiner/homehq/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=acrgardiner/homehq" alt="contrib.rocks image" />
 </a>
 
-
-
-<!-- LICENSE -->
 ## License
 
 Distributed under the GPL-3.0 license. See `LICENSE.txt` for more information.

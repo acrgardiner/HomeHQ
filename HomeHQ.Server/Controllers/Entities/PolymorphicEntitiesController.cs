@@ -9,21 +9,27 @@ namespace HomeHQ.Api.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize]
-public class PolymorphicEntitiesController<TEntity> : EntitiesController<TEntity> where TEntity : IAuditableEntity, IEntity<Guid>, IPolymorphicEntity
+public abstract class PolymorphicEntitiesController<TEntity, TDto, TCreate, TUpdate> : EntitiesController<TEntity, TDto, TCreate, TUpdate>
+    where TEntity : AuditableEntity, IEntity<Guid>, IPolymorphicEntity
+    where TDto : IEntityDto
+    where TUpdate : IUpdateRequest
 {
-    public PolymorphicEntitiesController(IEntityService<TEntity> entityService) : base(entityService)
+    protected PolymorphicEntitiesController(
+        IEntityService<TEntity> entityService,
+        Application.Mapping.EntityApiMapping<TEntity, TDto, TCreate, TUpdate> mapping)
+        : base(entityService, mapping)
     {
     }
 
     [HttpGet("by-parent/{parentType}/{parentId}")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<TEntity>>>> GetByParent(string parentType, string parentId)
+    public async Task<ActionResult<ApiResponse<IEnumerable<TDto>>>> GetByParent(string parentType, string parentId)
     {
         if (!Guid.TryParse(parentId, out var parentGuid))
         {
-            return BadRequest(ApiResponse<IEnumerable<TEntity>>.Fail("Invalid parentId format. Must be a valid GUID."));
+            return BadRequest(ApiResponse<IEnumerable<TDto>>.Fail("Invalid parentId format. Must be a valid GUID."));
         }
 
         var entities = await EntityService.GetAsync(n => n.ParentType == parentType && n.ParentId == parentGuid);
-        return Ok(ApiResponse<IEnumerable<TEntity>>.Ok(entities));
+        return Ok(ApiResponse<IEnumerable<TDto>>.Ok(Mapping.ToDtos(entities)));
     }
 }

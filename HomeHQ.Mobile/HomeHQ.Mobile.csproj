@@ -67,7 +67,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\HomeHQ.Shared\HomeHQ.Shared.csproj" />
+	  <ProjectReference Include="..\HomeHQ.Application\HomeHQ.Application.csproj" />
+	  <ProjectReference Include="..\HomeHQ.Domain\HomeHQ.Domain.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

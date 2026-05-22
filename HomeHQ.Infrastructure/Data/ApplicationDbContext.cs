@@ -1,4 +1,4 @@
-﻿using HomeHQ.Entities;
+using HomeHQ.Entities;
 using HomeHQ.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

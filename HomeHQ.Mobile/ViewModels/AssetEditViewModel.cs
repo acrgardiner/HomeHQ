@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Windows.Input;
+using HomeHQ.Application.Mapping;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Helpers;
@@ -16,9 +17,9 @@ namespace HomeHQ.Mobile.ViewModels;
 public class AssetEditViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
-    private readonly CacheService<Category> _categoryCache;
-    private readonly CacheService<WarrantyType> _warrantyTypeCache;
-    private readonly CacheService<AttachmentType> _attachmentTypeCache;
+    private readonly CacheService<CategoryDto> _categoryCache;
+    private readonly CacheService<WarrantyTypeDto> _warrantyTypeCache;
+    private readonly CacheService<AttachmentTypeDto> _attachmentTypeCache;
     private readonly AttachmentViewerNavigation _attachmentViewerNavigation;
 
     // The raw loaded asset (kept for Id reference during save)
@@ -275,9 +276,9 @@ public class AssetEditViewModel : BaseViewModel
 
     public AssetEditViewModel(
         ApiClient apiClient
-        , CacheService<Category> categoryCache
-        , CacheService<AttachmentType> attachmentTypeCache
-        , CacheService<WarrantyType> warrantyTypeCache
+        , CacheService<CategoryDto> categoryCache
+        , CacheService<AttachmentTypeDto> attachmentTypeCache
+        , CacheService<WarrantyTypeDto> warrantyTypeCache
         , AttachmentViewerNavigation attachmentViewerNavigation
     )
     {
@@ -350,10 +351,10 @@ public class AssetEditViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/assets/{AssetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<Asset>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AssetDto>>();
                 if (apiResponse?.Data != null)
                 {
-                    _loadedAsset = apiResponse.Data;
+                    _loadedAsset = EntityMappings.ToEntity(apiResponse.Data);
                     await PopulateFormFromAsset(_loadedAsset);
                 }
                 else
@@ -427,28 +428,30 @@ public class AssetEditViewModel : BaseViewModel
         Categories.Clear();
         foreach (var cat in (await _categoryCache.GetAllAsync()))
         {
-            Categories.Add(cat);
+            Categories.Add(EntityMappings.ToEntity(cat));
         }
 
         WarrantyTypes.Clear();
         foreach (var wt in (await _warrantyTypeCache.GetAllAsync()).OrderBy(w => w.SortOrder))
         {
-            WarrantyTypes.Add(wt);
+            var entity = EntityMappings.ToEntity(wt);
+            WarrantyTypes.Add(entity);
             if (wt.Default)
             {
                 _defaultWarrantyTypeId = wt.Id;
-                _defaultWarrantyType = wt;
+                _defaultWarrantyType = entity;
             }
         }
 
         AttachmentTypes.Clear();
         foreach (var at in (await _attachmentTypeCache.GetAllAsync()).OrderBy(w => w.Default))
         {
-            AttachmentTypes.Add(at);
+            var entity = EntityMappings.ToEntity(at);
+            AttachmentTypes.Add(entity);
             if (at.Default)
             {
                 _defaultAttachmentTypeId = at.Id;
-                _defaultAttachmentType = at;
+                _defaultAttachmentType = entity;
             }
         }
     }
@@ -554,7 +557,7 @@ public class AssetEditViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/attributes/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Entities.Attribute>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AttributeItemDto>>>();
                 var attrs = apiResponse?.Data;
 
                 // Ensure collection modifications run on UI thread
@@ -563,7 +566,7 @@ public class AssetEditViewModel : BaseViewModel
                     Attributes.Clear();
                     if (attrs != null)
                     {
-                        foreach (var attr in attrs)
+                        foreach (var attr in attrs.Select(EntityMappings.ToEntity))
                         {
                             Attributes.Add(new AttributeViewModel(attr));
                         }
@@ -590,7 +593,7 @@ public class AssetEditViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/notes/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Note>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<NoteDto>>>();
                 var notes = apiResponse?.Data;
 
                 // Ensure collection modifications and property notifications run on the UI thread
@@ -599,7 +602,7 @@ public class AssetEditViewModel : BaseViewModel
                     Notes.Clear();
                     if (notes != null)
                     {
-                        foreach (var note in notes)
+                        foreach (var note in notes.Select(EntityMappings.ToEntity))
                         {
                             Notes.Add(new NoteViewModel(note));
                         }
@@ -627,16 +630,17 @@ public class AssetEditViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/attachments/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Attachment>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AttachmentDto>>>();
                 Attachments.Clear();
                 if (apiResponse?.Data != null)
                 {
+                    var attachments = apiResponse.Data.Select(EntityMappings.ToEntity).ToList();
                     _attachmentTypeCache.PopulateAll(
-                        apiResponse.Data,
+                        attachments,
                         a => a.AttachmentTypeId,
-                        (a, c) => a.AttachmentType = c);
+                        (a, c) => a.AttachmentType = c is null ? null : EntityMappings.ToEntity(c));
 
-                    foreach (var attachment in apiResponse.Data)
+                    foreach (var attachment in attachments)
                     {
                         Attachments.Add(attachment);
                     }
@@ -691,33 +695,26 @@ public class AssetEditViewModel : BaseViewModel
             _loadedAsset.CategoryId = SelectedCategory?.Id;
             _loadedAsset.WarrantyTypeId = SelectedWarrantyType?.Id;
             _loadedAsset.WarrantyExpiration = SelectedWarrantyType != null ? WarrantyExpiration : null;
-            _loadedAsset.CreatedBy = string.Empty;
-            _loadedAsset.CreatedOn = DateTime.UtcNow;
-            _loadedAsset.LastModifiedBy = string.Empty;
-            _loadedAsset.LastModifiedOn = DateTime.UtcNow;
-
             // Update asset
             HttpResponseMessage assetResponse;
             if (_loadedAsset.Id == Guid.Empty)
             {
-                // New asset — POST
-                assetResponse = await _apiClient.PostAsJsonAsync("api/assets", _loadedAsset);
+                assetResponse = await _apiClient.PostAsJsonAsync("api/assets", EntityMappings.ToCreateRequest(_loadedAsset));
                 if (!assetResponse.IsSuccessStatusCode)
                 {
                     await Shell.Current.DisplayAlertAsync("Error", "Failed to create asset.", "OK");
                     return;
                 }
 
-                var created = await assetResponse.Content.ReadFromJsonAsync<ApiResponse<Asset>>();
+                var created = await assetResponse.Content.ReadFromJsonAsync<ApiResponse<AssetDto>>();
                 if (created?.Data != null)
                 {
                     _loadedAsset.Id = created.Data.Id;
-                    //AssetId = _loadedAsset.Id.ToString();
                 }
             }
             else
             {
-                assetResponse = await _apiClient.PutAsJsonAsync($"api/assets/{_loadedAsset.Id}", _loadedAsset);
+                assetResponse = await _apiClient.PutAsJsonAsync($"api/assets/{_loadedAsset.Id}", EntityMappings.ToUpdateRequest(_loadedAsset));
                 if (!assetResponse.IsSuccessStatusCode)
                 {
                     await Shell.Current.DisplayAlertAsync("Error", "Failed to save asset.", "OK");
@@ -762,10 +759,10 @@ public class AssetEditViewModel : BaseViewModel
                     // New attribute — POST
                     attr.ParentId = assetId;
                     attr.ParentType = nameof(Asset);
-                    var response = await _apiClient.PostAsJsonAsync("api/attributes", attr);
+                    var response = await _apiClient.PostAsJsonAsync("api/attributes", EntityMappings.ToCreateRequest(attr));
                     if (response.IsSuccessStatusCode)
                     {
-                        var wrapped = await response.Content.ReadFromJsonAsync<ApiResponse<Entities.Attribute>>();
+                        var wrapped = await response.Content.ReadFromJsonAsync<ApiResponse<AttributeItemDto>>();
                         if (wrapped?.Success == true && wrapped.Data != null && wrapped.Data.Id != Guid.Empty)
                         {
                             attr.Id = wrapped.Data.Id;
@@ -775,7 +772,7 @@ public class AssetEditViewModel : BaseViewModel
                 else
                 {
                     // Existing attribute — PUT
-                    await _apiClient.PutAsJsonAsync($"api/attributes/{attr.Id}", attr);
+                    await _apiClient.PutAsJsonAsync($"api/attributes/{attr.Id}", EntityMappings.ToUpdateRequest(attr));
                 }
             }
             catch (Exception ex)
@@ -801,10 +798,10 @@ public class AssetEditViewModel : BaseViewModel
                     // New note — POST
                     note.ParentId = assetId;
                     note.ParentType = nameof(Asset);
-                    var response = await _apiClient.PostAsJsonAsync("api/notes", note);
+                    var response = await _apiClient.PostAsJsonAsync("api/notes", EntityMappings.ToCreateRequest(note));
                     if (response.IsSuccessStatusCode)
                     {
-                        var wrapped = await response.Content.ReadFromJsonAsync<ApiResponse<Note>>();
+                        var wrapped = await response.Content.ReadFromJsonAsync<ApiResponse<NoteDto>>();
                         if (wrapped?.Success == true && wrapped.Data != null && wrapped.Data.Id != Guid.Empty)
                         {
                             note.Id = wrapped.Data.Id;
@@ -814,7 +811,7 @@ public class AssetEditViewModel : BaseViewModel
                 else
                 {
                     // Existing note — PUT
-                    await _apiClient.PutAsJsonAsync($"api/notes/{note.Id}", note);
+                    await _apiClient.PutAsJsonAsync($"api/notes/{note.Id}", EntityMappings.ToUpdateRequest(note));
                 }
             }
             catch (Exception ex)

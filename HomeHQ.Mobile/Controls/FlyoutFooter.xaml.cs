@@ -27,7 +27,7 @@ public partial class FlyoutFooter : ContentView
 
     private async void OnLogoutClicked(object? sender, EventArgs e)
     {
-        var authService = Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
+        var authService = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
         if (authService != null)
         {
             authService.Logout();
@@ -47,7 +47,7 @@ public partial class FlyoutFooter : ContentView
 
     private async Task LoadUsernameAsync()
     {
-        var authService = Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
+        var authService = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
         if (authService != null)
         {
             var username = await authService.GetUsernameAsync();

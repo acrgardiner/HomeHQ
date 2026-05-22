@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Windows.Input;
+using HomeHQ.Application.Mapping;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 
@@ -10,7 +11,7 @@ namespace HomeHQ.Mobile.ViewModels;
 public class DashboardViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
-    private readonly CacheService<Category> _categoryCache;
+    private readonly CacheService<CategoryDto> _categoryCache;
 
     public ObservableCollection<Asset> RecentAssets { get; } = [];
     public int TotalAssets
@@ -61,7 +62,7 @@ public class DashboardViewModel : BaseViewModel
     public ICommand AssetSelectedCommand { get; }
     public ICommand AddAssetCommand { get; }
 
-    public DashboardViewModel(ApiClient apiClient, CacheService<Category> categoryCache)
+    public DashboardViewModel(ApiClient apiClient, CacheService<CategoryDto> categoryCache)
     {
         _apiClient = apiClient;
         _categoryCache = categoryCache;
@@ -93,11 +94,11 @@ public class DashboardViewModel : BaseViewModel
 
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Asset>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AssetDto>>>();
 
                 if (apiResponse?.Data != null)
                 {
-                    var assets = apiResponse.Data;
+                    var assets = apiResponse.Data.Select(EntityMappings.ToEntity).ToList();
                                         
                     // Update statistics
                     TotalAssets = assets.Count;
@@ -118,7 +119,7 @@ public class DashboardViewModel : BaseViewModel
                     _categoryCache.PopulateAll(
                         recentItems,
                         a => a.CategoryId,
-                        (a, c) => a.Category = c);
+                        (a, c) => a.Category = c is null ? null : EntityMappings.ToEntity(c));
 
                     foreach (var asset in recentItems)
                     {

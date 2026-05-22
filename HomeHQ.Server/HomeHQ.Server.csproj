@@ -11,12 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Extensions.MudBlazor.StaticInput" Version="4.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
-	  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -31,7 +26,6 @@
 
   <ItemGroup>
     <Folder Include="appdata\" />
-    <Folder Include="Data\Migrations\" />
     <Folder Include="docs\" />
   </ItemGroup>
 
@@ -40,7 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HomeHQ.Shared\HomeHQ.Shared.csproj" />
+    <ProjectReference Include="..\HomeHQ.Application\HomeHQ.Application.csproj" />
+    <ProjectReference Include="..\HomeHQ.Domain\HomeHQ.Domain.csproj" />
+    <ProjectReference Include="..\HomeHQ.Infrastructure\HomeHQ.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

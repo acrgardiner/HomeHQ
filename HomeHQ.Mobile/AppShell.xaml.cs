@@ -21,7 +21,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("AttachmentViewer", typeof(AttachmentViewerPage));
 
         // Try to get services
-        _authService = Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
+        _authService = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
 
         // Handle navigation events
         Navigated += OnNavigated;

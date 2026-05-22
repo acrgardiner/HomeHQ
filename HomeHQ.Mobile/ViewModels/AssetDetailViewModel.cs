@@ -1,4 +1,5 @@
-﻿using HomeHQ.Mobile.Services;
+﻿using HomeHQ.Application.Mapping;
+using HomeHQ.Mobile.Services;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Helpers;
@@ -13,9 +14,9 @@ namespace HomeHQ.Mobile.ViewModels;
 public class AssetDetailViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
-    private readonly CacheService<Category> _categoryCache;
-    private readonly CacheService<WarrantyType> _warrantyTypeCache;
-    private readonly CacheService<AttachmentType> _attachmentTypeCache;
+    private readonly CacheService<CategoryDto> _categoryCache;
+    private readonly CacheService<WarrantyTypeDto> _warrantyTypeCache;
+    private readonly CacheService<AttachmentTypeDto> _attachmentTypeCache;
     private readonly SettingsService _settingsService;
     private readonly AttachmentViewerNavigation _attachmentViewerNavigation;
 
@@ -211,9 +212,9 @@ public class AssetDetailViewModel : BaseViewModel
     public ICommand SelectAttachmentCommand { get; }
 
     public AssetDetailViewModel(ApiClient apiClient
-        , CacheService<Category> categoryCache
-        , CacheService<AttachmentType> attachmentTypeCache
-        , CacheService<WarrantyType> warrantyTypeCache
+        , CacheService<CategoryDto> categoryCache
+        , CacheService<AttachmentTypeDto> attachmentTypeCache
+        , CacheService<WarrantyTypeDto> warrantyTypeCache
         , SettingsService settingsService
         , AttachmentViewerNavigation attachmentViewerNavigation
     )
@@ -274,21 +275,21 @@ public class AssetDetailViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/assets/{AssetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<Asset>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AssetDto>>();
                 if (apiResponse?.Data != null)
                 {
-                    // Populate Category navigation property
+                    var asset = EntityMappings.ToEntity(apiResponse.Data);
                     _categoryCache.Populate(
-                        apiResponse.Data,
+                        asset,
                         a => a.CategoryId,
-                        (a, c) => a.Category = c);
+                        (a, c) => a.Category = c is null ? null : EntityMappings.ToEntity(c));
 
                     _warrantyTypeCache.Populate(
-                        apiResponse.Data,
+                        asset,
                         a => a.WarrantyTypeId,
-                        (a, c) => a.WarrantyType = c);
+                        (a, c) => a.WarrantyType = c is null ? null : EntityMappings.ToEntity(c));
 
-                    Asset = apiResponse.Data;
+                    Asset = asset;
                 }
                 else
                 {
@@ -343,11 +344,11 @@ public class AssetDetailViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/attributes/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Entities.Attribute>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AttributeItemDto>>>();
                 Attributes.Clear();
                 if (apiResponse?.Data != null)
                 {
-                    foreach (var attr in apiResponse.Data)
+                    foreach (var attr in apiResponse.Data.Select(EntityMappings.ToEntity))
                     {
                         Attributes.Add(attr);
                     }
@@ -367,11 +368,11 @@ public class AssetDetailViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/notes/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Note>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<NoteDto>>>();
                 Notes.Clear();
                 if (apiResponse?.Data != null)
                 {
-                    foreach (var note in apiResponse.Data)
+                    foreach (var note in apiResponse.Data.Select(EntityMappings.ToEntity))
                     {
                         Notes.Add(note);
                     }
@@ -391,16 +392,17 @@ public class AssetDetailViewModel : BaseViewModel
             var response = await _apiClient.GetAsync($"api/attachments/by-parent/Asset/{assetId}");
             if (response.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<Attachment>>>();
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AttachmentDto>>>();
                 Attachments.Clear();
                 if (apiResponse?.Data != null)
                 {
+                    var attachments = apiResponse.Data.Select(EntityMappings.ToEntity).ToList();
                     _attachmentTypeCache.PopulateAll(
-                        apiResponse.Data,
+                        attachments,
                         a => a.AttachmentTypeId,
-                        (a, c) => a.AttachmentType = c);
+                        (a, c) => a.AttachmentType = c is null ? null : EntityMappings.ToEntity(c));
 
-                    foreach (var attachment in apiResponse.Data)
+                    foreach (var attachment in attachments)
                     {
                         Attachments.Add(attachment);
                     }
