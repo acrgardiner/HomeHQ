@@ -24,10 +24,10 @@ public partial class AssetListPage
     private int _warrantiesExpiring = 0;
     private int _categoriesCount = 0;
 
-    List<Expression<Func<Asset, object>>>? Includes => new List<Expression<Func<Asset, object>>>
+    List<Expression<Func<Asset, object>>>? Includes => new()
     {
-        x => x.Category,
-        x => x.WarrantyType
+        x => x.Category!,
+        x => x.WarrantyType!
     };
 
     protected override async Task OnInitializedAsync()
@@ -93,18 +93,10 @@ public partial class AssetListPage
     {
         try
         {
-            var assets = await AssetService.GetAllAsync(Includes);
-
-            _totalAssets = assets.Count();
-
-            // Count warranties expiring in next 30 days
-            var thirtyDaysFromNow = DateTime.Today.AddDays(30);
-            _warrantiesExpiring = assets.Where(a => a.WarrantyExpiration.HasValue &&
-                                                   a.WarrantyExpiration.Value <= thirtyDaysFromNow &&
-                                                   a.WarrantyExpiration.Value >= DateTime.Today).Count();
-
-            // Get unique categories count
-            _categoriesCount = assets.Where(a => a.Category != null).Select(a => a.CategoryId).Distinct().Count();
+            var stats = await DashboardStats.GetAsync(expiringWithinDays: 30);
+            _totalAssets = stats.TotalAssets;
+            _warrantiesExpiring = stats.WarrantiesExpiringSoon;
+            _categoriesCount = stats.DistinctCategoriesWithAssets;
         }
         catch (Exception ex)
         {

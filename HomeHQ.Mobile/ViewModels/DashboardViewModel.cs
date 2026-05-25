@@ -89,30 +89,28 @@ public class DashboardViewModel : BaseViewModel
             // Ensure categories are loaded (uses shared cache)
             await _categoryCache.EnsureLoadedAsync(forceRefresh);
 
-            // Load assets to get counts and recent items
-            var response = await _apiClient.GetAsync("api/assets");
+            var statsResponse = await _apiClient.GetAsync("api/assets/dashboard-stats?expiringWithinDays=90");
+            var assetsResponse = await _apiClient.GetAsync("api/assets");
 
-            if (response.IsSuccessStatusCode)
+            if (statsResponse.IsSuccessStatusCode)
             {
-                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AssetDto>>>();
+                var stats = await statsResponse.Content.ReadFromJsonAsync<ApiResponse<AssetDashboardStatsDto>>();
+                if (stats?.Data != null)
+                {
+                    TotalAssets = stats.Data.TotalAssets;
+                    ExpiringWarranties = stats.Data.WarrantiesExpiringSoon;
+                }
+            }
+
+            if (assetsResponse.IsSuccessStatusCode)
+            {
+                var apiResponse = await assetsResponse.Content.ReadFromJsonAsync<ApiResponse<List<AssetDto>>>();
 
                 if (apiResponse?.Data != null)
                 {
-                    var assets = apiResponse.Data.Select(EntityMappings.ToEntity).ToList();
-                                        
-                    // Update statistics
-                    TotalAssets = assets.Count;
-                    
-                    // Calculate expiring warranties (within 90 days)
-                    var expirationThreshold = DateTime.UtcNow.AddDays(90);
-                    ExpiringWarranties = assets.Count(a => 
-                        a.WarrantyExpiration.HasValue && 
-                        a.WarrantyExpiration.Value >= DateTime.UtcNow &&
-                        a.WarrantyExpiration.Value <= expirationThreshold);
-
-                    // Get recent assets (last 5)
                     RecentAssets.Clear();
-                    var recentItems = assets
+                    var recentItems = apiResponse.Data
+                        .Select(EntityMappings.ToEntity)
                         .OrderByDescending(a => a.CreatedOn)
                         .Take(5);
 
@@ -126,17 +124,22 @@ public class DashboardViewModel : BaseViewModel
                         RecentAssets.Add(asset);
                     }
                 }
-                
+
                 OnPropertyChanged(nameof(HasRecentAssets));
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            else if (assetsResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized
+                     || statsResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 await Shell.Current.GoToAsync("//Login");
                 return;
             }
-            else
+            else if (!assetsResponse.IsSuccessStatusCode)
             {
-                ErrorMessage = $"Failed to load dashboard: {response.StatusCode}";
+                ErrorMessage = $"Failed to load assets: {assetsResponse.StatusCode}";
+            }
+            else if (!statsResponse.IsSuccessStatusCode)
+            {
+                ErrorMessage = $"Failed to load dashboard stats: {statsResponse.StatusCode}";
             }
         }
         catch (HttpRequestException ex)

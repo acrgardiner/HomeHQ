@@ -9,6 +9,7 @@
 @attribute [Authorize()]
 
 @inject IEntityService<Asset> AssetService
+@inject HomeHQ.Application.Assets.IGetAssetDashboardStatsHandler DashboardStats
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject ILogger<AssetListPage> Logger

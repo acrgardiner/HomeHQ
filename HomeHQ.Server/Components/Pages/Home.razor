@@ -8,6 +8,7 @@
 @using MudBlazor.Charts
 
 @inject IEntityService<Asset> AssetService
+@inject HomeHQ.Application.Assets.IGetAssetDashboardStatsHandler AssetDashboardStats
 @inject IEntityService<Category> CategoryService
 @inject NavigationManager Navigation
 @inject ILogger<Home> Logger
@@ -252,13 +253,16 @@
         {
             _loading = true;
 
+            var stats = await AssetDashboardStats.GetAsync(expiringWithinDays: 365);
+            _totalAssets = stats.TotalAssets;
+            _expiringWarranties = stats.WarrantiesExpiringSoon;
+
             var tasks = new List<Task>
             {
-                LoadAssets(),
+                LoadRecentAssetsAsync(),
                 LoadHistoryChartDataAsync(),
-                GetWarrantiesExpiringSoon()
+                LoadWarrantyExpiringListAsync()
             };
-
 
             await Task.WhenAll(tasks);
         }
@@ -275,35 +279,31 @@
         }
     }
 
-    private async Task LoadAssets()
+    private async Task LoadRecentAssetsAsync()
     {
-        // Load assets
-        _totalAssets = await AssetService.CountAsync();
-
-        // Get recent assets (last 5)
-        _recentAssets = (await AssetService.GetAsync(includes: new List<System.Linq.Expressions.Expression<Func<Asset, object>>>
+        _recentAssets = (await AssetService.GetAsync(
+            includes: new List<Expression<Func<Asset, object>>>
             {
                 x => x.Category,
                 x => x.WarrantyType
             },
-        take: 5,
-        orderby: asset => asset.CreatedOn,
-        descending: true
-        )).ToList();
+            take: 5,
+            orderby: asset => asset.CreatedOn,
+            descending: true)).ToList();
     }
 
-    private async Task GetWarrantiesExpiringSoon()
+    private async Task LoadWarrantyExpiringListAsync()
     {
-        var dateFrom = DateTime.UtcNow;
-        var dateTo = DateTime.UtcNow.AddYears(1); //TODO: Set to realistic value
-        _warrantyExpiringSoon = (await AssetService.GetAsync(filter: x => x.WarrantyExpiration.HasValue && x.WarrantyExpiration >= dateFrom && x.WarrantyExpiration <= dateTo,
-                orderby: asset => asset.WarrantyExpiration,
-                descending: true,
-                take: 10,
-                includes: new List<Expression<Func<Asset, object>>> { x => x.Category, x => x.WarrantyType }
-        )).ToList();
-
-        _expiringWarranties = _warrantyExpiringSoon.Count;
+        var today = DateTime.Today;
+        var through = today.AddDays(365);
+        _warrantyExpiringSoon = (await AssetService.GetAsync(
+            filter: x => x.WarrantyExpiration.HasValue
+                         && x.WarrantyExpiration.Value.Date >= today
+                         && x.WarrantyExpiration.Value.Date <= through,
+            orderby: asset => asset.WarrantyExpiration,
+            descending: true,
+            take: 10,
+            includes: new List<Expression<Func<Asset, object>>> { x => x.Category, x => x.WarrantyType })).ToList();
     }
 
     private async Task LoadHistoryChartDataAsync()

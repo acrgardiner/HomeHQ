@@ -139,6 +139,11 @@ public record CreateAttributeItemRequest(Guid? ParentId, string ParentType, stri
 
 public record UpdateAttributeItemRequest(Guid Id, string? Key, string? Value) : IUpdateRequest;
 
+public record AssetDashboardStatsDto(
+    int TotalAssets,
+    int WarrantiesExpiringSoon,
+    int DistinctCategoriesWithAssets);
+
 public record AttachmentUploadRequest(
     string? ParentId,
     string? ParentType,
