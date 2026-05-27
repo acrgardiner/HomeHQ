@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using HomeHQ.Contracts;
 using HomeHQ.Data;
 using HomeHQ.Entities;
@@ -246,46 +246,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : AuditableEnt
 
     public void Delete(T entity)
     {
-        // Delete polymorphic children first
-        DeletePolymorphicChildren(entity.Id);
-
         _dbSet.Remove(entity);
-    }
-
-    private void DeletePolymorphicChildren(Guid parentId)
-    {
-        // Get the parent type name
-        var parentType = typeof(T).Name;
-
-        // Delete all Attachments linked to this parent
-        var attachments = _applicationContext.Attachments
-            .Where(a => a.ParentId == parentId && a.ParentType == parentType)
-            .ToList();
-
-        if (attachments.Any())
-        {
-            _applicationContext.Attachments.RemoveRange(attachments);
-        }
-
-        // Delete all Notes linked to this parent
-        var notes = _applicationContext.Notes
-            .Where(n => n.ParentId == parentId && n.ParentType == parentType)
-            .ToList();
-
-        if (notes.Any())
-        {
-            _applicationContext.Notes.RemoveRange(notes);
-        }
-
-        // Delete all Attributes linked to this parent
-        var attributes = _applicationContext.Attributes
-            .Where(a => a.ParentId == parentId && a.ParentType == parentType)
-            .ToList();
-
-        if (attributes.Any())
-        {
-            _applicationContext.Attributes.RemoveRange(attributes);
-        }
     }
 
     public async Task SaveChangesAsync()

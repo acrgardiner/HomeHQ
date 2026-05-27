@@ -122,4 +122,46 @@ public class AttachmentsController : PolymorphicEntitiesController<Attachment, A
             return StatusCode(500, ApiResponse<AttachmentDto>.Fail($"Upload failed: {ex.Message}"));
         }
     }
+
+    //protected override Task OnBeforeDeleteAsync(Attachment entity, CancellationToken cancellationToken)
+    //{
+    //    TryDeleteStoredFiles(entity);
+    //    return Task.CompletedTask;
+    //}
+
+    //private void TryDeleteStoredFiles(Attachment attachment)
+    //{
+    //    if (string.IsNullOrWhiteSpace(attachment.ParentType))
+    //    {
+    //        return;
+    //    }
+
+    //    if (!string.IsNullOrWhiteSpace(attachment.LocalFileName))
+    //    {
+    //        var filePath = Path.Combine(
+    //            _env.ContentRootPath,
+    //            "appdata",
+    //            "attachments",
+    //            attachment.ParentType,
+    //            attachment.LocalFileName);
+    //        if (System.IO.File.Exists(filePath))
+    //        {
+    //            System.IO.File.Delete(filePath);
+    //        }
+    //    }
+
+    //    if (!string.IsNullOrWhiteSpace(attachment.Thumb_LocalFileName))
+    //    {
+    //        var thumbPath = Path.Combine(
+    //            _env.ContentRootPath,
+    //            "appdata",
+    //            "thumbs",
+    //            attachment.ParentType,
+    //            attachment.Thumb_LocalFileName);
+    //        if (System.IO.File.Exists(thumbPath))
+    //        {
+    //            System.IO.File.Delete(thumbPath);
+    //        }
+    //    }
+    //}
 }

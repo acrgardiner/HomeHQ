@@ -1,5 +1,6 @@
 ﻿using HomeHQ.Contracts;
 using HomeHQ.DTOs;
+using HomeHQ.Entities;
 using HomeHQ.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -79,8 +80,12 @@ public abstract class EntitiesController<TEntity, TDto, TCreate, TUpdate> : Cont
         return Ok(ApiResponse<TDto>.Ok(Mapping.ToDto(updated), $"{typeof(TEntity).Name} updated successfully"));
     }
 
+    /// <summary>
+    /// Deletes the entity. When <see cref="PolymorphicParentTypes.IsPolymorphicParent"/> applies
+    /// (e.g. Asset), polymorphic children are soft-deleted first via <see cref="IEntityService{T}.DeleteAsync"/>.
+    /// </summary>
     [HttpDelete("{id}")]
-    public async Task<ActionResult<ApiResponse>> Delete(Guid id)
+    public virtual async Task<ActionResult<ApiResponse>> Delete(Guid id, CancellationToken cancellationToken = default)
     {
         if (id == Guid.Empty)
         {
@@ -88,7 +93,7 @@ public abstract class EntitiesController<TEntity, TDto, TCreate, TUpdate> : Cont
         }
 
         var existing = await EntityService.GetByIdAsync(id);
-        if (existing == null)
+        if (existing is null)
         {
             return Ok(ApiResponse.Fail($"{typeof(TEntity).Name} not found"));
         }

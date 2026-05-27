@@ -1,4 +1,4 @@
-using HomeHQ.Entities;
+﻿using HomeHQ.Entities;
 using HomeHQ.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -29,66 +29,66 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
         _currentUserService = currentUserService;
     }
 
-    public override int SaveChanges(bool acceptAllChangesOnSuccess)
-    {
-        OnBeforeSaving();
-        return base.SaveChanges(acceptAllChangesOnSuccess);
-    }
+    //public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    //{
+    //    //OnBeforeSaving();
+    //    return base.SaveChanges(acceptAllChangesOnSuccess);
+    //}
 
-    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default(CancellationToken))
-    {
-        OnBeforeSaving();
-        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-    }
+    //public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default(CancellationToken))
+    //{
+    //    //OnBeforeSaving();
+    //    return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    //}
 
-    private void OnBeforeSaving()
-    {
-        var entries = ChangeTracker.Entries();
+    //private void OnBeforeSaving()
+    //{
+    //    var entries = ChangeTracker.Entries();
 
-        var now = DateTime.UtcNow;
-        var user = GetCurrentUser();
+    //    var now = DateTime.UtcNow;
+    //    var user = GetCurrentUser();
 
-        var stateList = new List<EntityState>
-        {
-            EntityState.Added,
-            EntityState.Modified,
-            EntityState.Deleted
-        };
+    //    var stateList = new List<EntityState>
+    //    {
+    //        EntityState.Added,
+    //        EntityState.Modified,
+    //        EntityState.Deleted
+    //    };
 
-        foreach (var entry in entries.Where(x => stateList.Contains(x.State)))
-        {
-            //Soft Delete first, so Modified will trigger after
-            if (entry.Entity is ISoftDelete softDeleteEntity)
-            {
-                switch (entry.State)
-                {
-                    case EntityState.Deleted:
-                        entry.State = EntityState.Modified;
-                        softDeleteEntity.DeletedOn = now;
-                        softDeleteEntity.DeletedBy = user;
-                        break;
-                }
-            }
+    //    foreach (var entry in entries.Where(x => stateList.Contains(x.State)))
+    //    {
+    //        //Soft Delete first, so Modified will trigger after
+    //        if (entry.Entity is ISoftDelete softDeleteEntity)
+    //        {
+    //            switch (entry.State)
+    //            {
+    //                case EntityState.Deleted:
+    //                    entry.State = EntityState.Modified;
+    //                    softDeleteEntity.DeletedOn = now;
+    //                    softDeleteEntity.DeletedBy = user;
+    //                    break;
+    //            }
+    //        }
 
-            if (entry.Entity is IAuditableEntity auditableEntity)
-            {
-                switch (entry.State)
-                {
-                    case EntityState.Modified:
-                        auditableEntity.LastModifiedOn = now;
-                        auditableEntity.LastModifiedBy = user;
-                        break;
+    //        if (entry.Entity is IAuditableEntity auditableEntity)
+    //        {
+    //            switch (entry.State)
+    //            {
+    //                case EntityState.Modified:
+    //                    auditableEntity.LastModifiedOn = now;
+    //                    auditableEntity.LastModifiedBy = user;
+    //                    break;
 
-                    case EntityState.Added:
-                        auditableEntity.CreatedOn = now;
-                        auditableEntity.CreatedBy = user;
-                        auditableEntity.LastModifiedOn = now;
-                        auditableEntity.LastModifiedBy = user;
-                        break;
-                }
-            }
-        }
-    }
+    //                case EntityState.Added:
+    //                    auditableEntity.CreatedOn = now;
+    //                    auditableEntity.CreatedBy = user;
+    //                    auditableEntity.LastModifiedOn = now;
+    //                    auditableEntity.LastModifiedBy = user;
+    //                    break;
+    //            }
+    //        }
+    //    }
+    //}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,4 +1,7 @@
+﻿using HomeHQ.Application.Polymorphism;
 using HomeHQ.Contracts;
+using HomeHQ.Entities;
+using HomeHQ.Polymorphism;
 using HomeHQ.Repositories;
 using System.Linq.Expressions;
 
@@ -7,10 +10,12 @@ namespace HomeHQ.Services;
 public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEntity
 {
     private readonly IGenericRepository<T> _repository;
+    private readonly PolymorphicDeletionService _polymorphicDeletion;
 
-    public EntityService(IGenericRepository<T> repository)
+    public EntityService(IGenericRepository<T> repository, PolymorphicDeletionService polymorphicDeletion)
     {
         _repository = repository;
+        _polymorphicDeletion = polymorphicDeletion;
     }
 
     public async Task<IEnumerable<T>> GetAllAsync()
@@ -70,15 +75,8 @@ public class EntityService<T> : IEntityService<T> where T : AuditableEntity, IEn
         return entityList;
     }
 
-    public async Task DeleteAsync(Guid id)
-    {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity != null)
-        {
-            _repository.Delete(entity);
-            await _repository.SaveChangesAsync();
-        }
-    }
+    public Task DeleteAsync(Guid id) =>
+        PolymorphicEntityDeletion.DeleteAsync(_polymorphicDeletion, _repository, id);
 
     public async Task<int> CountAsync(Expression<Func<T, bool>>? filter = null, bool includeDeleted = false)
     {

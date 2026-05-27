@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using HomeHQ.Contracts;
 using HomeHQ.Data;
 using HomeHQ.Entities;
 
@@ -78,7 +77,7 @@ public class PurgeService : IPurgeService
     private async Task<int> PurgeEntityAsync<T>(DateTime deletedBefore) where T : AuditableEntity
     {
         var dbSet = _context.Set<T>();
-        
+
         // Find all soft-deleted records
         var entitiesToPurge = await dbSet
             .IgnoreQueryFilters()
@@ -88,7 +87,7 @@ public class PurgeService : IPurgeService
         if (entitiesToPurge.Any())
         {
             _logger.LogInformation("Purging {Count} {EntityType} records", entitiesToPurge.Count, typeof(T).Name);
-            
+
             // Permanently delete the entities
             dbSet.RemoveRange(entitiesToPurge);
             await _context.SaveChangesAsync();
@@ -100,7 +99,7 @@ public class PurgeService : IPurgeService
     private async Task<int> GetSoftDeletedCountAsync<T>() where T : AuditableEntity
     {
         var dbSet = _context.Set<T>();
-        
+
         return await dbSet
             .IgnoreQueryFilters()
             .Where(e => e.DeletedOn != null)
