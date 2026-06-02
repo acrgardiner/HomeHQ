@@ -255,15 +255,8 @@ try
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
 
-            List<Task> tasks = new List<Task>();
-            tasks.Add(ContextSeed.SeedRolesAsync(userManager, roleManager));
-            tasks.Add(ContextSeed.SeedSysAdminAsync(userManager, roleManager));
-
-            tasks.Add(ContextSeed.SeedCategories(context));
-            tasks.Add(ContextSeed.SeedAttachmentTypes(context));
-            tasks.Add(ContextSeed.SeedWarrantyTypes(context));
-
-            await Task.WhenAll(tasks);
+            var seeder = new ContextSeed(loggerFactory.CreateLogger<ContextSeed>(), context, userManager, roleManager);
+            await seeder.SeedAsync();
         }
         catch (Exception ex)
         {

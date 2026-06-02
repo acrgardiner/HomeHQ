@@ -16,15 +16,22 @@ public class CustomJsonFormatter : ITextFormatter
     }
     public void Format(LogEvent logEvent, TextWriter output)
     {
-        var logObject = new
+        try
         {
-            Timestamp = logEvent.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"),
-            Level = logEvent.Level.ToString(),
-            SourceContext = GetPropertyValue(logEvent, "SourceContext"),
-            Message = logEvent.RenderMessage(),
-            Exception = logEvent.Exception
-        };
-        output.WriteLine(JsonSerializer.Serialize(logObject, _options));
+            var logObject = new
+            {
+                Timestamp = logEvent.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz"),
+                Level = logEvent.Level.ToString(),
+                SourceContext = GetPropertyValue(logEvent, "SourceContext"),
+                Message = logEvent.RenderMessage(),
+                Exception = logEvent.Exception
+            };
+            output.WriteLine(JsonSerializer.Serialize(logObject, _options));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in CustomJsonFormatter: " + ex.Message);
+        }
     }
     private string GetPropertyValue(LogEvent logEvent, string propertyName)
     {

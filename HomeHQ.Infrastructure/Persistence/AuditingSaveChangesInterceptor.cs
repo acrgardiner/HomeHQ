@@ -18,13 +18,15 @@ internal class AuditingSaveChangesInterceptor : SaveChangesInterceptor
         _currentUser = currentUser;
     }
 
-    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var user = string.IsNullOrWhiteSpace(_currentUser.UserId) ? "system" : _currentUser.UserId;
         if (eventData.Context == null)
         {
-            return base.SavingChanges(eventData, result);
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
         }
 
         foreach (var entry in eventData.Context.ChangeTracker.Entries())
@@ -44,6 +46,6 @@ internal class AuditingSaveChangesInterceptor : SaveChangesInterceptor
                 }
             }
         }
-        return base.SavingChanges(eventData, result);
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 }
