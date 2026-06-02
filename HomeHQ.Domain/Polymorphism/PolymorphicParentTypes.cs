@@ -8,16 +8,10 @@ namespace HomeHQ.Polymorphism;
 public static class PolymorphicParentTypes
 {
     public const string Asset = nameof(Asset);
-    public const string Category = nameof(Category);
-    public const string WarrantyType = nameof(WarrantyType);
-    public const string AttachmentType = nameof(AttachmentType);
 
     private static readonly HashSet<string> ParentTypeNames = new(StringComparer.Ordinal)
     {
-        Asset,
-        Category,
-        WarrantyType,
-        AttachmentType
+        Asset
     };
 
     /// <summary>
