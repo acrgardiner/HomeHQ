@@ -72,16 +72,13 @@ namespace HomeHQ.data.migrations
                     NormalizedUserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     NormalizedEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
                     PasswordHash = table.Column<string>(type: "TEXT", nullable: true),
                     SecurityStamp = table.Column<string>(type: "TEXT", nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "TEXT", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "TEXT", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
                     LockoutEnd = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     LockoutEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "INTEGER", nullable: false)
+                    AccessFailedCount = table.Column<int>(type: "INTEGER", nullable: false),
+                    LastLogin = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -264,6 +261,10 @@ namespace HomeHQ.data.migrations
                     ContentType = table.Column<string>(type: "TEXT", nullable: false),
                     Extension = table.Column<string>(type: "TEXT", nullable: false),
                     FileSize = table.Column<float>(type: "REAL", nullable: false),
+                    Thumb_ContentType = table.Column<string>(type: "TEXT", nullable: false),
+                    Thumb_Extension = table.Column<string>(type: "TEXT", nullable: false),
+                    Thumb_FileSize = table.Column<float>(type: "REAL", nullable: false),
+                    Thumb_LocalFileName = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -275,12 +276,6 @@ namespace HomeHQ.data.migrations
                 {
                     table.PrimaryKey("PK_Attachments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Attachments_Assets_ParentId",
-                        column: x => x.ParentId,
-                        principalTable: "Assets",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
                         name: "FK_Attachments_AttachmentTypes_AttachmentTypeId",
                         column: x => x.AttachmentTypeId,
                         principalTable: "AttachmentTypes",
@@ -289,14 +284,36 @@ namespace HomeHQ.data.migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ParentType = table.Column<string>(type: "TEXT", nullable: false),
+                    Title = table.Column<string>(type: "TEXT", nullable: false),
+                    Content = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
+                    LastModifiedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DeletedBy = table.Column<string>(type: "TEXT", nullable: true),
+                    DeletedOn = table.Column<DateTime>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notes", x => x.Id);
+                }
+            );
+
+            migrationBuilder.CreateTable(
                 name: "Attributes",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     ParentId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    ParentType = table.Column<string>(type: "TEXT", nullable: false),
                     Attribute = table.Column<string>(type: "TEXT", nullable: true),
                     Value = table.Column<string>(type: "TEXT", nullable: true),
-                    AssetId = table.Column<Guid>(type: "TEXT", nullable: true),
                     CreatedBy = table.Column<string>(type: "TEXT", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "TEXT", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "TEXT", nullable: false),
@@ -307,13 +324,22 @@ namespace HomeHQ.data.migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Attributes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Attributes_Assets_AssetId",
-                        column: x => x.AssetId,
-                        principalTable: "Assets",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AttributeValue_Parent",
+                table: "Attributes",
+                columns: new[] { "ParentId", "ParentType" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attachments_Parent",
+                table: "Attachments",
+                columns: new[] { "ParentId", "ParentType" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notes_Parent",
+                table: "Notes",
+                columns: new[] { "ParentId", "ParentType" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Assets_CategoryId",
@@ -329,16 +355,6 @@ namespace HomeHQ.data.migrations
                 name: "IX_Attachments_AttachmentTypeId",
                 table: "Attachments",
                 column: "AttachmentTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Attachments_ParentId",
-                table: "Attachments",
-                column: "ParentId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Attributes_AssetId",
-                table: "Attributes",
-                column: "AssetId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoleClaims_RoleId",
