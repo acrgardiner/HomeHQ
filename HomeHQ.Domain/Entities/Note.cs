@@ -1,5 +1,4 @@
-﻿using HomeHQ.Contracts;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HomeHQ.Entities;
 

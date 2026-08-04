@@ -1,4 +1,4 @@
-﻿namespace HomeHQ.Contracts;
+﻿namespace HomeHQ.Entities;
 
 public abstract class BaseEntity : BaseEntity<Guid>
 {

@@ -1,5 +1,4 @@
-using HomeHQ.Contracts;
-using HomeHQ.Entities;
+﻿using HomeHQ.Entities;
 using HomeHQ.Polymorphism;
 using HomeHQ.Repositories;
 

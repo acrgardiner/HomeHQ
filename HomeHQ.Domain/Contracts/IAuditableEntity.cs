@@ -1,4 +1,4 @@
-﻿namespace HomeHQ.Contracts;
+﻿namespace HomeHQ.Entities;
 
 public interface IAuditableEntity
 {

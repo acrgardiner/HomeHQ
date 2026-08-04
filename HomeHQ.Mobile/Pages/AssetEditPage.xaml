@@ -566,7 +566,6 @@
                                 Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
 
                             <!-- ═══ Add Attachment actions ═══ -->
-
                             <Button Text="Take Photo"
                                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Camera}"
                                 Command="{Binding AddAttachmentPhotoCommand}"
@@ -574,7 +573,7 @@
                                 TextColor="White"
                                 CornerRadius="8"
                                 HeightRequest="44"
-                                Margin="16,12,16,0"
+                                Margin="6,12,0,0"
                                 IsVisible="{Binding CanAddAttachments}"/>
 
                             <Button Text="From Gallery"
@@ -584,9 +583,19 @@
                                 TextColor="White"
                                 CornerRadius="8"
                                 HeightRequest="44"
-                                Margin="16,12,16,0"
+                                Margin="6,12,0,0"
                                 IsVisible="{Binding CanAddAttachments}"/>
 
+                            <Button Text="From File"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}"
+                                    Command="{Binding AddAttachmentFileCommand}"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"
+                                    CornerRadius="8"
+                                    HeightRequest="44"
+                                    Margin="6,12,0,0"
+                                    IsVisible="{Binding CanAddAttachments}"/>
+                            
                             <!-- ═══ Carousel Content (attachments present) ═══ -->
                             <VerticalStackLayout IsVisible="{Binding HasAttachments}"
                              Padding="12,12,12,8"

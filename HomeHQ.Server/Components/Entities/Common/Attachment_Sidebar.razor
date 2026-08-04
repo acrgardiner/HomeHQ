@@ -67,6 +67,7 @@
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Camera"
+                                       OnClick="@context.OpenFilePickerAsync"   
                                        FullWidth="true"
                                        Class="upload-btn">
                                 Take Photo
@@ -82,9 +83,27 @@
                             <MudButton Variant="Variant.Outlined"
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Image"
+                                       OnClick="@context.OpenFilePickerAsync"   
                                        FullWidth="true"
                                        Class="upload-btn">
                                 From Gallery
+                            </MudButton>
+                        </CustomContent>
+                        <SelectedTemplate />
+                    </MudFileUpload>
+
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                                   FilesChanged="AddAttachment"
+                                   Accept="*/*"
+                    >
+                        <CustomContent>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.UploadFile"
+                                       OnClick="@context.OpenFilePickerAsync"
+                                       FullWidth="true"
+                                       Class="upload-btn">
+                                From File
                             </MudButton>
                         </CustomContent>
                         <SelectedTemplate />

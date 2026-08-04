@@ -264,6 +264,7 @@ public class AssetEditViewModel : BaseViewModel
     public ICommand RemoveNoteCommand { get; }
     public ICommand AddAttachmentPhotoCommand { get; }
     public ICommand AddAttachmentGalleryCommand { get; }
+    public ICommand AddAttachmentFileCommand { get; }
     public ICommand RemoveAttachmentCommand { get; }
 
     public ICommand PreviousAttachmentCommand { get; }
@@ -305,6 +306,7 @@ public class AssetEditViewModel : BaseViewModel
         RemoveNoteCommand = new Command<NoteViewModel>(async note => await RemoveNoteAsync(note));
         AddAttachmentPhotoCommand = new Command(async () => await AddAttachmentPhoto());
         AddAttachmentGalleryCommand = new Command(async () => await AddAttachmentGallery());
+        AddAttachmentFileCommand = new Command(async () => await AddAttachmentFile());
         RemoveAttachmentCommand = new Command(async () => await RemoveAttachmentAsync());
 
         PreviousAttachmentCommand = new Command(() => CurrentAttachmentIndex--);
@@ -1146,6 +1148,46 @@ public class AssetEditViewModel : BaseViewModel
             // Surface the full exception so the root cause is visible
             await Shell.Current.DisplayAlertAsync(
                 "Gallery Error",
+                $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
+                "OK");
+        }
+    }
+
+    private async Task AddAttachmentFile()
+    {
+        try
+        {
+            var result = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Select a file"
+            });
+            if (result != null)
+            {
+                await using Stream sourceStream = await result.OpenReadAsync();
+                using var ms = new MemoryStream();
+                await sourceStream.CopyToAsync(ms);
+                var bytes = ms.ToArray();
+                Attachments.Add(new Attachment
+                {
+                    Id = Guid.Empty, // New attachment; ID will be assigned by server
+                    OriginFileName = result.FileName,
+                    LocalFileName = result.FileName,
+                    ContentType = result.ContentType ?? "application/octet-stream",
+                    FileSize = bytes.Length,
+                    PendingUploadBytes = bytes,
+                    AttachmentTypeId = _defaultAttachmentTypeId,
+                    AttachmentType = _defaultAttachmentType
+                });
+                CurrentAttachmentIndex = Attachments.Count - 1; // Move carousel to the newly added attachment
+                NotifyAttachmentCarouselChanged();
+                _ = LoadCurrentAttachmentPreviewAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Surface the full exception so the root cause is visible
+            await Shell.Current.DisplayAlertAsync(
+                "File Error",
                 $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}",
                 "OK");
         }

@@ -1,5 +1,4 @@
-﻿using HomeHQ.Contracts;
-using HomeHQ.Data;
+﻿using HomeHQ.Data;
 using HomeHQ.Entities;
 using HomeHQ.Polymorphism;
 using Microsoft.EntityFrameworkCore;

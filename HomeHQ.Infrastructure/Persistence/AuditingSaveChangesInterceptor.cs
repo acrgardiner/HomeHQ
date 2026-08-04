@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using HomeHQ.Contracts;
-using HomeHQ.Entities;
+﻿using HomeHQ.Entities;
 using HomeHQ.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

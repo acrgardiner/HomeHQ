@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using HomeHQ.Contracts;
 using HomeHQ.Data;
 using HomeHQ.Entities;
 using System.Linq.Expressions;
@@ -61,29 +60,29 @@ public class GenericRepository<T> : IGenericRepository<T> where T : AuditableEnt
 
     public async Task<IEnumerable<T>> GetAllAsync(List<Expression<Func<T, object>>>? includes = null)
     {
-        IQueryable<T> query = GetQueryable();
+            IQueryable<T> query = GetQueryable();
 
-        bool includeParent = false;
+            bool includeParent = false;
 
-        if (includes != null && includes.Count > 0)
-        {
-            includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
-
-            foreach (var include in includes)
+            if (includes != null && includes.Count > 0)
             {
-                query = query.Include(include);
+                includeParent = includes.RemoveAll(e => e.ToString().Contains("Parent")) > 0;
+
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
             }
+
+            var result = await query.ToListAsync();
+
+            if (includeParent)
+            {
+                await LoadPolymorphicParents(result);
+            }
+
+            return result;
         }
-
-        var result = await query.ToListAsync();
-
-        if (includeParent)
-        {
-            await LoadPolymorphicParents(result);
-        }
-
-        return result;
-    }
 
     public async Task<IEnumerable<T>> GetAsync<TKey>(
         Expression<Func<T, bool>>? filter = null,

@@ -1,5 +1,4 @@
-﻿using HomeHQ.Contracts;
-using HomeHQ.Entities;
+﻿using HomeHQ.Entities;
 using System.Linq.Expressions;
 
 namespace HomeHQ.Repositories;

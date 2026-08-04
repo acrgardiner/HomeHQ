@@ -1,6 +1,4 @@
-﻿using HomeHQ.Contracts;
-
-namespace HomeHQ.Entities;
+﻿namespace HomeHQ.Entities;
 
 public abstract class AuditableEntity : AuditableEntity<Guid>
 {

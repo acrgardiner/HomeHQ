@@ -1,6 +1,4 @@
-﻿using HomeHQ.Contracts;
-
-namespace HomeHQ.Entities;
+﻿namespace HomeHQ.Entities;
 
 public class WarrantyType : AuditableEntity, IEntity, IEntityNamed
 {

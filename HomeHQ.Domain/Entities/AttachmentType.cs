@@ -1,5 +1,4 @@
-﻿using HomeHQ.Contracts;
-
+﻿
 namespace HomeHQ.Entities;
 
 public class AttachmentType : AuditableEntity, IEntity, IEntityNamed
