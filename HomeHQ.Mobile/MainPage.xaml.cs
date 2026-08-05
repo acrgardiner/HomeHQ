@@ -6,6 +6,9 @@
 
         public MainPage()
         {
+            // Forces the CI/CD compiler to resolve the MauiIcon type
+            _ = new MauiIcons.Core.MauiIcon();
+
             InitializeComponent();
             // Temporary Workaround for url styled namespace in xaml removed to avoid build-time dependency
         }
