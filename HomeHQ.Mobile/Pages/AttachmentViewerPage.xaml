@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
              x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
-             xmlns:mi="clr-namespace:MauiIcons.Core;assembly=MauiIcons.Core"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:DataType="vm:AttachmentViewerViewModel"
              Title="{Binding FileName}"
              Shell.NavBarIsVisible="False"

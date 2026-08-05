@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
-             xmlns:mi="clr-namespace:MauiIcons.Core;assembly=MauiIcons.Core"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:Class="HomeHQ.Mobile.Pages.AssetsPage"
              x:DataType="vm:AssetsViewModel"
              Title="My Assets">

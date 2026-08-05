@@ -1,4 +1,6 @@
-﻿namespace HomeHQ.Mobile
+﻿using MauiIcons.Core;
+
+namespace HomeHQ.Mobile
 {
     public partial class MainPage : ContentPage
     {
@@ -6,11 +8,10 @@
 
         public MainPage()
         {
-            // Forces the CI/CD compiler to resolve the MauiIcon type
-            _ = new MauiIcons.Core.MauiIcon();
-
             InitializeComponent();
+
             // Temporary Workaround for url styled namespace in xaml removed to avoid build-time dependency
+            _ = new MauiIcon();
         }
 
         private void OnCounterClicked(object? sender, EventArgs e)
