@@ -38,8 +38,10 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore HomeHQ.Server/HomeHQ.Server.csproj
+      - name: Restore dependencies (solution-wide)
+        # Restore all projects in the repository so mobile/Blazor/other projects
+        # have their NuGet packages available during later jobs.
+        run: dotnet restore
 
       - name: Build project
         run: dotnet build HomeHQ.Server/HomeHQ.Server.csproj --configuration Release --no-restore
@@ -97,7 +99,7 @@ jobs:
 
   build-android-apk:
     name: Build Android APK (Release)
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     if: |
       github.event_name == 'push' && (
@@ -110,30 +112,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK command-line tools
+      - name: Debug Android SDK environment
+        shell: pwsh
         run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip curl
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk
-          curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip -q commandlinetools.zip -d cmdline-tools
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/cmdline-tools/* cmdline-tools/latest/ || true
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-
-      - name: Accept Android SDK licenses
-        run: |
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          Write-Host "JAVA_HOME: $Env:JAVA_HOME"
+          Write-Host "ANDROID_SDK_ROOT: $Env:ANDROID_SDK_ROOT"
+          Write-Host "PATH contains Android sdkmanager: "
+          Get-Command sdkmanager -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.Source }
 
       - name: Setup .NET 10.0
         uses: actions/setup-dotnet@v4
@@ -144,6 +136,11 @@ jobs:
         run: |
           dotnet workload restore
           dotnet workload install maui-android || true
+
+      - name: Restore Mobile project NuGet packages
+        # Ensure the MAUI Mobile project's NuGet dependencies are available
+        # prior to publish so XamlC can resolve custom XAML types.
+        run: dotnet restore HomeHQ.Mobile/HomeHQ.Mobile.csproj
 
       - name: Publish Android APK (Release)
         env:
