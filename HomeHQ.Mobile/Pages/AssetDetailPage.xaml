@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Shared"
              x:Class="HomeHQ.Mobile.Pages.AssetDetailPage"
-             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             xmlns:mi="clr-namespace:MauiIcons.Core;assembly=MauiIcons.Core"
              x:DataType="vm:AssetDetailViewModel"
              Title="{Binding Asset.Name, FallbackValue='Asset Details'}"
              Shell.NavBarIsVisible="False">
