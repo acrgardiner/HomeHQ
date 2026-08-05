@@ -101,6 +101,8 @@ jobs:
     name: Build Android APK (Release)
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
     if: |
       github.event_name == 'push' && (
         github.ref_type == 'tag' ||
