@@ -7,7 +7,6 @@ using HomeHQ.Entities;
 using HomeHQ.Helpers;
 using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
-using Microsoft.Maui.ApplicationModel;
 using Attachment = HomeHQ.Entities.Attachment;
 
 namespace HomeHQ.Mobile.ViewModels;
