@@ -111,6 +111,15 @@ public static class EntityMappings
         LastModifiedOn = dto.LastModifiedOn
     };
 
+    public static CreateCategoryRequest ToCreateRequest(Category entity) => new(
+        entity.Name,
+        entity.Icon);
+
+    public static UpdateCategoryRequest ToUpdateRequest(Category entity) => new(
+        entity.Id,
+        entity.Name,
+        entity.Icon);
+
     private static Category FromCreate(CreateCategoryRequest request) => new()
     {
         Name = request.Name,
@@ -148,6 +157,21 @@ public static class EntityMappings
         LastModifiedOn = dto.LastModifiedOn
     };
 
+    public static CreateWarrantyTypeRequest ToCreateRequest(WarrantyType entity) => new(
+        entity.Name,
+        entity.Days,
+        entity.Months,
+        entity.Years,
+        entity.Default);
+
+    public static UpdateWarrantyTypeRequest ToUpdateRequest(WarrantyType entity) => new(
+        entity.Id,
+        entity.Name,
+        entity.Days,
+        entity.Months,
+        entity.Years,
+        entity.Default);
+
     private static WarrantyType FromCreate(CreateWarrantyTypeRequest request) => new()
     {
         Name = request.Name,
@@ -183,6 +207,15 @@ public static class EntityMappings
         CreatedOn = dto.CreatedOn,
         LastModifiedOn = dto.LastModifiedOn
     };
+
+    public static CreateAttachmentTypeRequest ToCreateRequest(AttachmentType entity) => new(
+        entity.Name,
+        entity.Default);
+
+    public static UpdateAttachmentTypeRequest ToUpdateRequest(AttachmentType entity) => new(
+        entity.Id,
+        entity.Name,
+        entity.Default);
 
     private static AttachmentType FromCreate(CreateAttachmentTypeRequest request) => new()
     {

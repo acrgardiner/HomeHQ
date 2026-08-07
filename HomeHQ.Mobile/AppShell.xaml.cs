@@ -6,6 +6,7 @@ namespace HomeHQ.Mobile;
 public partial class AppShell : Shell
 {
     private readonly AuthService? _authService;
+    private bool _setupExpanded;
 
     public AppShell()
     {
@@ -19,12 +20,32 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("AssetDetail", typeof(AssetDetailPage));
         Routing.RegisterRoute("AssetEdit", typeof(AssetEditPage));
         Routing.RegisterRoute("AttachmentViewer", typeof(AttachmentViewerPage));
+        Routing.RegisterRoute("SetupEdit", typeof(SetupEditPage));
 
         // Try to get services
         _authService = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
 
         // Handle navigation events
         Navigated += OnNavigated;
+
+        ApplySetupExpandedState();
+    }
+
+    private void OnSetupMenuItemClicked(object? sender, EventArgs e)
+    {
+        _setupExpanded = !_setupExpanded;
+        ApplySetupExpandedState();
+
+        // Keep the flyout open so the user can pick a Setup page after expanding.
+        FlyoutIsPresented = true;
+    }
+
+    private void ApplySetupExpandedState()
+    {
+        CategoriesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
+        WarrantyTypesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
+        AttachmentTypesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
+        SetupMenuItem.Text = _setupExpanded ? "Setup  ˅" : "Setup  ›";
     }
 
     private void OnNavigated(object? sender, ShellNavigatedEventArgs e)

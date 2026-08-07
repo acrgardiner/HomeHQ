@@ -1,26 +1,24 @@
-﻿using HomeHQ.Mobile.Services;
-using System.Linq;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Windows.Input;
 using HomeHQ.Application.Mapping;
 using HomeHQ.DTOs;
-using HomeHQ.Entities;
+using HomeHQ.Mobile.Models;
+using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile.ViewModels;
 
 public class AssetsViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
-    private readonly AuthService _authService;
     private readonly CacheService<CategoryDto> _categoryCache;
+    private readonly CacheService<WarrantyTypeDto> _warrantyTypeCache;
     private readonly SettingsService _settingsService;
 
-    public ObservableCollection<Asset> Assets { get; } = [];
-    // Backing store for all loaded assets used for local filtering
-    private List<Asset> _allAssets = new();
+    public ObservableCollection<AssetListItem> Assets { get; } = [];
+
+    private List<AssetListItem> _allAssets = [];
+
     public string SearchText
     {
         get;
@@ -28,11 +26,22 @@ public class AssetsViewModel : BaseViewModel
         {
             if (SetProperty(ref field, value))
             {
-                // Apply local filter as the user types
                 ApplyFilter();
             }
         }
     } = string.Empty;
+
+    public int TotalAssets
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
+    public int WarrantiesExpiring
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
 
     public bool IsLoading
     {
@@ -68,7 +77,14 @@ public class AssetsViewModel : BaseViewModel
         get;
         set => SetProperty(ref field, value);
     }
+
     public bool ShowList
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
+    public bool ShowStats
     {
         get;
         set => SetProperty(ref field, value);
@@ -79,16 +95,20 @@ public class AssetsViewModel : BaseViewModel
     public ICommand AssetSelectedCommand { get; }
     public ICommand AddAssetCommand { get; }
 
-    public AssetsViewModel(ApiClient apiClient, AuthService authService, CacheService<CategoryDto> categoryCache, SettingsService settingsService)
+    public AssetsViewModel(
+        ApiClient apiClient,
+        CacheService<CategoryDto> categoryCache,
+        CacheService<WarrantyTypeDto> warrantyTypeCache,
+        SettingsService settingsService)
     {
         _apiClient = apiClient;
-        _authService = authService;
         _categoryCache = categoryCache;
+        _warrantyTypeCache = warrantyTypeCache;
         _settingsService = settingsService;
 
         RefreshCommand = new Command(async () => await LoadAssetsAsync(forceRefresh: true));
-        SearchCommand = new Command(async () => await SearchAssetsAsync());
-        AssetSelectedCommand = new Command<Asset>(async (asset) => await OnAssetSelected(asset));
+        SearchCommand = new Command(ApplyFilter);
+        AssetSelectedCommand = new Command<AssetListItem>(async item => await OnAssetSelected(item));
         AddAssetCommand = new Command(async () => await AddAssetAsync());
     }
 
@@ -105,16 +125,32 @@ public class AssetsViewModel : BaseViewModel
             IsRefreshing = forceRefresh;
             ErrorMessage = null;
 
-            // Ensure categories are loaded (uses shared cache)
-            await _categoryCache.EnsureLoadedAsync(forceRefresh);
+            await Task.WhenAll(
+                _categoryCache.EnsureLoadedAsync(forceRefresh),
+                _warrantyTypeCache.EnsureLoadedAsync(forceRefresh));
 
-            var response = await _apiClient.GetAsync("api/assets");
+            var assetsTask = _apiClient.GetAsync("api/assets");
+            // Match Blazor AssetListPage: warranties expiring within 30 days
+            var statsTask = _apiClient.GetAsync("api/assets/dashboard-stats?expiringWithinDays=30");
+            await Task.WhenAll(assetsTask, statsTask);
+
+            var response = await assetsTask;
+            var statsResponse = await statsTask;
+
+            if (statsResponse.IsSuccessStatusCode)
+            {
+                var stats = await statsResponse.Content.ReadFromJsonAsync<ApiResponse<AssetDashboardStatsDto>>();
+                if (stats?.Data != null)
+                {
+                    TotalAssets = stats.Data.TotalAssets;
+                    WarrantiesExpiring = stats.Data.WarrantiesExpiringSoon;
+                }
+            }
 
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<List<AssetDto>>>();
 
-                // Clear previous lists
                 Assets.Clear();
                 _allAssets.Clear();
 
@@ -125,17 +161,26 @@ public class AssetsViewModel : BaseViewModel
                         assets,
                         a => a.CategoryId,
                         (a, c) => a.Category = c is null ? null : EntityMappings.ToEntity(c));
+                    _warrantyTypeCache.PopulateAll(
+                        assets,
+                        a => a.WarrantyTypeId,
+                        (a, w) => a.WarrantyType = w is null ? null : EntityMappings.ToEntity(w));
 
-                    // Keep a full in-memory copy for filtering
-                    _allAssets = assets;
+                    _allAssets = assets
+                        .Select(a => new AssetListItem { Asset = a })
+                        .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
 
-                    // Apply any active filter to populate the visible collection
+                    ApplyFilter();
+                }
+                else
+                {
+                    TotalAssets = 0;
                     ApplyFilter();
                 }
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
-                // Token expired and refresh failed - go to login
                 await Shell.Current.GoToAsync("//Login");
                 return;
             }
@@ -160,44 +205,46 @@ public class AssetsViewModel : BaseViewModel
         }
     }
 
-    private async Task SearchAssetsAsync()
-    {
-        // Apply local filter
-        ApplyFilter();
-        await Task.CompletedTask;
-    }
-
     private void ApplyFilter()
     {
-        var list = _allAssets ?? new List<Asset>();
+        var list = _allAssets;
 
         var results = string.IsNullOrWhiteSpace(SearchText)
             ? list
-            : list.Where(a =>
-                (!string.IsNullOrEmpty(a.Name) && a.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(a.PurchasedFrom) && a.PurchasedFrom.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
-                (a.Category != null && !string.IsNullOrEmpty(a.Category.Title) && a.Category.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
-            ).ToList();
+            : list.Where(MatchesSearch).ToList();
 
         Assets.Clear();
-        foreach (var a in results)
+        foreach (var item in results)
         {
-            Assets.Add(a);
+            Assets.Add(item);
         }
 
         UpdateVisibility();
     }
 
-    private async Task OnAssetSelected(Asset? asset)
+    private bool MatchesSearch(AssetListItem item)
     {
-        if (asset == null)
+        var term = SearchText;
+        return (!string.IsNullOrEmpty(item.Name) && item.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            || (!string.IsNullOrEmpty(item.PurchasedFrom) && item.PurchasedFrom.Contains(term, StringComparison.OrdinalIgnoreCase))
+            || item.CategoryTitle.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || (item.HasPurchaseDate && item.PurchaseDateFormatted.Contains(term, StringComparison.OrdinalIgnoreCase))
+            || item.WarrantyStatusText.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || (item.HasWarranty && item.WarrantyDateFormatted.Contains(term, StringComparison.OrdinalIgnoreCase))
+            || (item.Asset.WarrantyType?.Name is { Length: > 0 } warrantyName
+                && warrantyName.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task OnAssetSelected(AssetListItem? item)
+    {
+        if (item == null)
         {
             return;
         }
 
         var parameters = new Dictionary<string, object>
         {
-            { "assetId", asset.Id.ToString() }
+            { "assetId", item.Id.ToString() }
         };
 
         await SafeExecuteAsync(
@@ -209,18 +256,16 @@ public class AssetsViewModel : BaseViewModel
     {
         try
         {
-            var param  = new Dictionary<string, object>
+            var param = new Dictionary<string, object>
             {
                 { "assetId", Guid.Empty.ToString() }
             };
-            // Navigate to the in-app AssetEdit page without an assetId to create a new asset
             await SafeExecuteAsync(
                 () => Shell.Current.GoToAsync("AssetEdit", param),
                 onError: ex => ErrorMessage = $"Navigation failed: {ex.Message}");
         }
         catch (Exception ex)
         {
-            // Fallback: open the web create page in the browser
             try
             {
                 var createUrl = $"{_settingsService.ApiBaseUrl}/assets/create";
@@ -237,5 +282,6 @@ public class AssetsViewModel : BaseViewModel
     {
         ShowEmptyState = !IsLoading && !HasError && Assets.Count == 0;
         ShowList = !IsLoading && !HasError && Assets.Count > 0;
+        ShowStats = !IsLoading && !HasError;
     }
 }

@@ -47,8 +47,41 @@
             Title="Assets"/>
     </FlyoutItem>
 
-    <!-- Separator -->
-    <MenuItem Text="──────────────────" IsEnabled="False" />
+    <!-- Setup group (collapsed by default; toggled via MenuItem) -->
+    <MenuItem x:Name="SetupMenuItem"
+              Text="Setup  ›"
+              Clicked="OnSetupMenuItemClicked"
+              mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Tune, IconColor={StaticResource Primary}, IconSize=22}" />
+
+    <FlyoutItem x:Name="CategoriesFlyoutItem"
+                Title="  Categories"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Category, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Categories"
+            ContentTemplate="{DataTemplate pages:CategoriesPage}"
+            Title="Categories"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="WarrantyTypesFlyoutItem"
+                Title="  Warranty Types"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="WarrantyTypes"
+            ContentTemplate="{DataTemplate pages:WarrantyTypesPage}"
+            Title="Warranty Types"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="AttachmentTypesFlyoutItem"
+                Title="  Attachment Types"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="AttachmentTypes"
+            ContentTemplate="{DataTemplate pages:AttachmentTypesPage}"
+            Title="Attachment Types"/>
+    </FlyoutItem>
 
     <!-- Settings/Configuration Section -->
     <FlyoutItem Title="Settings"
@@ -79,7 +112,7 @@
 
     <Shell.MenuItemTemplate>
         <DataTemplate>
-            <Grid Padding="16,8" ColumnDefinitions="Auto, *">
+            <Grid Padding="16,12" ColumnDefinitions="Auto, *">
                 <Image Source="{Binding Icon}"
                        HeightRequest="24"
                        WidthRequest="24"
@@ -87,9 +120,21 @@
                 <Label Grid.Column="1"
                        Text="{Binding Text}"
                        FontSize="16"
-                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
                        VerticalOptions="Center"
-                       Margin="16,0,0,0"/>
+                       Margin="16,0,0,0">
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label"
+                                     Binding="{Binding IsEnabled}"
+                                     Value="False">
+                            <Setter Property="TextColor"
+                                    Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"/>
+                            <Setter Property="FontSize" Value="14"/>
+                            <Setter Property="HorizontalTextAlignment" Value="Center"/>
+                            <Setter Property="Margin" Value="0"/>
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
             </Grid>
         </DataTemplate>
     </Shell.MenuItemTemplate>

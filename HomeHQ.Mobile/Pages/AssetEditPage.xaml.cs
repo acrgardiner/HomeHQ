@@ -1,4 +1,5 @@
 ﻿using HomeHQ.Mobile.ViewModels;
+using HomeHQ.Entities;
 
 namespace HomeHQ.Mobile.Pages;
 
