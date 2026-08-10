@@ -51,6 +51,11 @@ public static class MauiProgram
         builder.Services.AddTransient<WarrantyTypesViewModel>();
         builder.Services.AddTransient<AttachmentTypesViewModel>();
         builder.Services.AddTransient<SetupEditViewModel>();
+        builder.Services.AddTransient<AdminDashboardViewModel>();
+        builder.Services.AddTransient<UsersViewModel>();
+        builder.Services.AddTransient<UserEditViewModel>();
+        builder.Services.AddTransient<MaintenanceViewModel>();
+        builder.Services.AddTransient<LogsViewModel>();
 
         // Register Pages
         builder.Services.AddTransient<LoginPage>();
@@ -64,10 +69,15 @@ public static class MauiProgram
         builder.Services.AddTransient<WarrantyTypesPage>();
         builder.Services.AddTransient<AttachmentTypesPage>();
         builder.Services.AddTransient<SetupEditPage>();
+        builder.Services.AddTransient<AdminDashboardPage>();
+        builder.Services.AddTransient<UsersPage>();
+        builder.Services.AddTransient<UserEditPage>();
+        builder.Services.AddTransient<MaintenancePage>();
+        builder.Services.AddTransient<LogsPage>();
 
-//#if DEBUG
-//        builder.Logging.AddDebug();
-//#endif
+        //#if DEBUG
+        //        builder.Logging.AddDebug();
+        //#endif
 
         return builder.Build();
     }

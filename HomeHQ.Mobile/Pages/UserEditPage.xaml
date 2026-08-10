@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+             x:Class="HomeHQ.Mobile.Pages.UserEditPage"
+             x:DataType="vm:UserEditViewModel"
+             Title="{Binding PageTitle}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <Grid Grid.Row="0"
+              Padding="8"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+              ColumnDefinitions="Auto, *, Auto">
+
+            <Button Grid.Column="0"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ArrowBack}"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+
+            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Padding="8,0">
+                <Label Text="{Binding PageTitle}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"/>
+                <Label Text="{Binding UserName}"
+                       FontSize="13"
+                       TextColor="{StaticResource Gray500}"
+                       LineBreakMode="TailTruncation"/>
+            </VerticalStackLayout>
+
+            <Button Grid.Column="2"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Save}"
+                    Command="{Binding SaveCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    CornerRadius="20"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    Margin="4,0"
+                    IsEnabled="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"/>
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="16">
+                <Frame Padding="16" CornerRadius="12" HasShadow="True"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Details" FontSize="16" FontAttributes="Bold"/>
+
+                        <controls:FloatingEntry Title="Username *">
+                            <controls:FloatingEntry.InnerContent>
+                                <Entry Text="{Binding UserName}"
+                                       Placeholder="Username"
+                                       FontSize="15"
+                                       HeightRequest="44"
+                                       BackgroundColor="Transparent"/>
+                            </controls:FloatingEntry.InnerContent>
+                        </controls:FloatingEntry>
+
+                        <controls:FloatingEntry Title="Password *"
+                                                IsVisible="{Binding ShowPasswordFields}">
+                            <controls:FloatingEntry.InnerContent>
+                                <Entry Text="{Binding Password}"
+                                       IsPassword="True"
+                                       Placeholder="Password (min 6 characters)"
+                                       FontSize="15"
+                                       HeightRequest="44"
+                                       BackgroundColor="Transparent"/>
+                            </controls:FloatingEntry.InnerContent>
+                        </controls:FloatingEntry>
+
+                        <controls:FloatingEntry Title="Confirm Password *"
+                                                IsVisible="{Binding ShowPasswordFields}">
+                            <controls:FloatingEntry.InnerContent>
+                                <Entry Text="{Binding ConfirmPassword}"
+                                       IsPassword="True"
+                                       Placeholder="Confirm password"
+                                       FontSize="15"
+                                       HeightRequest="44"
+                                       BackgroundColor="Transparent"/>
+                            </controls:FloatingEntry.InnerContent>
+                        </controls:FloatingEntry>
+
+                        <HorizontalStackLayout IsVisible="{Binding ShowAdminToggle}" Spacing="12">
+                            <Switch IsToggled="{Binding IsAdmin}"/>
+                            <Label Text="Admin User"
+                                   VerticalOptions="Center"
+                                   FontSize="15"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

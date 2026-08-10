@@ -1,5 +1,7 @@
-﻿using HomeHQ.Identity;
+﻿using HomeHQ.DTOs;
+using HomeHQ.Identity;
 using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -40,13 +42,28 @@ public class AuthController(
 
         // Generate bearer token using Identity's built-in mechanism
         var principal = await signInManager.CreateUserPrincipalAsync(user);
-        
+
         // Update last login timestamp
         user.LastLogin = DateTime.UtcNow;
         await userManager.UpdateAsync(user);
 
         var response = GenerateAccessTokenResponse(principal);
         return TypedResults.Ok(response);
+    }
+
+    [HttpGet("me")]
+    [Authorize(Policy = "BearerAndCookies")]
+    public async Task<ActionResult<ApiResponse<CurrentUserDto>>> Me()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        var roles = await userManager.GetRolesAsync(user);
+        return Ok(ApiResponse<CurrentUserDto>.Ok(
+            new CurrentUserDto(user.UserName ?? string.Empty, roles.ToList())));
     }
 
     private AccessTokenResponse GenerateAccessTokenResponse(System.Security.Claims.ClaimsPrincipal principal)
@@ -73,9 +90,9 @@ public class AuthController(
         var ticket = new Microsoft.AspNetCore.Authentication.AuthenticationTicket(
             principal,
             authenticationScheme: IdentityConstants.BearerScheme);
-        
+
         ticket.Properties.ExpiresUtc = expiration;
-        
+
         return protector.Protect(ticket);
     }
 }

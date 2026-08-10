@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="HomeHQ.Mobile.Pages.AdminDashboardPage"
+             x:DataType="vm:AdminDashboardViewModel"
+             Title="Admin Dashboard">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <Grid RowDefinitions="Auto, Auto, Auto, Auto, Auto" Padding="16" RowSpacing="16">
+
+                <ActivityIndicator Grid.Row="0"
+                                   Grid.RowSpan="5"
+                                   IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HeightRequest="48"
+                                   WidthRequest="48"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center"/>
+
+                <VerticalStackLayout Grid.Row="0"
+                                     Grid.RowSpan="5"
+                                     IsVisible="{Binding HasError}"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="16"
+                                     Padding="32">
+                    <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}" FontSize="64" HorizontalOptions="Center"/>
+                    <Label Text="Something went wrong"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"/>
+                    <Label Text="{Binding ErrorMessage}"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray400}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"/>
+                    <Button Text="Try Again"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"/>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Row="0" IsVisible="{Binding ShowContent}" Spacing="4">
+                    <Label Text="Admin Dashboard"
+                           FontSize="28"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                    <Label Text="Admin based dashboard reporting"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray500}"/>
+                </VerticalStackLayout>
+
+                <Grid Grid.Row="1"
+                      IsVisible="{Binding ShowContent}"
+                      ColumnDefinitions="*, *, *"
+                      ColumnSpacing="8">
+                    <Frame Grid.Column="0" Padding="12" CornerRadius="12" HasShadow="True"
+                           BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Users" FontSize="12" TextColor="{StaticResource Gray500}"/>
+                            <Label Text="{Binding UserCount}" FontSize="24" FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                    <Frame Grid.Column="1" Padding="12" CornerRadius="12" HasShadow="True"
+                           BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Attachments" FontSize="12" TextColor="{StaticResource Gray500}"/>
+                            <Label Text="{Binding AttachmentCount}" FontSize="24" FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                    <Frame Grid.Column="2" Padding="12" CornerRadius="12" HasShadow="True"
+                           BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Files Stored" FontSize="12" TextColor="{StaticResource Gray500}"/>
+                            <Label Text="{Binding TotalAttachmentSizeDisplay}" FontSize="18" FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}" LineBreakMode="TailTruncation"/>
+                        </VerticalStackLayout>
+                    </Frame>
+                </Grid>
+
+                <Frame Grid.Row="2"
+                       IsVisible="{Binding ShowContent}"
+                       Padding="16" CornerRadius="16" HasShadow="True"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Largest Attachments" FontSize="18" FontAttributes="Bold"/>
+                        <Label Text="No large attachments"
+                               IsVisible="{Binding HasLargestAttachments, Converter={StaticResource InvertedBoolConverter}}"
+                               TextColor="{StaticResource Gray400}"/>
+                        <CollectionView ItemsSource="{Binding LargestAttachments}"
+                                        IsVisible="{Binding HasLargestAttachments}"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:LargeAttachmentItem">
+                                    <Frame Margin="0,4" Padding="12" CornerRadius="10" HasShadow="False"
+                                           BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}">
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminDashboardViewModel}}, Path=AttachmentSelectedCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Frame.GestureRecognizers>
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="{Binding OriginFileName}" FontAttributes="Bold" LineBreakMode="TailTruncation"/>
+                                                <Label Text="{Binding ParentName}" FontSize="12" TextColor="{StaticResource Gray500}"/>
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1" Text="{Binding FileSizeDisplay}"
+                                                   VerticalOptions="Center" TextColor="{StaticResource Gray500}"/>
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Grid.Row="3"
+                       IsVisible="{Binding ShowContent}"
+                       Padding="16" CornerRadius="16" HasShadow="True"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Warranties Expiring Soon" FontSize="18" FontAttributes="Bold"/>
+                        <Label Text="No warranties expiring in the next year"
+                               IsVisible="{Binding HasWarrantiesExpiring, Converter={StaticResource InvertedBoolConverter}}"
+                               TextColor="{StaticResource Gray400}"/>
+                        <CollectionView ItemsSource="{Binding WarrantiesExpiringSoon}"
+                                        IsVisible="{Binding HasWarrantiesExpiring}"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:ExpiringWarrantyItem">
+                                    <Frame Margin="0,4" Padding="12" CornerRadius="10" HasShadow="False"
+                                           BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}">
+                                        <Frame.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AdminDashboardViewModel}}, Path=WarrantySelectedCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Frame.GestureRecognizers>
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="{Binding Name}" FontAttributes="Bold" LineBreakMode="TailTruncation"/>
+                                                <Label Text="{Binding CategoryName}" FontSize="12" TextColor="{StaticResource Gray500}"/>
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1" Text="{Binding WarrantyExpirationDisplay}"
+                                                   VerticalOptions="Center" TextColor="{StaticResource Warning}"/>
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Frame Grid.Row="4"
+                       IsVisible="{Binding ShowContent}"
+                       Padding="16" CornerRadius="16" HasShadow="True"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Pending Purge" FontSize="18" FontAttributes="Bold"/>
+                            <Label Grid.Column="1" Text="{Binding PendingPurgeTotal, StringFormat='{0} items'}"
+                                   TextColor="{StaticResource Warning}" VerticalOptions="Center"/>
+                        </Grid>
+                        <Label Text="No soft-deleted records pending purge"
+                               IsVisible="{Binding HasPendingPurge, Converter={StaticResource InvertedBoolConverter}}"
+                               TextColor="{StaticResource Gray400}"/>
+                        <CollectionView ItemsSource="{Binding PendingPurge}"
+                                        IsVisible="{Binding HasPendingPurge}"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:SoftDeletedCountItem">
+                                    <Grid ColumnDefinitions="*, Auto" Padding="0,6">
+                                        <Label Text="{Binding EntityType}"/>
+                                        <Label Grid.Column="1" Text="{Binding Count}" FontAttributes="Bold"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </Grid>
+        </ScrollView>
+    </RefreshView>
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <local:InvertedBoolConverter x:Key="InvertedBoolConverter"
+                                         xmlns:local="clr-namespace:HomeHQ.Mobile.Converters"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+</ContentPage>

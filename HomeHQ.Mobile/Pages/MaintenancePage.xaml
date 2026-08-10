@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="HomeHQ.Mobile.Pages.MaintenancePage"
+             x:DataType="vm:MaintenanceViewModel"
+             Title="Maintenance">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <VerticalStackLayout Spacing="4">
+                <Label Text="Maintenance"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                <Label Text="Server maintenance actions"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray500}"/>
+            </VerticalStackLayout>
+
+            <Frame Padding="16" CornerRadius="12" HasShadow="True"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Manual Load" FontSize="16" FontAttributes="Bold"/>
+                        <Label Text="Import assets with attachments from the server import directory"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray500}"/>
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Import"
+                            Command="{Binding ImportCommand}"
+                            IsEnabled="{Binding IsImporting, Converter={StaticResource InvertedBoolConverter}}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            VerticalOptions="Center"
+                            HeightRequest="40"
+                            MinimumWidthRequest="100"/>
+                </Grid>
+            </Frame>
+
+            <Frame Padding="16" CornerRadius="12" HasShadow="True"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Rebuild Thumbnails" FontSize="16" FontAttributes="Bold"/>
+                        <Label Text="Regenerate thumbnails from source files"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray500}"/>
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Rebuild"
+                            Command="{Binding RebuildThumbnailsCommand}"
+                            IsEnabled="{Binding IsRebuilding, Converter={StaticResource InvertedBoolConverter}}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            VerticalOptions="Center"
+                            HeightRequest="40"
+                            MinimumWidthRequest="100"/>
+                </Grid>
+            </Frame>
+
+            <Frame Padding="16" CornerRadius="12" HasShadow="True"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                        <VerticalStackLayout Spacing="4">
+                            <HorizontalStackLayout Spacing="8">
+                                <Label Text="Purge" FontSize="16" FontAttributes="Bold" VerticalOptions="Center"/>
+                                <Border IsVisible="{Binding HasSoftDeleted}"
+                                        BackgroundColor="{StaticResource Warning}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="8,2">
+                                    <Label Text="{Binding SoftDeletedTotal, StringFormat='{0} items'}"
+                                           FontSize="11"
+                                           TextColor="White"/>
+                                </Border>
+                            </HorizontalStackLayout>
+                            <Label Text="Permanently delete soft-deleted records"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Gray500}"/>
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1"
+                                Text="{Binding PurgeToggleText}"
+                                Command="{Binding TogglePurgeCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource Primary}"
+                                VerticalOptions="Center"/>
+                    </Grid>
+
+                    <VerticalStackLayout IsVisible="{Binding ShowPurgeDetails}" Spacing="12">
+                        <ActivityIndicator IsRunning="{Binding IsLoadingCounts}"
+                                           IsVisible="{Binding IsLoadingCounts}"
+                                           Color="{StaticResource Primary}"
+                                           HeightRequest="32"
+                                           WidthRequest="32"
+                                           HorizontalOptions="Center"/>
+
+                        <CollectionView ItemsSource="{Binding SoftDeletedCounts}"
+                                        IsVisible="{Binding IsLoadingCounts, Converter={StaticResource InvertedBoolConverter}}"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:SoftDeletedCountItem">
+                                    <Grid ColumnDefinitions="*, Auto" Padding="0,6">
+                                        <Label Text="{Binding EntityType}"/>
+                                        <Label Grid.Column="1" Text="{Binding Count}" FontAttributes="Bold"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                            <Button Text="Refresh"
+                                    Command="{Binding RefreshCountsCommand}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                    TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                    CornerRadius="8"
+                                    HeightRequest="44"/>
+                            <Button Grid.Column="1"
+                                    Text="Purge All"
+                                    Command="{Binding PurgeCommand}"
+                                    IsEnabled="{Binding IsPurging, Converter={StaticResource InvertedBoolConverter}}"
+                                    BackgroundColor="#C62828"
+                                    TextColor="White"
+                                    CornerRadius="8"
+                                    HeightRequest="44"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

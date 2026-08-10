@@ -159,9 +159,4 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
             entity.ToTable("UserTokens");
         });
     }
-
-    private string GetCurrentUser()
-    {
-        return _currentUserService.UserId ?? "system";
-    }
 }

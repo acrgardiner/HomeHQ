@@ -14,7 +14,7 @@ public class ApiClient
     private readonly AuthService _authService;
     private readonly HttpClient _httpClient;
 
-    private static readonly string[] AnonymousEndpoints = 
+    private static readonly string[] AnonymousEndpoints =
         ["api/auth/login", "api/identity/login", "api/identity/register", "api/identity/refresh"];
 
     public ApiClient(SettingsService settings, AuthService authService)
@@ -63,6 +63,16 @@ public class ApiClient
     {
         var request = CreateRequest(HttpMethod.Post, endpoint);
         request.Content = JsonContent.Create(content);
+        return await SendAsync(request, endpoint, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a POST request with an empty JSON body.
+    /// </summary>
+    public async Task<HttpResponseMessage> PostAsync(string endpoint, CancellationToken cancellationToken = default)
+    {
+        var request = CreateRequest(HttpMethod.Post, endpoint);
+        request.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
         return await SendAsync(request, endpoint, cancellationToken);
     }
 

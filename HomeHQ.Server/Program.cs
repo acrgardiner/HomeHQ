@@ -84,7 +84,11 @@ try
 
     builder.Services.AddAuthorization(options =>
     {
-        options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+        options.AddPolicy("AdminOnly", policy =>
+        {
+            policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, IdentityConstants.BearerScheme);
+            policy.RequireRole("Admin");
+        });
         options.AddPolicy("BearerAndCookies", policy =>
         {
             policy.AddAuthenticationSchemes(IdentityConstants.ApplicationScheme, IdentityConstants.BearerScheme);
@@ -105,13 +109,13 @@ try
 
     // Configure Identity with both cookie auth (for Blazor web) and bearer token auth (for mobile API)
     builder.Services.AddIdentityApiEndpoints<ApplicationUser>(options => {
-            options.User.RequireUniqueEmail = false;
-            options.Password.RequiredLength = 6;
-            options.Password.RequireLowercase = false;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireDigit = false;
-            options.Password.RequireNonAlphanumeric = false;
-        })
+        options.User.RequireUniqueEmail = false;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireDigit = false;
+        options.Password.RequireNonAlphanumeric = false;
+    })
         .AddRoles<ApplicationRole>()
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddSignInManager()
@@ -201,7 +205,7 @@ try
     {
         options.ForwardedHeaders =
             ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        
+
         // Configure trusted proxies from environment variable
         var trustedProxiesEnv = builder.Configuration["TRUSTED_PROXIES"] ?? Environment.GetEnvironmentVariable("TRUSTED_PROXIES");
         if (!string.IsNullOrWhiteSpace(trustedProxiesEnv))
@@ -224,7 +228,7 @@ try
                     Log.Warning("Invalid proxy IP address in TRUSTED_PROXIES: {ProxyIP}", proxyIp);
                 }
             }
-            
+
             Log.Information("Configured {Count} trusted proxies", options.KnownProxies.Count);
         }
         else

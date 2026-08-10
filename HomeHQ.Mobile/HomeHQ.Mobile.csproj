@@ -62,8 +62,8 @@
 	<ItemGroup>
 		<PackageReference Include="AathifMahir.Maui.MauiIcons.Core" Version="6.0.0" />
 		<PackageReference Include="AathifMahir.Maui.MauiIcons.Material.Outlined" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.80" />
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.80" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.90" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.10" />
 	</ItemGroup>
 

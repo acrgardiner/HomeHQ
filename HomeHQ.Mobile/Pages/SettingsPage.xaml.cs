@@ -1,4 +1,5 @@
-﻿using HomeHQ.Mobile.Services;
+﻿using HomeHQ.DTOs;
+using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile.Pages;
 
@@ -6,19 +7,25 @@ public partial class SettingsPage : ContentPage
 {
     private readonly SettingsService _settingsService;
     private readonly AuthService _authService;
+    private readonly CacheService<CategoryDto> _categoryCache;
+    private readonly CacheService<AttachmentTypeDto> _attachmentTypeCache;
+    private readonly CacheService<WarrantyTypeDto> _warrantyTypeCache;
 
-    public SettingsPage(SettingsService settingsService, AuthService authService)
+    public SettingsPage(SettingsService settingsService, AuthService authService, CacheService<CategoryDto> categoryCache, CacheService<AttachmentTypeDto> attachmentTypeCache, CacheService<WarrantyTypeDto> warrantyTypeCache)
     {
         InitializeComponent();
         _settingsService = settingsService;
         _authService = authService;
+        _categoryCache = categoryCache;
+        _attachmentTypeCache = attachmentTypeCache;
+        _warrantyTypeCache = warrantyTypeCache;
     }
 
-    private async void OnClearCacheClicked(object? sender, EventArgs e)
+    private async void OnClearTempFilesClicked(object? sender, EventArgs e)
     {
         try
         {
-            var confirm = await DisplayAlertAsync("Clear Cache", "This will delete all files in the app cache. Continue?", "Yes", "No");
+            var confirm = await DisplayAlertAsync("Clear Temp Files", "This will delete all temporary files in the app. Continue?", "Yes", "No");
             if (!confirm)
             {
                 return;
@@ -27,7 +34,7 @@ public partial class SettingsPage : ContentPage
             var cacheDir = FileSystem.CacheDirectory;
             if (!Directory.Exists(cacheDir))
             {
-                await DisplayAlertAsync("Cache", "Cache is already empty.", "OK");
+                await DisplayAlertAsync("Temp Files", "Temp files are already empty.", "OK");
                 return;
             }
 
@@ -47,7 +54,37 @@ public partial class SettingsPage : ContentPage
                 }
             }
 
-            await DisplayAlertAsync("Cache", $"Cache cleared ({fileCount} files, {totalSizeBytes / (1024.0 * 1024.0):F2} MB).", "OK");
+            await DisplayAlertAsync("Temp Files", $"Temp files cleared ({fileCount} files, {totalSizeBytes / (1024.0 * 1024.0):F2} MB).", "OK");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to clear temp files: {ex.Message}", "OK");
+        }
+    }
+
+    private async void OnClearCacheClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var confirm = await DisplayAlertAsync("Clear Cache", "This will clear the database cache. Continue?", "Yes", "No");
+            if (!confirm)
+            {
+                return;
+            }
+
+            //for each cache service, clear the cache
+            _categoryCache.ClearCache();
+            _attachmentTypeCache.ClearCache();
+            _warrantyTypeCache.ClearCache();
+
+            //Rebuild cache for each service
+            await Task.WhenAll(
+                _categoryCache.EnsureLoadedAsync(true),
+                _attachmentTypeCache.EnsureLoadedAsync(true),
+                _warrantyTypeCache.EnsureLoadedAsync(true)
+            );
+
+            await DisplayAlertAsync("Cache", $"Cache cleared and reloaded.", "OK");
         }
         catch (Exception ex)
         {

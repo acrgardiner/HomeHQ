@@ -7,6 +7,8 @@ public partial class AppShell : Shell
 {
     private readonly AuthService? _authService;
     private bool _setupExpanded;
+    private bool _adminExpanded;
+    private bool _isAdmin;
 
     public AppShell()
     {
@@ -21,6 +23,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("AssetEdit", typeof(AssetEditPage));
         Routing.RegisterRoute("AttachmentViewer", typeof(AttachmentViewerPage));
         Routing.RegisterRoute("SetupEdit", typeof(SetupEditPage));
+        Routing.RegisterRoute("UserEdit", typeof(UserEditPage));
 
         // Try to get services
         _authService = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
@@ -29,6 +32,7 @@ public partial class AppShell : Shell
         Navigated += OnNavigated;
 
         ApplySetupExpandedState();
+        ApplyAdminExpandedState();
     }
 
     private void OnSetupMenuItemClicked(object? sender, EventArgs e)
@@ -40,6 +44,13 @@ public partial class AppShell : Shell
         FlyoutIsPresented = true;
     }
 
+    private void OnAdminMenuItemClicked(object? sender, EventArgs e)
+    {
+        _adminExpanded = !_adminExpanded;
+        ApplyAdminExpandedState();
+        FlyoutIsPresented = true;
+    }
+
     private void ApplySetupExpandedState()
     {
         CategoriesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
@@ -48,13 +59,92 @@ public partial class AppShell : Shell
         SetupMenuItem.Text = _setupExpanded ? "Setup  ˅" : "Setup  ›";
     }
 
-    private void OnNavigated(object? sender, ShellNavigatedEventArgs e)
+    private void ApplyAdminExpandedState()
+    {
+        if (!_isAdmin)
+        {
+            _adminExpanded = false;
+        }
+
+        Shell.SetFlyoutItemIsVisible(AdminMenuItem, _isAdmin);
+        AdminDashboardFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
+        UsersFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
+        MaintenanceFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
+        LogsFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
+        AdminMenuItem.Text = _adminExpanded ? "Admin  ˅" : "Admin  ›";
+    }
+
+    private async void OnNavigated(object? sender, ShellNavigatedEventArgs e)
     {
         var currentRoute = Current?.CurrentState?.Location?.OriginalString ?? string.Empty;
         var isLoginPage = currentRoute.Contains("Login", StringComparison.OrdinalIgnoreCase);
 
         // Update flyout behavior based on current page
         FlyoutBehavior = isLoginPage ? FlyoutBehavior.Disabled : FlyoutBehavior.Flyout;
+
+        if (!isLoginPage)
+        {
+            await RefreshAdminVisibilityAsync();
+            await RefreshFlyoutFooterAsync();
+        }
+        else
+        {
+            _isAdmin = false;
+            _adminExpanded = false;
+            ApplyAdminExpandedState();
+        }
+    }
+
+    private async Task RefreshAdminVisibilityAsync()
+    {
+        if (_authService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (await _authService.IsAuthenticatedAsync())
+            {
+                // Refresh roles if not cached yet (e.g. app restart with stored token)
+                var roles = await _authService.GetRolesAsync();
+                if (roles.Count == 0)
+                {
+                    await _authService.RefreshUserInfoAsync();
+                }
+
+                _isAdmin = await _authService.IsAdminAsync();
+            }
+            else
+            {
+                _isAdmin = false;
+                _adminExpanded = false;
+            }
+        }
+        catch
+        {
+            _isAdmin = false;
+        }
+
+        ApplyAdminExpandedState();
+    }
+
+    private async Task RefreshFlyoutFooterAsync()
+    {
+        if (_authService is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var username = await _authService.GetUsernameAsync();
+            FlyoutFooterControl.SetUsername(username);
+        }
+        catch
+        {
+            // ignore
+        }
     }
 
     protected override async void OnNavigating(ShellNavigatingEventArgs args)
@@ -76,7 +166,26 @@ public partial class AppShell : Shell
             {
                 args.Cancel();
                 await GoToAsync("//Login");
+                return;
+            }
+
+            // Gate Admin routes to Admin role
+            if (IsAdminRoute(targetRoute) && !await _authService.IsAdminAsync())
+            {
+                args.Cancel();
+                await DisplayAlertAsync("Access Denied", "You do not have permission to access Admin pages.", "OK");
             }
         }
     }
+
+    private static bool IsAdminRoute(string route) =>
+        route.Contains("AdminDashboard", StringComparison.OrdinalIgnoreCase)
+        || route.Contains("UserEdit", StringComparison.OrdinalIgnoreCase)
+        || route.Contains("Maintenance", StringComparison.OrdinalIgnoreCase)
+        || route.Contains("//Users", StringComparison.OrdinalIgnoreCase)
+        || route.EndsWith("/Users", StringComparison.OrdinalIgnoreCase)
+        || route.Equals("Users", StringComparison.OrdinalIgnoreCase)
+        || route.Contains("//Logs", StringComparison.OrdinalIgnoreCase)
+        || route.EndsWith("/Logs", StringComparison.OrdinalIgnoreCase)
+        || route.Equals("Logs", StringComparison.OrdinalIgnoreCase);
 }

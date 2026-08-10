@@ -32,7 +32,12 @@ public class UserService : IUserService
             UserName = username
         };
 
-        var a = await _userManager.CreateAsync(newUser, password);
+        var createResult = await _userManager.CreateAsync(newUser, password);
+        if (!createResult.Succeeded)
+        {
+            var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+            throw new InvalidOperationException(errors);
+        }
 
         await _userManager.AddToRolesAsync(newUser, roles.Select(r => r.ToString()));
 
@@ -42,11 +47,15 @@ public class UserService : IUserService
     public async Task<bool> UpdateUserName(string userId, string newUsername)
     {
         if (string.IsNullOrWhiteSpace(newUsername))
+        {
             return false;
+        }
 
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
+        {
             return false;
+        }
 
         user.UserName = newUsername;
         user.NormalizedUserName = newUsername.ToUpper();
@@ -61,7 +70,9 @@ public class UserService : IUserService
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
+            {
                 return false;
+            }
 
             // Remove current password and set new one
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);

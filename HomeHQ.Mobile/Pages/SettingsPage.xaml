@@ -106,8 +106,14 @@
                        TextColor="{StaticResource Primary}"/>
 
                     <Button x:Name="ClearCacheButton"
-                        Text="Clear File Cache"
+                        Text="Clear Cache"
                         Clicked="OnClearCacheClicked"
+                        BackgroundColor="{StaticResource Gray200}"
+                        TextColor="{StaticResource Gray900}"/>
+                    
+                    <Button x:Name="ClearTempFilesButton"
+                        Text="Clear Temp Files"
+                        Clicked="OnClearTempFilesClicked"
                         BackgroundColor="{StaticResource Gray200}"
                         TextColor="{StaticResource Gray900}"/>
                 </VerticalStackLayout>

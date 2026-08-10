@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="HomeHQ.Mobile.Pages.LogsPage"
+             x:DataType="vm:LogsViewModel"
+             Title="Logs">
+
+    <Grid RowDefinitions="Auto, Auto, Auto, *">
+
+        <VerticalStackLayout Grid.Row="0" Padding="16,12,16,0" Spacing="8">
+            <Label Text="Log File" FontSize="13" TextColor="{StaticResource Gray500}"/>
+            <Picker Title="Select log file"
+                    ItemsSource="{Binding LogFiles}"
+                    SelectedItem="{Binding SelectedLogFile}"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="1" Padding="16,8,16,0" Spacing="8">
+            <Label Text="Level" FontSize="13" TextColor="{StaticResource Gray500}"/>
+            <Picker Title="Level"
+                    ItemsSource="{Binding Levels}"
+                    SelectedItem="{Binding SelectedLevel}"/>
+        </VerticalStackLayout>
+
+        <SearchBar Grid.Row="2"
+                   Placeholder="Search message or source..."
+                   Text="{Binding SearchText}"
+                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                   Margin="16,8"/>
+
+        <ActivityIndicator Grid.Row="3"
+                           IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           Color="{StaticResource Primary}"
+                           HeightRequest="48"
+                           WidthRequest="48"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+
+        <VerticalStackLayout Grid.Row="3"
+                             IsVisible="{Binding ShowEmptyState}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="12"
+                             Padding="32">
+            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Description, IconColor={StaticResource Primary}, IconSize=22}"
+                   FontSize="64" HorizontalOptions="Center"/>
+            <Label Text="No log entries" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="Select a log file or adjust filters"
+                   FontSize="14" TextColor="{StaticResource Gray400}" HorizontalOptions="Center"/>
+            <Button Text="Refresh" Command="{Binding RefreshCommand}"
+                    BackgroundColor="{StaticResource Primary}" TextColor="White" CornerRadius="8"/>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Row="3"
+                             IsVisible="{Binding HasError}"
+                             VerticalOptions="Center"
+                             HorizontalOptions="Center"
+                             Spacing="12"
+                             Padding="32">
+            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}" FontSize="64" HorizontalOptions="Center"/>
+            <Label Text="Something went wrong" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="{Binding ErrorMessage}" FontSize="14" TextColor="{StaticResource Gray400}"
+                   HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+            <Button Text="Try Again" Command="{Binding RefreshCommand}"
+                    BackgroundColor="{StaticResource Primary}" TextColor="White" CornerRadius="8"/>
+        </VerticalStackLayout>
+
+        <RefreshView Grid.Row="3"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}"
+                     IsVisible="{Binding ShowList}">
+            <CollectionView ItemsSource="{Binding Entries}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:LogEntryItem">
+                        <Frame Margin="16,6" Padding="12" CornerRadius="10" HasShadow="True"
+                               BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:LogsViewModel}}, Path=EntrySelectedCommand}"
+                                    CommandParameter="{Binding .}"/>
+                            </Frame.GestureRecognizers>
+                            <VerticalStackLayout Spacing="4">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border BackgroundColor="{Binding LevelColor}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 6"
+                                            Padding="8,2">
+                                        <Label Text="{Binding Level}" FontSize="11" TextColor="White"/>
+                                    </Border>
+                                    <Label Grid.Column="1"
+                                           Text="{Binding Timestamp}"
+                                           FontSize="11"
+                                           TextColor="{StaticResource Gray500}"
+                                           HorizontalOptions="End"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                                <Label Text="{Binding Message}"
+                                       FontSize="14"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="3"/>
+                                <Label Text="{Binding SourceContext}"
+                                       FontSize="11"
+                                       TextColor="{StaticResource Gray400}"
+                                       LineBreakMode="TailTruncation"/>
+                            </VerticalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>

@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using HomeHQ.DTOs;
 
 namespace HomeHQ.Mobile.Services;
 
@@ -11,6 +13,8 @@ public class AuthService
     private const string RefreshTokenKey = "refresh_token";
     private const string TokenExpiryKey = "token_expiry";
     private const string UsernameKey = "username";
+    private const string RolesKey = "roles";
+    private const string AdminRole = "Admin";
 
     public AuthService(SettingsService settings)
     {
@@ -41,11 +45,11 @@ public class AuthService
                 {
                     await StoreTokensAsync(result);
                     await SecureStorage.Default.SetAsync(UsernameKey, username);
+                    await RefreshUserInfoAsync();
                     return AuthResult.Success();
                 }
             }
 
-            var errorContent = await response.Content.ReadAsStringAsync();
             return AuthResult.Failure(response.StatusCode == System.Net.HttpStatusCode.Unauthorized
                 ? "Invalid username or password"
                 : $"Login failed: {response.StatusCode}");
@@ -138,6 +142,7 @@ public class AuthService
         SecureStorage.Default.Remove(RefreshTokenKey);
         SecureStorage.Default.Remove(TokenExpiryKey);
         SecureStorage.Default.Remove(UsernameKey);
+        SecureStorage.Default.Remove(RolesKey);
     }
 
     private async Task StoreTokensAsync(AccessTokenResponse tokens)
@@ -154,6 +159,66 @@ public class AuthService
     public async Task<string?> GetUsernameAsync()
     {
         return await SecureStorage.Default.GetAsync(UsernameKey);
+    }
+
+    /// <summary>
+    /// Returns true when the signed-in user has the Admin role.
+    /// </summary>
+    public async Task<bool> IsAdminAsync()
+    {
+        var roles = await GetRolesAsync();
+        return roles.Contains(AdminRole, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public async Task<IReadOnlyList<string>> GetRolesAsync()
+    {
+        var stored = await SecureStorage.Default.GetAsync(RolesKey);
+        if (string.IsNullOrWhiteSpace(stored))
+        {
+            return [];
+        }
+
+        return stored.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    /// <summary>
+    /// Loads the current user's profile (including roles) from the API and caches them.
+    /// </summary>
+    public async Task<bool> RefreshUserInfoAsync()
+    {
+        try
+        {
+            var token = await GetAccessTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, BuildUri("api/auth/me"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<CurrentUserDto>>();
+            if (apiResponse?.Success != true || apiResponse.Data is null)
+            {
+                return false;
+            }
+
+            await SecureStorage.Default.SetAsync(UsernameKey, apiResponse.Data.UserName);
+            await SecureStorage.Default.SetAsync(
+                RolesKey,
+                string.Join(',', apiResponse.Data.Roles));
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
 
