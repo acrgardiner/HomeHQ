@@ -4,6 +4,8 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:HomeHQ.Mobile.Pages"
+    xmlns:pagesSetup="clr-namespace:HomeHQ.Mobile.Pages.Setup"
+    xmlns:pagesAdmin="clr-namespace:HomeHQ.Mobile.Pages.Admin"
     xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
     xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
     Title="HomeHQ"
@@ -54,32 +56,32 @@
               mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Tune, IconColor={StaticResource Primary}, IconSize=22}" />
 
     <FlyoutItem x:Name="CategoriesFlyoutItem"
-                Title="  Categories"
+                Title="Categories"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Category, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Categories"
-            ContentTemplate="{DataTemplate pages:CategoriesPage}"
+            ContentTemplate="{DataTemplate pagesSetup:CategoriesPage}"
             Title="Categories"/>
     </FlyoutItem>
 
     <FlyoutItem x:Name="WarrantyTypesFlyoutItem"
-                Title="  Warranty Types"
+                Title="Warranty Types"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="WarrantyTypes"
-            ContentTemplate="{DataTemplate pages:WarrantyTypesPage}"
+            ContentTemplate="{DataTemplate pagesSetup:WarrantyTypesPage}"
             Title="Warranty Types"/>
     </FlyoutItem>
 
     <FlyoutItem x:Name="AttachmentTypesFlyoutItem"
-                Title="  Attachment Types"
+                Title="Attachment Types"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="AttachmentTypes"
-            ContentTemplate="{DataTemplate pages:AttachmentTypesPage}"
+            ContentTemplate="{DataTemplate pagesSetup:AttachmentTypesPage}"
             Title="Attachment Types"/>
     </FlyoutItem>
 
@@ -88,44 +90,44 @@
               Text="Admin  ›"
               Clicked="OnAdminMenuItemClicked"
               mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AdminPanelSettings, IconColor={StaticResource Primary}, IconSize=22}" />
-
+    
     <FlyoutItem x:Name="AdminDashboardFlyoutItem"
-                Title="  Dashboard"
+                Title="Dashboard"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Dashboard, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="AdminDashboard"
-            ContentTemplate="{DataTemplate pages:AdminDashboardPage}"
+            ContentTemplate="{DataTemplate pagesAdmin:AdminDashboardPage}"
             Title="Admin Dashboard"/>
     </FlyoutItem>
 
     <FlyoutItem x:Name="UsersFlyoutItem"
-                Title="  Users"
+                Title="Users"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Person, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Users"
-            ContentTemplate="{DataTemplate pages:UsersPage}"
+            ContentTemplate="{DataTemplate pagesAdmin:UsersPage}"
             Title="Users"/>
     </FlyoutItem>
 
     <FlyoutItem x:Name="MaintenanceFlyoutItem"
-                Title="  Maintenance"
+                Title="Maintenance"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Build, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Maintenance"
-            ContentTemplate="{DataTemplate pages:MaintenancePage}"
+            ContentTemplate="{DataTemplate pagesAdmin:MaintenancePage}"
             Title="Maintenance"/>
     </FlyoutItem>
 
     <FlyoutItem x:Name="LogsFlyoutItem"
-                Title="  Logs"
+                Title="Logs"
                 FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Description, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Logs"
-            ContentTemplate="{DataTemplate pages:LogsPage}"
+            ContentTemplate="{DataTemplate pagesAdmin:LogsPage}"
             Title="Logs"/>
     </FlyoutItem>
 
@@ -134,7 +136,7 @@
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Settings, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Settings"
-            ContentTemplate="{DataTemplate pages:SettingsPage}"
+            ContentTemplate="{DataTemplate pagesAdmin:SettingsPage}"
             Title="Settings"/>
     </FlyoutItem>
 

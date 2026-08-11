@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Windows.Input;
 using HomeHQ.DTOs;
@@ -6,7 +6,7 @@ using HomeHQ.Helpers;
 using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
 
-namespace HomeHQ.Mobile.ViewModels;
+namespace HomeHQ.Mobile.ViewModels.Admin;
 
 public class AdminDashboardViewModel : BaseViewModel
 {

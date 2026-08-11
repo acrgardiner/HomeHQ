@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
-             x:Class="HomeHQ.Mobile.Pages.UserEditPage"
+             x:Class="HomeHQ.Mobile.Pages.Admin.UserEditPage"
              x:DataType="vm:UserEditViewModel"
              Title="{Binding PageTitle}"
              Shell.NavBarIsVisible="False">
@@ -86,12 +86,15 @@
                             </controls:FloatingEntry.InnerContent>
                         </controls:FloatingEntry>
 
-                        <HorizontalStackLayout IsVisible="{Binding ShowAdminToggle}" Spacing="12">
-                            <Switch IsToggled="{Binding IsAdmin}"/>
-                            <Label Text="Admin User"
-                                   VerticalOptions="Center"
-                                   FontSize="15"/>
-                        </HorizontalStackLayout>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Roles" FontSize="13" TextColor="{StaticResource Gray500}"/>
+                            <HorizontalStackLayout Spacing="12">
+                                <Switch IsToggled="{Binding IsAdmin}"/>
+                                <Label Text="Admin User"
+                                       VerticalOptions="Center"
+                                       FontSize="15"/>
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Frame>
             </VerticalStackLayout>

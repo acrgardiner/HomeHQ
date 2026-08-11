@@ -1,12 +1,13 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Windows.Input;
 using HomeHQ.DTOs;
 using HomeHQ.Mobile.Services;
 
-namespace HomeHQ.Mobile.ViewModels;
+namespace HomeHQ.Mobile.ViewModels.Admin;
 
 [QueryProperty(nameof(UserId), "userId")]
 [QueryProperty(nameof(UserName), "userName")]
+[QueryProperty(nameof(IsAdminQuery), "isAdmin")]
 public class UserEditViewModel : BaseViewModel
 {
     private readonly ApiClient _apiClient;
@@ -22,7 +23,6 @@ public class UserEditViewModel : BaseViewModel
                 OnPropertyChanged(nameof(IsCreate));
                 OnPropertyChanged(nameof(PageTitle));
                 OnPropertyChanged(nameof(ShowPasswordFields));
-                OnPropertyChanged(nameof(ShowAdminToggle));
             }
         }
     } = string.Empty;
@@ -51,9 +51,16 @@ public class UserEditViewModel : BaseViewModel
         set => SetProperty(ref field, value);
     }
 
+    /// <summary>
+    /// Shell query-string binder for <see cref="IsAdmin"/>.
+    /// </summary>
+    public string IsAdminQuery
+    {
+        set => IsAdmin = bool.TryParse(value, out var isAdmin) && isAdmin;
+    }
+
     public bool IsCreate => string.IsNullOrWhiteSpace(UserId);
     public bool ShowPasswordFields => IsCreate;
-    public bool ShowAdminToggle => IsCreate;
     public string PageTitle => IsCreate ? "Create User" : "Edit User";
 
     public bool IsLoading
@@ -168,7 +175,7 @@ public class UserEditViewModel : BaseViewModel
             {
                 var response = await _apiClient.PutAsJsonAsync(
                     $"api/users/{UserId}",
-                    new UpdateUserRequest(UserName.Trim()));
+                    new UpdateUserRequest(UserName.Trim(), IsAdmin));
 
                 if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized
                     or System.Net.HttpStatusCode.Forbidden)

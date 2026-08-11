@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Windows.Input;
 using HomeHQ.DTOs;
@@ -6,7 +6,7 @@ using HomeHQ.Helpers;
 using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
 
-namespace HomeHQ.Mobile.ViewModels;
+namespace HomeHQ.Mobile.ViewModels.Admin;
 
 public class UsersViewModel : BaseViewModel
 {
@@ -173,7 +173,8 @@ public class UsersViewModel : BaseViewModel
         var parameters = new Dictionary<string, object>
         {
             { "userId", user?.Id ?? string.Empty },
-            { "userName", user?.UserName ?? string.Empty }
+            { "userName", user?.UserName ?? string.Empty },
+            { "isAdmin", (user?.IsAdmin == true).ToString() }
         };
 
         await SafeExecuteAsync(

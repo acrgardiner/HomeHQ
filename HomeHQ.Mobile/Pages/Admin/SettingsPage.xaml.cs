@@ -1,7 +1,7 @@
 ﻿using HomeHQ.DTOs;
 using HomeHQ.Mobile.Services;
 
-namespace HomeHQ.Mobile.Pages;
+namespace HomeHQ.Mobile.Pages.Admin;
 
 public partial class SettingsPage : ContentPage
 {

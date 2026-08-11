@@ -1,8 +1,8 @@
-using HomeHQ.DTOs;
+﻿using HomeHQ.DTOs;
 using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
 
-namespace HomeHQ.Mobile.ViewModels;
+namespace HomeHQ.Mobile.ViewModels.Setup;
 
 public sealed class AttachmentTypesViewModel : SetupListViewModel<AttachmentTypeDto>
 {

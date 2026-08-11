@@ -1,10 +1,10 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using HomeHQ.DTOs;
 using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
 
-namespace HomeHQ.Mobile.ViewModels;
+namespace HomeHQ.Mobile.ViewModels.Setup;
 
 /// <summary>
 /// Non-generic surface for Setup list pages (compiled bindings / shared XAML).

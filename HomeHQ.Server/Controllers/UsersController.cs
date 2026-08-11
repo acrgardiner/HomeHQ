@@ -1,4 +1,4 @@
-using HomeHQ.DTOs;
+﻿using HomeHQ.DTOs;
 using HomeHQ.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -51,11 +51,7 @@ public class UsersController(
             return Ok(ApiResponse<UserDto>.Fail("A user with that username already exists."));
         }
 
-        var roles = new List<Roles> { Roles.Basic };
-        if (request.IsAdmin)
-        {
-            roles.Add(Roles.Admin);
-        }
+        var roles = BuildRoles(request.IsAdmin);
 
         try
         {
@@ -83,7 +79,15 @@ public class UsersController(
             return Ok(ApiResponse<UserDto>.Fail("Username is required."));
         }
 
-        var success = await userService.UpdateUserName(id, request.UserName.Trim());
+        var roles = BuildRoles(request.IsAdmin);
+        var currentRoles = await userService.GetUserRolesAsync(id);
+        if (currentRoles.Contains(Roles.SysAdmin.ToString(), StringComparer.OrdinalIgnoreCase)
+            && !roles.Contains(Roles.SysAdmin))
+        {
+            roles.Add(Roles.SysAdmin);
+        }
+
+        var success = await userService.UpdateUserAsync(id, request.UserName.Trim(), roles);
         if (!success)
         {
             return Ok(ApiResponse<UserDto>.Fail("User update failed."));
@@ -95,9 +99,9 @@ public class UsersController(
             return Ok(ApiResponse<UserDto>.Fail("User not found."));
         }
 
-        var roles = await userManager.GetRolesAsync(user);
+        var userRoles = await userManager.GetRolesAsync(user);
         return Ok(ApiResponse<UserDto>.Ok(
-            new UserDto(user.Id, user.UserName ?? string.Empty, user.LastLogin, roles.ToList()),
+            new UserDto(user.Id, user.UserName ?? string.Empty, user.LastLogin, userRoles.ToList()),
             "User updated successfully"));
     }
 
@@ -113,5 +117,16 @@ public class UsersController(
         return Ok(success
             ? ApiResponse.Ok("Password reset successfully")
             : ApiResponse.Fail("Failed to reset password."));
+    }
+
+    private static List<Roles> BuildRoles(bool isAdmin)
+    {
+        var roles = new List<Roles> { Roles.Basic };
+        if (isAdmin)
+        {
+            roles.Add(Roles.Admin);
+        }
+
+        return roles;
     }
 }

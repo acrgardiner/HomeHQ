@@ -1,6 +1,6 @@
-using HomeHQ.Mobile.ViewModels;
+﻿using HomeHQ.Mobile.ViewModels.Admin;
 
-namespace HomeHQ.Mobile.Pages;
+namespace HomeHQ.Mobile.Pages.Admin;
 
 public partial class AdminDashboardPage : ContentPage
 {

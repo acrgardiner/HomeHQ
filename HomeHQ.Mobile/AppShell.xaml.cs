@@ -1,4 +1,6 @@
 ﻿using HomeHQ.Mobile.Pages;
+using HomeHQ.Mobile.Pages.Admin;
+using HomeHQ.Mobile.Pages.Setup;
 using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile;

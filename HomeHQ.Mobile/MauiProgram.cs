@@ -1,7 +1,11 @@
 ﻿using HomeHQ.DTOs;
 using HomeHQ.Mobile.Pages;
+using HomeHQ.Mobile.Pages.Setup;
+using HomeHQ.Mobile.Pages.Admin;
 using HomeHQ.Mobile.Services;
 using HomeHQ.Mobile.ViewModels;
+using HomeHQ.Mobile.ViewModels.Admin;
+using HomeHQ.Mobile.ViewModels.Setup;
 using MauiIcons.Material.Outlined;
 using Microsoft.Extensions.Logging;
 

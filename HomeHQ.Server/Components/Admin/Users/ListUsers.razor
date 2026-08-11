@@ -80,41 +80,56 @@
             </MudCardHeader>
             <MudDivider />
 
-            <MudDataGrid T="ApplicationUser" Items="@_users" Loading="@_loading" QuickFilter="@_quickFilter"
-                Hideable="true" Hover="true" Dense="true"
-                Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
+            <MudDataGrid T="UserListItem" Items="@_users" Loading="@_loading" QuickFilter="@_quickFilter"
+                         Hideable="true" Hover="true" Dense="true"
+                         Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1">
                 <ToolBarContent>
                     <MudTextField @bind-Value="SearchString" Placeholder="Search..." Adornment="Adornment.Start"
-                                    Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mx-2" />
+                                  Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mx-2" />
                 </ToolBarContent>
                 <Columns>
-                    <PropertyColumn Property="x => x.UserName" />
-                    <PropertyColumn Property="x => x.LastLogin.HasValue ? Formatter.FormatDateTime(x.LastLogin.Value.ToLocalTime(), null) : String.Empty" Title="Last Login" />
+                    <PropertyColumn Property="x => x.User.UserName" Title="UserName" />
+                    <TemplateColumn Title="Roles">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="1">
+                                @foreach (var role in context.Item.Roles)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">
+                                        @role
+                                    </MudChip>
+                                }
+                                @if (context.Item.Roles.Count == 0)
+                                {
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Basic</MudText>
+                                }
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.User.LastLogin.HasValue ? Formatter.FormatDateTime(x.User.LastLogin.Value.ToLocalTime(), null) : String.Empty" Title="Last Login" />
                     <TemplateColumn Title="Actions">
                         <CellTemplate>
                             <MudStack Row="true" Spacing="0" Class="pa-2">
                                 <div>
                                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
-                                    Size="Size.Small" Class="mx-1"
-                                    OnClick="@(() => OpenEditDialog(context.Item))" />
+                                                   Size="Size.Small" Class="mx-1"
+                                                   OnClick="@(() => OpenEditDialog(context.Item.User))" />
                                 </div>
                                 <div>
                                     <MudIconButton Icon="@Icons.Material.Filled.Lock" Color="Color.Warning"
-                                    Size="Size.Small" Class="mx-1"
-                                    OnClick="@(() => OpenPasswordResetDialog(context.Item))"
-                                    />
+                                                   Size="Size.Small" Class="mx-1"
+                                                   OnClick="@(() => OpenPasswordResetDialog(context.Item.User))" />
                                 </div>
                                 <div>
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                    Size="Size.Small" Class="mx-1"
-                                    OnClick="@(() => OpenDeleteDialog(context.Item.Id))" />
+                                                   Size="Size.Small" Class="mx-1"
+                                                   OnClick="@(() => OpenDeleteDialog(context.Item.User.Id))" />
                                 </div>
                             </MudStack>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
                 <PagerContent>
-                    <MudDataGridPager T="ApplicationUser" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                    <MudDataGridPager T="UserListItem" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
                 </PagerContent>
             </MudDataGrid>
         </MudCard>
@@ -122,7 +137,14 @@
 </MudContainer>
 
 @code {
-    private List<ApplicationUser> _users = new();
+    private sealed class UserListItem
+    {
+        public required ApplicationUser User { get; init; }
+        public required IReadOnlyList<string> Roles { get; init; }
+        public string RolesDisplay => Roles.Count > 0 ? string.Join(", ", Roles) : "Basic";
+    }
+
+    private List<UserListItem> _users = new();
     private bool _loading = true;
     private string _searchString = string.Empty;
 
@@ -155,7 +177,20 @@
         try
         {
             _loading = true;
-            _users = await UserService.GetUsersAsync();
+            var users = await UserService.GetUsersAsync();
+            var items = new List<UserListItem>(users.Count);
+
+            foreach (var user in users)
+            {
+                var roles = await UserService.GetUserRolesAsync(user.Id);
+                items.Add(new UserListItem
+                {
+                    User = user,
+                    Roles = roles.OrderBy(r => r, StringComparer.OrdinalIgnoreCase).ToList()
+                });
+            }
+
+            _users = items;
         }
         catch (Exception ex)
         {
@@ -169,14 +204,15 @@
         }
     }
 
-    private Func<ApplicationUser, bool> _quickFilter => x =>
+    private Func<UserListItem, bool> _quickFilter => x =>
     {
         if (string.IsNullOrWhiteSpace(_searchString))
             return true;
 
-        if (
-            x.UserName.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
-        )
+        if (x.User.UserName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+
+        if (x.RolesDisplay.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return false;
@@ -266,11 +302,18 @@
         try
         {
             var csv = new StringBuilder("\uFEFF");
-            csv.AppendLine(string.Join(",", ["Id", "UserName"]));
-            // Rows
+            csv.AppendLine(string.Join(",", ["Id", "UserName", "Roles", "LastLogin"]));
             foreach (var item in _users)
             {
-                csv.AppendLine(string.Join(",", ["Id", "UserName"]));
+                csv.AppendLine(string.Join(",",
+                [
+                    EscapeCsv(item.User.Id),
+                    EscapeCsv(item.User.UserName),
+                    EscapeCsv(item.RolesDisplay),
+                    EscapeCsv(item.User.LastLogin.HasValue
+                        ? Formatter.FormatDateTime(item.User.LastLogin.Value.ToLocalTime(), null)
+                        : string.Empty)
+                ]));
             }
 
             var now = DateTime.UtcNow.ToString("yyyyMMddHHmm");

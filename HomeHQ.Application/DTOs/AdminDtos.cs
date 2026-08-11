@@ -1,4 +1,4 @@
-namespace HomeHQ.DTOs;
+﻿namespace HomeHQ.DTOs;
 
 // ── Auth / current user ──────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ public record UserDto(
 
 public record CreateUserRequest(string UserName, string Password, bool IsAdmin);
 
-public record UpdateUserRequest(string UserName);
+public record UpdateUserRequest(string UserName, bool IsAdmin);
 
 public record ResetPasswordRequest(string NewPassword);
 

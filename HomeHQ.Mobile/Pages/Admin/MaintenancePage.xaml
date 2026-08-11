@@ -4,7 +4,7 @@
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
              xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
-             x:Class="HomeHQ.Mobile.Pages.MaintenancePage"
+             x:Class="HomeHQ.Mobile.Pages.Admin.MaintenancePage"
              x:DataType="vm:MaintenanceViewModel"
              Title="Maintenance">
 

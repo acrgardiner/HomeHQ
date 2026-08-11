@@ -1,6 +1,6 @@
-using HomeHQ.Mobile.ViewModels;
+﻿using HomeHQ.Mobile.ViewModels.Setup;
 
-namespace HomeHQ.Mobile.Pages;
+namespace HomeHQ.Mobile.Pages.Setup;
 
 public class AttachmentTypesPage : SetupListPage
 {

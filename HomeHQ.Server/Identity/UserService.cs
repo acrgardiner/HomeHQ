@@ -39,9 +39,21 @@ public class UserService : IUserService
             throw new InvalidOperationException(errors);
         }
 
-        await _userManager.AddToRolesAsync(newUser, roles.Select(r => r.ToString()));
+        var roleNames = NormalizeRoles(roles).Select(r => r.ToString()).ToList();
+        await _userManager.AddToRolesAsync(newUser, roleNames);
 
         return newUser;
+    }
+
+    public async Task<IList<string>> GetUserRolesAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        return await _userManager.GetRolesAsync(user);
     }
 
     public async Task<bool> UpdateUserName(string userId, string newUsername)
@@ -64,6 +76,57 @@ public class UserService : IUserService
         return result.Succeeded;
     }
 
+    public async Task<bool> UpdateUserAsync(string userId, string newUsername, IEnumerable<Roles> roles)
+    {
+        if (string.IsNullOrWhiteSpace(newUsername))
+        {
+            return false;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return false;
+        }
+
+        if (!string.Equals(user.UserName, newUsername, StringComparison.Ordinal))
+        {
+            user.UserName = newUsername;
+            user.NormalizedUserName = newUsername.ToUpperInvariant();
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return false;
+            }
+        }
+
+        var desiredRoles = NormalizeRoles(roles).Select(r => r.ToString()).ToHashSet(StringComparer.Ordinal);
+        var currentRoles = await _userManager.GetRolesAsync(user);
+
+        var toRemove = currentRoles.Where(r => !desiredRoles.Contains(r)).ToList();
+        var toAdd = desiredRoles.Where(r => !currentRoles.Contains(r, StringComparer.Ordinal)).ToList();
+
+        if (toRemove.Count > 0)
+        {
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, toRemove);
+            if (!removeResult.Succeeded)
+            {
+                return false;
+            }
+        }
+
+        if (toAdd.Count > 0)
+        {
+            var addResult = await _userManager.AddToRolesAsync(user, toAdd);
+            if (!addResult.Succeeded)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public async Task<bool> ResetPasswordAsync(string userId, string newPassword)
     {
         try
@@ -84,5 +147,16 @@ public class UserService : IUserService
         {
             return false;
         }
+    }
+
+    private static List<Roles> NormalizeRoles(IEnumerable<Roles> roles)
+    {
+        var normalized = roles.Distinct().ToList();
+        if (!normalized.Contains(Roles.Basic))
+        {
+            normalized.Insert(0, Roles.Basic);
+        }
+
+        return normalized;
     }
 }
