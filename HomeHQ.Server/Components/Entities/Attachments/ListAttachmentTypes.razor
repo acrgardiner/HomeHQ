@@ -50,9 +50,9 @@
                     EditDialog="@(parameters => DialogService.ShowAsync<EditAttachmentType>("Edit Attachment Type", parameters))"
             Logger="Logger"
             Columns="@(
-                new List<(Func<AttachmentType, object?>, string)>
+                new List<(System.Linq.Expressions.Expression<Func<AttachmentType, object>>, string)>
                 {
-                    (new Func<AttachmentType, object?>(x => x.Name), "Name"),
+                    ((System.Linq.Expressions.Expression<Func<AttachmentType, object>>)(x => x.Name), "Name"),
                 })"
             >
         </EntityList>

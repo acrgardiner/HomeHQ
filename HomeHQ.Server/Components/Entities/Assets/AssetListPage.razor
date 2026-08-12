@@ -83,12 +83,12 @@
                     Logger="Logger"
                     Includes="@(Includes)"
                     Columns="@(
-                        new List<(Func<Asset, object?>, string)>{
-                            (new Func<Asset, object?>(x => x.Name), "Name"),
-                            (new Func<Asset, object?>(x => x.Category?.Title ?? "Uncategorized"), "Category"),
-                            (new Func<Asset, object?>(x => x.PurchasedFrom), "From"),
-                            (new Func<Asset, object?>(x => Formatter.FormatDate(x.PurchaseDate, "MMM dd, yyyy")), "Purchase Date"),
-                            (new Func<Asset, object?>(x => WarrantyFormatter.RenderWarrantyInfo(x)), "Warranty"),
+                        new List<(System.Linq.Expressions.Expression<Func<Asset, object>>, string)>{
+                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Name), "Name"),
+                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Category != null ? x.Category.Title : "Uncategorized"), "Category"),
+                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.PurchasedFrom), "From"),
+                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => Formatter.FormatDate(x.PurchaseDate, "MMM dd, yyyy")), "Purchase Date"),
+                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => WarrantyFormatter.RenderWarrantyInfo(x)), "Warranty"),
                         }
                     )"
                     ItemActions="_AssetActions"

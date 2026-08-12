@@ -22,22 +22,13 @@
             Logger="Logger"
             Includes="@(Includes)"
             Columns="@(
-                    new List<(Func<Attachment, object?>, string)>{
-                        ((Func<Attachment, object?>)(x => (RenderFragment)(builder =>
-                            {
-                                if (x.ParentId.HasValue)
-                                {
-                                    builder.OpenElement(0, "a");
-                                    builder.AddAttribute(1, "href", $"/assets/{x.ParentId}");
-                                    builder.AddContent(2, x.ParentId.ToString());
-                                    builder.CloseElement();
-                                }
-                            })), "Parent"),
-                        (new Func<Attachment, object?>(x => x.OriginFileName), "Origin File Name"),
-                        (new Func<Attachment, object?>(x => x.LocalFileName), "Local File Name"),
-                        (new Func<Attachment, object?>(x => x.Extension), "Extension"),
-                        (new Func<Attachment, object?>(x => x.AttachmentType?.Name), "Attachment Type"),
-                        (new Func<Attachment, object?>(x => $"{Formatter.FormatFileSize(x.FileSize)}"), "File Size")
+                    new List<(System.Linq.Expressions.Expression<Func<Attachment, object>>, string)>{
+                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.ParentId), "Parent"),
+                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.OriginFileName), "Origin File Name"),
+                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.LocalFileName), "Local File Name"),
+                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.Extension), "Extension"),
+                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.AttachmentType != null ? x.AttachmentType.Name : null), "Attachment Type"),
+                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => $"{Formatter.FormatFileSize(x.FileSize)}"), "File Size")
                     }
                 )"
             ItemActions="AttachmentActions"

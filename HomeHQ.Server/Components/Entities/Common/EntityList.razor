@@ -143,10 +143,10 @@
                     {
                         @foreach (var column in Columns)
                         {
-                            <TemplateColumn T="TEntityType" Title="@column.Title" Sortable="true">
+                            <TemplateColumn T="TEntityType" Title="@column.Title" Sortable="true" SortBy="@column.Selector.Compile()">
                                 <CellTemplate>
                                     @{
-                                        var value = column.Selector(context.Item);
+                                        var value = column.Selector.Compile()(context.Item);
                                         if (value is RenderFragment fragment)
                                         {
                                             @fragment
@@ -227,7 +227,7 @@
 
     [Parameter] public required IEntityService<TEntityType> EntityService { get; set; }
 
-    [Parameter] public List<(Func<TEntityType, object?> Selector, string Title)>? Columns { get; set; } = null;
+    [Parameter] public List<(Expression<Func<TEntityType, object>> Selector, string Title)>? Columns { get; set; } = null;
     [Parameter] public RenderFragment? ToolbarActions { get; set; }
 
     [Parameter] public Func<TEntityType, bool>? QuickFilter { get; set; }
@@ -313,7 +313,7 @@
             return true;
         // Check if any property contains the search string
         return Columns?.Any(c =>
-            c.Selector(x)?.ToString()?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true) ?? false;
+            c.Selector.Compile()(x)?.ToString()?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true) ?? false;
     };
 
     private async Task ExportToCsv()
@@ -325,7 +325,7 @@
             // Rows
             foreach (var item in _entities)
             {
-                csv.AppendLine(string.Join(",", Columns?.Select(c => EscapeCsv(c.Selector(item)?.ToString() ?? "")) ?? Enumerable.Empty<string>()));
+                csv.AppendLine(string.Join(",", Columns?.Select(c => EscapeCsv(c.Selector.Compile()(item)?.ToString() ?? "")) ?? Enumerable.Empty<string>()));
             }
 
             var now = DateTime.UtcNow.ToString("yyyyMMddHHmm");
