@@ -49,10 +49,10 @@
             EditDialog="@(parameters => DialogService.ShowAsync<EditCategory>("Edit Category", parameters))"
             Logger="Logger"
             Columns="@(
-                new List<(System.Linq.Expressions.Expression<Func<Category, object>>, string)>
+                new List<DataColumn<Category>>
                 {
-                    ((System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Icon), "Icon"),
-                    ((System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Name), "Name")
+                    new DataColumn<Category> { Title = "Icon", Property = (System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Icon) },
+                    new DataColumn<Category> { Title = "Name", Property = (System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Name) }
                 })">
         </EntityList>
     </MudCard>

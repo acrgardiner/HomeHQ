@@ -22,13 +22,23 @@
             Logger="Logger"
             Includes="@(Includes)"
             Columns="@(
-                    new List<(System.Linq.Expressions.Expression<Func<Attachment, object>>, string)>{
-                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.ParentId), "Parent"),
-                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.OriginFileName), "Origin File Name"),
-                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.LocalFileName), "Local File Name"),
-                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.Extension), "Extension"),
-                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.AttachmentType != null ? x.AttachmentType.Name : null), "Attachment Type"),
-                        ((System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => $"{Formatter.FormatFileSize(x.FileSize)}"), "File Size")
+                    new List<DataColumn<Attachment>>
+                    {
+                        new DataColumn<Attachment> { Title = "Parent", Renderer = (Func<Attachment, object?>)(x => (RenderFragment)(builder =>
+                            {
+                                if (x.ParentId.HasValue)
+                                {
+                                    builder.OpenElement(0, "a");
+                                    builder.AddAttribute(1, "href", $"/assets/{x.ParentId}");
+                                    builder.AddContent(2, x.ParentId.ToString());
+                                    builder.CloseElement();
+                                }
+                            })), Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.ParentId) },
+                        new DataColumn<Attachment> { Title = "Origin File Name", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.OriginFileName) },
+                        new DataColumn<Attachment> { Title = "Local File Name", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.LocalFileName) },
+                        new DataColumn<Attachment> { Title = "Extension", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.Extension) },
+                        new DataColumn<Attachment> { Title = "Attachment Type", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.AttachmentType != null ? x.AttachmentType.Name : null) },
+                        new DataColumn<Attachment> { Title = "File Size", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.FileSize), Renderer = (Func<Attachment, object?>)(x => $"{Formatter.FormatFileSize(x.FileSize)}") }
                     }
                 )"
             ItemActions="AttachmentActions"

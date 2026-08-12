@@ -28,11 +28,11 @@
         CreateDialog="@( () => DialogService.ShowAsync<CreateCategory>("New Category") )"
         EditDialog="@(parameters => DialogService.ShowAsync<EditCategory>("Edit Category", parameters))"
         Logger="Logger"
-        Columns="@(
-            new List<(System.Linq.Expressions.Expression<Func<Category, object>>, string)>
+        Columns="@( 
+            new List<DataColumn<Category>>
             {
-                ((System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Icon), "Icon"),
-                ((System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Name), "Name")
+                new DataColumn<Category> { Title = "Icon", Property = (System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Icon) },
+                new DataColumn<Category> { Title = "Name", Property = (System.Linq.Expressions.Expression<Func<Category, object>>)(x => x.Name) }
             })">
     </EntityList>
 
@@ -45,10 +45,10 @@
         CreateDialog="@( () => DialogService.ShowAsync<CreateAttachmentType>("New Attachment Type") )"
         EditDialog="@(parameters => DialogService.ShowAsync<EditAttachmentType>("Edit Attachment Type", parameters))"
         Logger="Logger"
-        Columns="@(
-            new List<(System.Linq.Expressions.Expression<Func<AttachmentType, object>>, string)>
+        Columns="@( 
+            new List<DataColumn<AttachmentType>>
             {
-                ((System.Linq.Expressions.Expression<Func<AttachmentType, object>>)(x => x.Name), "Name"),
+                new DataColumn<AttachmentType> { Title = "Name", Property = (System.Linq.Expressions.Expression<Func<AttachmentType, object>>)(x => x.Name) },
             })"
         >
     </EntityList>
@@ -62,11 +62,11 @@
         CreateDialog="@( () => DialogService.ShowAsync<CreateWarrantyType>("New Warranty Type") )"
         EditDialog="@(parameters => DialogService.ShowAsync<EditWarrantyType>("Edit Warranty Type", parameters))"
         Logger="Logger"
-        Columns="@(
-            new List<(System.Linq.Expressions.Expression<Func<WarrantyType, object>>, string)>
+        Columns="@( 
+            new List<DataColumn<WarrantyType>>
             {
-                ((System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => x.Name), "Name"),
-                ((System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => $"{x.Years ?? 0} Years {x.Months ?? 0} Months {x.Days ?? 0} Days"), "Length")
+                new DataColumn<WarrantyType> { Title = "Name", Property = (System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => x.Name) },
+                new DataColumn<WarrantyType> { Title = "Length", Property = (System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => x.Years), Renderer = (Func<WarrantyType, object?>)(x => $"{x.Years ?? 0} Years {x.Months ?? 0} Months {x.Days ?? 0} Days") }
             }
         )"
     >

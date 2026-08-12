@@ -50,10 +50,10 @@
             EditDialog="@(parameters => DialogService.ShowAsync<EditWarrantyType>("Edit Warranty Type", parameters))"
             Logger="Logger"
             Columns="@(
-                new List<(System.Linq.Expressions.Expression<Func<WarrantyType, object>>, string)>
+                new List<DataColumn<WarrantyType>>
                 {
-                    ((System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => x.Name), "Name"),
-                    ((System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => $"{x.Years ?? 0} Years {x.Months ?? 0} Months {x.Days ?? 0} Days"), "Length")
+                    new DataColumn<WarrantyType> { Title = "Name", Property = (System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => x.Name) },
+                    new DataColumn<WarrantyType> { Title = "Length", Property = (System.Linq.Expressions.Expression<Func<WarrantyType, object>>)(x => x.Years), Renderer = (Func<WarrantyType, object?>)(x => $"{x.Years ?? 0} Years {x.Months ?? 0} Months {x.Days ?? 0} Days") }
                 }
             )"
         >

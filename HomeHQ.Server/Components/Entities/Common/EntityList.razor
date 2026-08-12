@@ -143,10 +143,13 @@
                     {
                         @foreach (var column in Columns)
                         {
-                            <TemplateColumn T="TEntityType" Title="@column.Title" Sortable="true" SortBy="@column.Selector.Compile()">
+                            var renderer = column.Renderer ?? (column.Property != null ? column.Property.Compile() : new Func<TEntityType, object?>(_ => null));
+                            var sortDelegate = column.SortBy != null ? column.SortBy.Compile() : (column.Property != null ? column.Property.Compile() : null);
+                            var sortable = (sortDelegate != null);
+                            <TemplateColumn T="TEntityType" Title="@column.Title" Sortable="@sortable" SortBy="@sortDelegate">
                                 <CellTemplate>
                                     @{
-                                        var value = column.Selector.Compile()(context.Item);
+                                        var value = renderer(context.Item);
                                         if (value is RenderFragment fragment)
                                         {
                                             @fragment
@@ -227,7 +230,7 @@
 
     [Parameter] public required IEntityService<TEntityType> EntityService { get; set; }
 
-    [Parameter] public List<(Expression<Func<TEntityType, object>> Selector, string Title)>? Columns { get; set; } = null;
+    [Parameter] public List<HomeHQ.Components.Entities.Common.DataColumn<TEntityType>>? Columns { get; set; } = null;
     [Parameter] public RenderFragment? ToolbarActions { get; set; }
 
     [Parameter] public Func<TEntityType, bool>? QuickFilter { get; set; }
@@ -313,7 +316,7 @@
             return true;
         // Check if any property contains the search string
         return Columns?.Any(c =>
-            c.Selector.Compile()(x)?.ToString()?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true) ?? false;
+            ((c.Renderer != null ? c.Renderer(x) : c.Property?.Compile()(x))?.ToString()?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)) ?? false;
     };
 
     private async Task ExportToCsv()
@@ -323,9 +326,9 @@
             var csv = new StringBuilder("\uFEFF");
             csv.AppendLine(string.Join(",", Columns?.Select(c => c.Title) ?? Enumerable.Empty<string>()));
             // Rows
-            foreach (var item in _entities)
+                foreach (var item in _entities)
             {
-                csv.AppendLine(string.Join(",", Columns?.Select(c => EscapeCsv(c.Selector.Compile()(item)?.ToString() ?? "")) ?? Enumerable.Empty<string>()));
+                csv.AppendLine(string.Join(",", Columns?.Select(c => EscapeCsv(((c.Renderer != null ? c.Renderer(item) : c.Property?.Compile()(item))?.ToString() ?? ""))) ?? Enumerable.Empty<string>()));
             }
 
             var now = DateTime.UtcNow.ToString("yyyyMMddHHmm");

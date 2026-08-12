@@ -83,12 +83,12 @@
                     Logger="Logger"
                     Includes="@(Includes)"
                     Columns="@(
-                        new List<(System.Linq.Expressions.Expression<Func<Asset, object>>, string)>{
-                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Name), "Name"),
-                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Category != null ? x.Category.Title : "Uncategorized"), "Category"),
-                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.PurchasedFrom), "From"),
-                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => Formatter.FormatDate(x.PurchaseDate, "MMM dd, yyyy")), "Purchase Date"),
-                            ((System.Linq.Expressions.Expression<Func<Asset, object>>)(x => WarrantyFormatter.RenderWarrantyInfo(x)), "Warranty"),
+                        new List<DataColumn<Asset>>{
+                            new DataColumn<Asset> { Title = "Name", Property = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Name), SortBy = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Name) },
+                            new DataColumn<Asset> { Title = "Category", Property = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Category != null ? x.Category.Title : "Uncategorized"), SortBy = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.Category != null ? x.Category.Title : "Uncategorized") },
+                            new DataColumn<Asset> { Title = "From", Property = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.PurchasedFrom!), SortBy = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.PurchasedFrom!) },
+                            new DataColumn<Asset> { Title = "Purchase Date", Property = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.PurchaseDate!), SortBy = (System.Linq.Expressions.Expression<Func<Asset, object>>)(x => x.PurchaseDate!), Renderer = (Func<Asset, object?>)(x => Formatter.FormatDate(x.PurchaseDate, "MMM dd, yyyy")) },
+                            new DataColumn<Asset> { Title = "Warranty", Renderer = (Func<Asset, object?>)(x => WarrantyFormatter.RenderWarrantyInfo(x)), Property = null, SortBy = null },
                         }
                     )"
                     ItemActions="_AssetActions"
