@@ -138,12 +138,61 @@ jobs:
         # prior to publish so XamlC can resolve custom XAML types.
         run: dotnet restore HomeHQ.Mobile/HomeHQ.Mobile.csproj
 
+      - name: Set TAG from ref
+        run: echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Sanitize tag and compute Android versionCode
+        shell: bash
+        run: |
+          set -e
+          # Read TAG (set in previous step) or fall back to github.ref_name
+          TAG=${TAG:-${GITHUB_REF_NAME}}
+          TAG=${TAG:-${{ github.ref_name }}}
+          echo "Original TAG: $TAG"
+          # Remove leading 'v' and replace unsafe filename chars with '_'
+          SANITIZED_TAG=$(echo "$TAG" | sed 's/^v//' | sed 's/[^A-Za-z0-9._-]/_/g')
+
+          # Extract first occurrence of numeric semver-like segment (e.g., 1.2.3 or 1.2)
+          NUMS=$(echo "$SANITIZED_TAG" | grep -oE '[0-9]+(\.[0-9]+){0,2}' | head -n1 || true)
+          if [ -z "$NUMS" ]; then
+            MAJOR=0; MINOR=0; PATCH=0
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$NUMS"
+            MAJOR=${MAJOR:-0}
+            MINOR=${MINOR:-0}
+            PATCH=${PATCH:-0}
+          fi
+
+          # Android versionCode must be integer. Build as M*10000 + m*100 + p
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          if [ "$VERSION_CODE" -le 0 ]; then
+            VERSION_CODE=1
+          fi
+
+          echo "SANITIZED_TAG=$SANITIZED_TAG" >> $GITHUB_ENV
+          echo "ANDROID_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "ANDROID_VERSION_NAME=$SANITIZED_TAG" >> $GITHUB_ENV
+          echo "Computed ANDROID_VERSION_CODE=$VERSION_CODE from TAG=$TAG"
+
       - name: Publish Android APK (Release)
         env:
           ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
         run: |
           # Adjust the project path if your MAUI Android project file is located elsewhere
-          dotnet publish HomeHQ.Mobile/HomeHQ.Mobile.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk -o ./artifacts/android
+          dotnet publish HomeHQ.Mobile/HomeHQ.Mobile.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk -p:AndroidVersionName=${{ env.ANDROID_VERSION_NAME }} -p:AndroidVersionCode=${{ env.ANDROID_VERSION_CODE }} -o ./artifacts/android
+
+      - name: Rename APK to include sanitized tag in filename
+        if: ${{ env.SANITIZED_TAG != '' }}
+        shell: bash
+        run: |
+          set -e
+          mkdir -p ./artifacts/android
+          apk=$(ls ./artifacts/android/*.apk | head -n1)
+          echo "Found apk: $apk"
+          base=$(basename "$apk" .apk)
+          dest="./artifacts/android/${base}-${SANITIZED_TAG}.apk"
+          echo "Renaming to: $dest"
+          mv "$apk" "$dest"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
