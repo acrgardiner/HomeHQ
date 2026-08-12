@@ -1,0 +1,26 @@
+﻿@using HomeHQ.Identity
+@using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject ILogger<EditUser> Logger
+
+@attribute [Authorize(Roles = "Admin")]
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit User</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" Model="@_model">
+            <MudTextField T="string" @bind-Value="_model.UserName" Label="Username" Required="true"
+                          RequiredError="Name is required!" />
+            <MudCheckBox T="bool" @bind-Value="_model.IsAdmin" Label="Admin User" Class="mt-3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="_loading">Update</MudButton>
+    </DialogActions>
+</MudDialog>

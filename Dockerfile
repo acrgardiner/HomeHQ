@@ -1,38 +1,48 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+# Base image for runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
-#USER app
 
-# Install ICU for full globalization support
 RUN apk add --no-cache icu-libs tzdata
-# Set the env var to disable invariant globalization mode
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# This stage is used to build the service project
+# Build image
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["HomeHQ.csproj", "."]
-RUN dotnet restore "./HomeHQ.csproj"
-COPY . .
-WORKDIR "/src/."
-RUN dotnet build "./HomeHQ.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# Copy only project files for restore
+COPY ["HomeHQ.Server/HomeHQ.Server.csproj", "HomeHQ.Server/"]
+
+# If you have a solution file, copy it here as well:
+# COPY ["HomeHQ.sln", "."]
+
+# Restore dependencies
+WORKDIR /src/HomeHQ.Server
+RUN dotnet restore "HomeHQ.Server.csproj"
+
+# Copy the rest of the source code
+WORKDIR /src
+COPY . .
+
+# Build
+WORKDIR /src/HomeHQ.Server
+RUN dotnet build "HomeHQ.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# Publish
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./HomeHQ.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+WORKDIR /src/HomeHQ.Server
+RUN dotnet publish "HomeHQ.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# Final runtime image
 FROM base AS final
 ARG COMMIT_SHA
 ENV COMMIT_SHA=$COMMIT_SHA
 
 WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "HomeHQ.dll"]
+COPY --from=publish /app/publish ./
+
+ENTRYPOINT ["dotnet", "HomeHQ.Server.dll"]

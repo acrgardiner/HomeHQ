@@ -1,0 +1,51 @@
+﻿@page "/attachments"
+
+@using HomeHQ.Components.Entities.Common
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using System.Linq.Expressions
+@using HomeHQ.Server.Components.Entities.Common
+@using HomeHQ.Helpers
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
+@inject IEntityService<Attachment> AttachmentService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ILogger<ListAttachment> Logger
+
+<MudContainer MaxWidth="@MaxWidth.Medium" Class="mt-6">
+    <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachments</MudText>
+    <MudPaper Class="p-4">
+        <EntityList TEntityType="Attachment" Plural="Attachments" Singular="Attachment" EntityService="AttachmentService"
+            Logger="Logger"
+            Includes="@(Includes)"
+            Columns="@(
+                    new List<DataColumn<Attachment>>
+                    {
+                        new DataColumn<Attachment> { Title = "Parent", Renderer = (Func<Attachment, object?>)(x => (RenderFragment)(builder =>
+                            {
+                                if (x.ParentId.HasValue)
+                                {
+                                    builder.OpenElement(0, "a");
+                                    builder.AddAttribute(1, "href", $"/assets/{x.ParentId}");
+                                    builder.AddContent(2, x.ParentId.ToString());
+                                    builder.CloseElement();
+                                }
+                            })), Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.ParentId) },
+                        new DataColumn<Attachment> { Title = "Origin File Name", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.OriginFileName) },
+                        new DataColumn<Attachment> { Title = "Local File Name", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.LocalFileName) },
+                        new DataColumn<Attachment> { Title = "Extension", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.Extension) },
+                        new DataColumn<Attachment> { Title = "Attachment Type", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.AttachmentType != null ? x.AttachmentType.Name : null) },
+                        new DataColumn<Attachment> { Title = "File Size", Property = (System.Linq.Expressions.Expression<Func<Attachment, object>>)(x => x.FileSize), Renderer = (Func<Attachment, object?>)(x => $"{Formatter.FormatFileSize(x.FileSize)}") }
+                    }
+                )"
+            ItemActions="AttachmentActions"
+            EnableItemDelete="true">
+        </EntityList>
+    </MudPaper>
+</MudContainer>
+
+
+

@@ -1,0 +1,85 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@using HomeHQ.Services
+@using HomeHQ.Entities
+
+@attribute [Authorize()]
+
+@inject IJSRuntime JS
+
+<MudDialog style="width: 100%; height: 100%" Options="_maxWidthOptions">
+    <TitleContent>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Attachment</MudText>
+            <div class="d-flex align-center gap-2">
+                <MudIconButton Icon="@(_imageFitMode == ImageFitMode.Width ? Icons.Material.Filled.PhotoSizeSelectLarge : Icons.Material.Filled.PhotoSizeSelectSmall)"
+                                Color="Color.Primary"
+                                OnClick="@ToggleImageFitMode"
+                                title="Switch Fill Mode" />
+                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Primary" OnClick="Close" title="Close" />
+            </div>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Fixed="true" style="height: 90%;">
+            @if (IsImageAttachment(Attachment))
+            {
+                <a href="@imageSource" target="_blank" style="@GetImageStyle()">
+                    <MudImage Src="@imageSource" Style="@GetImageStyle()" />
+                </a>
+            }
+            else
+            {
+                <iframe src="@imageSource" frameborder="0" style="display:block;" />
+            }
+
+        </MudContainer>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] public required IMudDialogInstance MudDialog { get; set; }
+    [Parameter][EditorRequired] public Attachment Attachment { get; set; }
+
+    private readonly DialogOptions _maxWidthOptions = new() { MaxWidth = MaxWidth.Large };
+    private string imageSource;
+
+    private enum ImageFitMode
+    {
+        Width,
+        Height
+    }
+
+    private ImageFitMode _imageFitMode = ImageFitMode.Height;
+
+    private void ToggleImageFitMode()
+    {
+        _imageFitMode = _imageFitMode == ImageFitMode.Width ? ImageFitMode.Height : ImageFitMode.Width;
+    }
+
+    private string GetImageStyle()
+    {
+        return _imageFitMode switch
+        {
+            ImageFitMode.Width => "width: 100%; object-fit: contain; display: flex; justify-content: center; align-items: center;",
+            ImageFitMode.Height => "max-width: 100%; height: 100%; object-fit: contain; display: flex; justify-content: center; align-items: center;",
+            _ => "max-width: 100%; max-height: 100%; object-fit: contain;"
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await MudDialog.SetOptionsAsync(_maxWidthOptions);
+
+
+        imageSource = $"/api/attachments/{Attachment.Id}/previewdata";
+
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+
+    private bool IsImageAttachment(Attachment attachment)
+    {
+        return !string.IsNullOrEmpty(attachment.ContentType) && attachment.ContentType.StartsWith("image/");
+    }
+
+}

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels.Setup"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+             x:Class="HomeHQ.Mobile.Pages.Setup.SetupEditPage"
+             x:DataType="vm:SetupEditViewModel"
+             Title="{Binding PageTitle}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <Grid Grid.Row="0"
+              Padding="8"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+              ColumnDefinitions="Auto, *, Auto">
+
+            <Button Grid.Column="0"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ArrowBack}"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+
+            <VerticalStackLayout Grid.Column="1"
+                                 VerticalOptions="Center"
+                                 Padding="8,0">
+                <Label Text="{Binding PageTitle}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       LineBreakMode="TailTruncation"/>
+                <Label Text="{Binding Name}"
+                       FontSize="13"
+                       TextColor="{StaticResource Gray500}"
+                       LineBreakMode="TailTruncation"/>
+            </VerticalStackLayout>
+
+            <Button Grid.Column="2"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Save}"
+                    Command="{Binding SaveCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    CornerRadius="20"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    Margin="4,0"
+                    IsEnabled="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"/>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HeightRequest="48"
+                               WidthRequest="48"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"/>
+
+            <VerticalStackLayout IsVisible="{Binding HasError}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="12"
+                                 Padding="32">
+                <Label Text="Something went wrong"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray500}"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="Go Back"
+                        Command="{Binding GoBackCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"/>
+            </VerticalStackLayout>
+
+            <ScrollView IsVisible="{Binding ShowContent}">
+                <VerticalStackLayout Padding="16" Spacing="16">
+                    <Frame Padding="16"
+                           CornerRadius="12"
+                           HasShadow="True"
+                           BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                        <VerticalStackLayout Spacing="16">
+                            <Label Text="Details"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+
+                            <controls:FloatingEntry Title="Name *">
+                                <controls:FloatingEntry.InnerContent>
+                                    <Entry Text="{Binding Name}"
+                                           Placeholder="Name"
+                                           FontSize="15"
+                                           HeightRequest="44"
+                                           BackgroundColor="Transparent"/>
+                                </controls:FloatingEntry.InnerContent>
+                            </controls:FloatingEntry>
+
+                            <controls:FloatingEntry Title="Icon"
+                                                    IsVisible="{Binding ShowIconFields}">
+                                <controls:FloatingEntry.InnerContent>
+                                    <Entry Text="{Binding Icon}"
+                                           Placeholder="e.g. 🏠"
+                                           FontSize="15"
+                                           HeightRequest="44"
+                                           BackgroundColor="Transparent"/>
+                                </controls:FloatingEntry.InnerContent>
+                            </controls:FloatingEntry>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <Frame Padding="16"
+                           CornerRadius="12"
+                           HasShadow="True"
+                           IsVisible="{Binding ShowDurationFields}"
+                           BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}">
+                        <VerticalStackLayout Spacing="16">
+                            <Label Text="Duration"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+
+                            <controls:FloatingEntry Title="Years">
+                                <controls:FloatingEntry.InnerContent>
+                                    <Entry Text="{Binding YearsText}"
+                                           Keyboard="Numeric"
+                                           Placeholder="0"
+                                           FontSize="15"
+                                           HeightRequest="44"
+                                           BackgroundColor="Transparent"/>
+                                </controls:FloatingEntry.InnerContent>
+                            </controls:FloatingEntry>
+
+                            <controls:FloatingEntry Title="Months">
+                                <controls:FloatingEntry.InnerContent>
+                                    <Entry Text="{Binding MonthsText}"
+                                           Keyboard="Numeric"
+                                           Placeholder="0"
+                                           FontSize="15"
+                                           HeightRequest="44"
+                                           BackgroundColor="Transparent"/>
+                                </controls:FloatingEntry.InnerContent>
+                            </controls:FloatingEntry>
+
+                            <controls:FloatingEntry Title="Days">
+                                <controls:FloatingEntry.InnerContent>
+                                    <Entry Text="{Binding DaysText}"
+                                           Keyboard="Numeric"
+                                           Placeholder="0"
+                                           FontSize="15"
+                                           HeightRequest="44"
+                                           BackgroundColor="Transparent"/>
+                                </controls:FloatingEntry.InnerContent>
+                            </controls:FloatingEntry>
+                        </VerticalStackLayout>
+                    </Frame>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,51 @@
+﻿@using System.Text.Json
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+@page "/admin/logs"
+@inject IWebHostEnvironment Env
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Dashboard - @Constants.Application.TITLE</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                Log Viewer
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            </MudText>
+        </div>
+    </div>
+    <MudDataGrid T="LogEntry" RowsPerPage="@ROWS_PER_PAGE" Items="@_filteredEntries" Hover="true" Dense="true" Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1" QuickFilter="@QuickFilter">
+        <ToolBarContent>
+            <MudText >Select Log:  </MudText>
+            <MudSelect T="string" @bind-Value="_selectedLogFile" @bind-Value:after="OnLogFileChange" Class="mt-2 pa-2">
+                @foreach (var logFile in _logFiles)
+                {
+                    <MudSelectItem T="string" Value="@logFile">@logFile</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Class="mt-2 pa-2">Filter by Level:  </MudText>
+            <MudSelect T="string" @bind-Value="_selectedLevel" @bind-Value:after="OnLevelChanged" Class="mt-2 pa-2">
+                @foreach (var level in _availableLevels)
+                {
+                    <MudSelectItem T="string" Value="@level">@level</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-2 pa-2" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Timestamp" Title="TimeStamp" />
+            <PropertyColumn Property="x => x.Level" Title="Level" />
+            <PropertyColumn Property="x => x.SourceContext" Title="SourceContext" />
+            <PropertyColumn Property="x => x.Message" Title="Message" />
+            <PropertyColumn Property="x => x.Exception" Title="Exception" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="LogEntry" PageSizeOptions="new int[] { 10, 25, 50, 100, 1000 }" />
+        </PagerContent>
+    </MudDataGrid>
+</MudContainer>
+

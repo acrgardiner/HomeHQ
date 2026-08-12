@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HomeHQ.Mobile.Controls.FlyoutHeader">
+    
+    <Grid BackgroundColor="{StaticResource Primary}" 
+          Padding="16,48,16,16"
+          RowDefinitions="Auto, Auto, Auto">
+        
+        <!-- Logo/App Icon -->
+        <Frame Grid.Row="0"
+               BackgroundColor="White"
+               CornerRadius="12"
+               Padding="16"
+               HasShadow="False"
+               HeightRequest="80"
+               WidthRequest="80"
+               HorizontalOptions="Start">
+            <Image Source="logo_transparent.png"
+                   Aspect="AspectFit"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+        </Frame>
+        
+        <!-- App Title -->
+        <Label Grid.Row="1"
+               Text="HomeHQ"
+               FontSize="28"
+               FontAttributes="Bold"
+               TextColor="White"
+               Margin="0,16,0,4"/>
+        
+        <!-- Tagline -->
+        <Label Grid.Row="2"
+               Text="Home Document Management"
+               FontSize="13"
+               TextColor="#CCFFFFFF"/>
+        
+    </Grid>
+    
+</ContentView>

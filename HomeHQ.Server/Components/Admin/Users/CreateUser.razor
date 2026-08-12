@@ -1,0 +1,52 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using HomeHQ.Identity
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ILogger<CreateUser> Logger
+
+<EditForm Model="@newUser" OnValidSubmit="Submit">
+<DataAnnotationsValidator/>
+    <MudDialog Options="_dialogOptions">
+        <DialogContent>
+            <MudTextField Label="Username" HelperText="Max. 8 characters" @bind-Value="newUser.UserName" For="@(() => newUser.UserName)" />
+            <MudTextField @bind-Value="newUser.Password"
+                For="@(() => newUser.Password)"
+                Label="Password"
+                InputType="@_passwordInput"
+                Adornment="Adornment.End"
+                AdornmentIcon="@_passwordInputIcon"
+                OnAdornmentClick="TogglePasswordVisibility"
+                AdornmentAriaLabel="Show Password"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                HelperText="Choose a strong password"
+                Class="mt-3"
+            />
+            <MudTextField @bind-Value="newUser.ConfirmPassword"
+                          For="@(() => newUser.ConfirmPassword)"
+                Label="Password"
+                InputType="@_confirmPasswordInput"
+                Adornment="Adornment.End"
+                AdornmentIcon="@_confirmPasswordInputIcon"
+                OnAdornmentClick="ToggleConfirmPasswordVisibility"
+                AdornmentAriaLabel="Show Password"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                HelperText="Repeat the password"
+                Class="mt-3"
+            />
+            <MudCheckBox T="bool" @bind-Value="newUser.IsAdmin" Label="Admin User" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel">Cancel</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Create</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+

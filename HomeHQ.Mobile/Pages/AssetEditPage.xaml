@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
+             xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Domain"
+             x:Class="HomeHQ.Mobile.Pages.AssetEditPage"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+             x:DataType="vm:AssetEditViewModel"
+             x:Name="ThisPage"
+             Title="{Binding PageTitle}"
+             Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Card Style -->
+            <Style x:Key="CardStyle" TargetType="Frame">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="CornerRadius" Value="12"/>
+                <Setter Property="HasShadow" Value="True"/>
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"/>
+                <Setter Property="Margin" Value="0,0,0,16"/>
+            </Style>
+
+            <!-- Section Header Style -->
+            <Style x:Key="SectionHeaderStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="FontAttributes" Value="Bold"/>
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+            </Style>
+
+            <!-- Field Label Style -->
+            <Style x:Key="FieldLabelStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="TextColor" Value="{StaticResource Gray500}"/>
+                <Setter Property="Margin" Value="0,0,0,4"/>
+            </Style>
+
+            <!-- Entry Style -->
+            <Style x:Key="FormEntryStyle" TargetType="Entry">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                <Setter Property="BackgroundColor" Value="Transparent"/>
+                <Setter Property="HeightRequest" Value="44"/>
+            </Style>
+
+            <!-- Picker Style -->
+            <Style x:Key="FormPickerStyle" TargetType="Picker">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                <Setter Property="BackgroundColor" Value="Transparent"/>
+                <Setter Property="HeightRequest" Value="44"/>
+            </Style>
+
+            <!-- Input Container Style -->
+            <Style x:Key="InputContainerStyle" TargetType="Border">
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"/>
+                <Setter Property="StrokeThickness" Value="1"/>
+                <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"/>
+                <Setter Property="StrokeShape" Value="RoundRectangle 8"/>
+                <Setter Property="Padding" Value="12,4"/>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- ═══ Custom Header ═══ -->
+        <Grid Grid.Row="0"
+              Padding="8,8,8,8"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+              ColumnDefinitions="Auto, *, Auto">
+
+            <!-- Back Button -->
+            <Button Grid.Column="0"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ArrowBack}"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+
+            <!-- Title -->
+            <VerticalStackLayout Grid.Column="1"
+                                 VerticalOptions="Center"
+                                 Padding="8,0">
+                <Label Text="{Binding PageTitle}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       LineBreakMode="TailTruncation"/>
+                <Label Text="{Binding Name}"
+                       FontSize="13"
+                       TextColor="{StaticResource Gray500}"
+                       LineBreakMode="TailTruncation"/>
+            </VerticalStackLayout>
+
+            <!-- Save Button -->
+            <Button x:Name="SaveButton" Grid.Column="2"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Save}"
+                    Clicked="OnSaveButtonClicked"
+                    BackgroundColor="{StaticResource Primary}"
+                    CornerRadius="20"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    Margin="4,0"
+                    IsEnabled="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"/>
+        </Grid>
+
+        <!-- ═══ Content Area ═══ -->
+        <Grid Grid.Row="1">
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HeightRequest="48"
+                               WidthRequest="48"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"/>
+
+            <!-- Error State -->
+            <VerticalStackLayout IsVisible="{Binding HasError}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}"
+                       FontSize="64"
+                       HorizontalOptions="Center"/>
+                <Label Text="Something went wrong"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="Try Again"
+                        Command="{Binding GoBackCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <!-- Main Content -->
+            <ScrollView IsVisible="{Binding ShowContent}">
+                <VerticalStackLayout Padding="16" Spacing="0">
+
+                    <!-- ═══ Basic Information Card ═══ -->
+                    <Frame Style="{StaticResource CardStyle}">
+                        <VerticalStackLayout>
+
+                            <!-- Card Header -->
+                            <Grid Padding="16,12"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                  ColumnDefinitions="Auto, *">
+                                <Label Grid.Column="0"
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Info}"
+                                       FontSize="20"
+                                       TextColor="{StaticResource Primary}"
+                                       VerticalOptions="Center"
+                                       Margin="0,0,8,0"/>
+                                <Label Grid.Column="1"
+                                       Text="Basic Information"
+                                       Style="{StaticResource SectionHeaderStyle}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+
+                            <BoxView HeightRequest="1"
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+
+                            <!-- Card Content -->
+                            <VerticalStackLayout Padding="16" Spacing="12">
+
+                                <!-- Name -->
+                                <controls:FloatingEntry Title="Name *">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <Entry Text="{Binding Name}" Placeholder="Enter asset name" />
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
+
+                                <!-- Category -->
+                                <controls:FloatingEntry Title="Category *">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <Picker Title="-- Select Category --"
+                                            ItemsSource="{Binding Categories}"
+                                            ItemDisplayBinding="{Binding Title}"
+                                            SelectedItem="{Binding SelectedCategory}"
+                                            Style="{StaticResource FormPickerStyle}"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
+
+                                <!-- Purchased From -->
+                                <controls:FloatingEntry Title="Purchased From *">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <Entry Text="{Binding PurchasedFrom}" Placeholder="Where was this purchased?" />
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
+
+                                <!-- Purchase Date -->
+                                <controls:FloatingEntry Title="Purchase Date *">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <DatePicker Date="{Binding PurchaseDate}"
+                                            Format="D"
+                                            TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                            BackgroundColor="Transparent"
+                                            HeightRequest="44"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
+
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- ═══ Warranty Information Card ═══ -->
+                    <Frame Style="{StaticResource CardStyle}">
+                        <VerticalStackLayout>
+
+                            <!-- Card Header -->
+                            <Grid Padding="16,12"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                  ColumnDefinitions="Auto, *">
+                                <Label Grid.Column="0"
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified}"
+                                       FontSize="20"
+                                       TextColor="{StaticResource Success}"
+                                       VerticalOptions="Center"
+                                       Margin="0,0,8,0"/>
+                                <Label Grid.Column="1"
+                                       Text="Warranty Information"
+                                       Style="{StaticResource SectionHeaderStyle}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+
+                            <BoxView HeightRequest="1"
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+
+                            <!-- Card Content -->
+                            <VerticalStackLayout Padding="16" Spacing="12">
+
+                                <!-- Warranty Type -->
+                                <controls:FloatingEntry Title="Warranty Type">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <Picker Title="-- No Warranty --"
+                                                ItemsSource="{Binding WarrantyTypes}"
+                                                ItemDisplayBinding="{Binding Name}"
+                                                SelectedItem="{Binding SelectedWarrantyType}"
+                                                Style="{StaticResource FormPickerStyle}"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
+
+                                <!-- Warranty Expiration -->
+                                <controls:FloatingEntry Title="Warranty Expiration">
+                                    <controls:FloatingEntry.InnerContent>
+                                        <DatePicker Date="{Binding WarrantyExpiration}"
+                                                        Format="D"
+                                                        IsEnabled="{Binding IsWarrantyExpirationEnabled}"
+                                                        TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                        BackgroundColor="Transparent"
+                                                        HeightRequest="44"/>
+                                    </controls:FloatingEntry.InnerContent>
+                                </controls:FloatingEntry>
+
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- ═══ Attributes Card ═══ -->
+                    <Frame Style="{StaticResource CardStyle}">
+                        <VerticalStackLayout>
+
+                            <!-- Card Header -->
+                            <Grid Padding="16,12"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                  ColumnDefinitions="Auto, *, Auto">
+                                <Label Grid.Column="0"
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Extension}"
+                                       FontSize="20"
+                                       TextColor="{StaticResource Info}"
+                                       VerticalOptions="Center"
+                                       Margin="0,0,8,0"/>
+                                <Label Grid.Column="1"
+                                       Text="Attributes"
+                                       Style="{StaticResource SectionHeaderStyle}"
+                                       VerticalOptions="Center"/>
+                                <!-- Add Attribute Button -->
+                                <Button Grid.Column="2"
+                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add}"
+                                        Command="{Binding AddAttributeCommand}"
+                                        BackgroundColor="{StaticResource Primary}"
+                                        CornerRadius="16"
+                                        WidthRequest="32"
+                                        HeightRequest="32"
+                                        Padding="0"
+                                        Margin="0,0,4,0"/>
+                            </Grid>
+
+                            <BoxView HeightRequest="1"
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+
+                            <!-- Attributes List (CollectionView for editable items) -->
+                            <CollectionView ItemsSource="{Binding Attributes}"
+                                            IsVisible="{Binding HasAttributes}"
+                                            SelectionMode="None"
+                                            Margin="16"
+                                            ItemSizingStrategy="MeasureAllItems">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:AttributeViewModel">
+                                        <Frame Padding="0,0,4,0"
+                                               CornerRadius="8"
+                                               HasShadow="False"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                               Margin="0,0,0,8">
+                                            <Grid ColumnDefinitions="*, *, Auto" ColumnSpacing="8">
+
+                                                <!-- Attribute Name Entry -->
+                                                <Border Grid.Column="0"
+                                                        BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                        StrokeThickness="1"
+                                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        Padding="8,2">
+                                                    <Entry Text="{Binding Key, Mode=TwoWay}"
+                                                           TextChanged="OnAttributeTextChanged"
+                                                           Placeholder="Name"
+                                                           FontSize="14"
+                                                           PlaceholderColor="{StaticResource Gray400}"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                           BackgroundColor="Transparent"
+                                                           HeightRequest="40"/>
+                                                </Border>
+
+                                                <!-- Attribute Value Entry -->
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                        StrokeThickness="1"
+                                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        Padding="8,2">
+                                                    <Entry Text="{Binding Value, Mode=TwoWay}"
+                                                           TextChanged="OnAttributeValueTextChanged"
+                                                           Placeholder="Value"
+                                                           FontSize="14"
+                                                           PlaceholderColor="{StaticResource Gray400}"
+                                                           TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                           BackgroundColor="Transparent"
+                                                           HeightRequest="40"/>
+                                                </Border>
+
+                                                <!-- Delete Button -->
+                                                <Button Grid.Column="2"
+                                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                                                        Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveAttributeCommand}"
+                                                        CommandParameter="{Binding .}"
+                                                        BackgroundColor="{StaticResource Error}"
+                                                        CornerRadius="16"
+                                                        WidthRequest="32"
+                                                        HeightRequest="32"
+                                                        Padding="0"
+                                                        VerticalOptions="Center" HorizontalOptions="End"/>
+                                            </Grid>
+                                        </Frame>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+
+                            <!-- Empty State -->
+                            <VerticalStackLayout Padding="24"
+                                                 IsVisible="{Binding HasAttributes, Converter={StaticResource InvertedBoolConverter}}"
+                                                 HorizontalOptions="Center"
+                                                 Spacing="8">
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}"
+                                       FontSize="32"
+                                       HorizontalOptions="Center"
+                                       Opacity="0.5"/>
+                                <Label Text="No attributes added"
+                                       FontSize="14"
+                                       TextColor="{StaticResource Gray400}"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- ═══ Notes Card ═══ -->
+                    <Frame Style="{StaticResource CardStyle}">
+                        <VerticalStackLayout>
+
+                            <!-- Card Header -->
+                            <Grid Padding="16,12"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                  ColumnDefinitions="Auto, *, Auto">
+                                <Label Grid.Column="0"
+                                       mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Notes}"
+                                       FontSize="20"
+                                       TextColor="{StaticResource Warning}"
+                                       VerticalOptions="Center"
+                                       Margin="0,0,8,0"/>
+                                <Label Grid.Column="1"
+                                       Text="Notes"
+                                       Style="{StaticResource SectionHeaderStyle}"
+                                       VerticalOptions="Center"/>
+                                <!-- Add Note Button -->
+                                <Button Grid.Column="2"
+                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add}"
+                                        Command="{Binding AddNoteCommand}"
+                                        BackgroundColor="{StaticResource Primary}"
+                                        CornerRadius="16"
+                                        WidthRequest="32"
+                                        HeightRequest="32"
+                                        Padding="0"
+                                        Margin="0,0,4,0"/>
+                            </Grid>
+
+                            <BoxView HeightRequest="1"
+                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+
+                            <!-- Notes List (CollectionView for editable items) -->
+                            <CollectionView ItemsSource="{Binding Notes}"
+                                            IsVisible="{Binding HasNotes}"
+                                            SelectionMode="None"
+                                            Margin="16"
+                                            ItemSizingStrategy="MeasureAllItems">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:NoteViewModel">
+                                        <Frame Padding="0,0,4,0"
+                                               CornerRadius="8"
+                                               HasShadow="False"
+                                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                                               Margin="0,0,0,8">
+                                            <VerticalStackLayout Spacing="8">
+
+                                                <!-- Title row -->
+                                                <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                                                    <Border Grid.Column="0"
+                                                            BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                            StrokeThickness="1"
+                                                            Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                            StrokeShape="RoundRectangle 6"
+                                                            Padding="8,0,0,4">
+                                                        <Entry Text="{Binding Title, Mode=TwoWay}"
+                                                               TextChanged="OnNoteTitleTextChanged"
+                                                               Placeholder="Title"
+                                                               FontSize="14"
+                                                               FontAttributes="Bold"
+                                                               PlaceholderColor="{StaticResource Gray400}"
+                                                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                               BackgroundColor="Transparent"
+                                                               HeightRequest="40"/>
+                                                    </Border>
+
+                                                    <!-- Delete Button -->
+                                                    <Button Grid.Column="1"
+                                                            mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                                                            Command="{Binding Source={x:Reference ThisPage}, Path=BindingContext.RemoveNoteCommand}"
+                                                            CommandParameter="{Binding .}"
+                                                            BackgroundColor="{StaticResource Error}"
+                                                            CornerRadius="16"
+                                                            WidthRequest="32"
+                                                            HeightRequest="32"
+                                                            Padding="0"
+                                                            VerticalOptions="Center"/>
+                                                </Grid>
+
+                                                <!-- Content Editor -->
+                                                <Border BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                                        StrokeThickness="1"
+                                                        Stroke="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray600}}"
+                                                        StrokeShape="RoundRectangle 6"
+                                                        Padding="8,4">
+                                                    <Editor Text="{Binding Content, Mode=TwoWay}"
+                                                            TextChanged="OnNoteContentTextChanged"
+                                                            Placeholder="Note content..."
+                                                            FontSize="14"
+                                                            PlaceholderColor="{StaticResource Gray400}"
+                                                            TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}"
+                                                            BackgroundColor="Transparent"
+                                                            AutoSize="TextChanges"
+                                                            MinimumHeightRequest="80"/>
+                                                </Border>
+
+                                            </VerticalStackLayout>
+                                        </Frame>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+
+                            <!-- Empty State -->
+                            <VerticalStackLayout Padding="24"
+                                                 IsVisible="{Binding HasNotes, Converter={StaticResource InvertedBoolConverter}}"
+                                                 HorizontalOptions="Center"
+                                                 Spacing="8">
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}"
+                                       FontSize="32"
+                                       HorizontalOptions="Center"
+                                       Opacity="0.5"/>
+                                <Label Text="No notes added"
+                                       FontSize="14"
+                                       TextColor="{StaticResource Gray400}"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <!-- ═══ Attachments Card ═══ -->
+                    <!-- Attachments Card -->
+                    <Frame Style="{StaticResource CardStyle}">
+                        <VerticalStackLayout>
+
+                            <!-- Card Header — title + carousel navigation controls -->
+                            <Grid Padding="16,12"
+                              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
+                              ColumnDefinitions="Auto, *, Auto, Auto, Auto">
+
+                                <Label Grid.Column="0"
+                                   mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile}"
+                                   FontSize="20"
+                                   TextColor="{StaticResource Warning}"
+                                   VerticalOptions="Center"
+                                   Margin="0,0,8,0"/>
+
+                                <Label Grid.Column="1"
+                                   Text="Attachments"
+                                   Style="{StaticResource SectionHeaderStyle}"
+                                   VerticalOptions="Center"/>
+
+                                <!-- "1 of N" counter -->
+                                <Label Grid.Column="2"
+                                   Text="{Binding AttachmentCountText}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Gray500}"
+                                   VerticalOptions="Center"
+                                   Margin="0,0,4,0"
+                                   IsVisible="{Binding HasAttachments}"/>
+
+                                <!-- Previous -->
+                                <Button Grid.Column="3"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ChevronLeft}"
+                                    Command="{Binding PreviousAttachmentCommand}"
+                                    IsEnabled="{Binding CanGoPreviousAttachment}"
+                                    IsVisible="{Binding HasAttachments}"
+                                    BackgroundColor="Transparent"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    Padding="0"/>
+
+                                <!-- Next -->
+                                <Button Grid.Column="4"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ChevronRight}"
+                                    Command="{Binding NextAttachmentCommand}"
+                                    IsEnabled="{Binding CanGoNextAttachment}"
+                                    IsVisible="{Binding HasAttachments}"
+                                    BackgroundColor="Transparent"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    Padding="0"/>
+                            </Grid>
+
+                            <BoxView HeightRequest="1"
+                                Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+
+                            <!-- ═══ Add Attachment actions ═══ -->
+                            <Button Text="Take Photo"
+                                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Camera}"
+                                Command="{Binding AddAttachmentPhotoCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                Margin="6,12,0,0"
+                                IsVisible="{Binding CanAddAttachments}"/>
+
+                            <Button Text="From Gallery"
+                                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Image}"
+                                Command="{Binding AddAttachmentGalleryCommand}"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"
+                                Margin="6,12,0,0"
+                                IsVisible="{Binding CanAddAttachments}"/>
+
+                            <Button Text="From File"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}"
+                                    Command="{Binding AddAttachmentFileCommand}"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"
+                                    CornerRadius="8"
+                                    HeightRequest="44"
+                                    Margin="6,12,0,0"
+                                    IsVisible="{Binding CanAddAttachments}"/>
+                            
+                            <!-- ═══ Carousel Content (attachments present) ═══ -->
+                            <VerticalStackLayout IsVisible="{Binding HasAttachments}"
+                             Padding="12,12,12,8"
+                             Spacing="10">
+
+                                <!-- Main preview area — tap to open full viewer -->
+                                <Frame CornerRadius="12"
+                                   HasShadow="False"
+                                   Padding="0"
+                                   IsClippedToBounds="True"
+                                   HeightRequest="200"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding OpenAttachmentCommand}"
+                                            CommandParameter="{Binding CurrentAttachment}"/>
+                                    </Frame.GestureRecognizers>
+
+                                    <Grid>
+                                        <!-- Image preview (shown once bytes are loaded) -->
+                                        <Image Source="{Binding CurrentAttachmentPreviewSource}"
+                                            IsVisible="{Binding HasPreviewImage}"
+                                            Aspect="AspectFill"/>
+
+                                        <!-- Loading spinner while fetching image bytes -->
+                                        <ActivityIndicator IsRunning="{Binding IsLoadingPreview}"
+                                            IsVisible="{Binding IsLoadingPreview}"
+                                            Color="{StaticResource Primary}"
+                                            WidthRequest="48"
+                                            HeightRequest="48"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"/>
+
+                                        <!-- File-icon fallback for non-images or failed previews -->
+                                        <VerticalStackLayout IsVisible="{Binding ShowFileIcon}"
+                                            VerticalOptions="Center"
+                                            HorizontalOptions="Center"
+                                            Spacing="6">
+                                        <Label Text="{Binding CurrentAttachmentFileIcon}"
+                                           FontSize="56"
+                                           HorizontalOptions="Center"/>
+                                            <Label Text="{Binding CurrentAttachment.OriginFileName}"
+                                               FontSize="13"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"
+                                               HorizontalOptions="Center"
+                                               HorizontalTextAlignment="Center"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2"
+                                               MaximumWidthRequest="200"/>
+                                        </VerticalStackLayout>
+
+                                        <!-- "Tap to view" hint at the bottom of the preview -->
+                                        <Label Text="Tap to view"
+                                           BackgroundColor="#80000000"
+                                           TextColor="White"
+                                           FontSize="11"
+                                           Padding="0,6"
+                                           HorizontalOptions="Fill"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalOptions="End"/>
+
+                                        <!-- File name + MIME type metadata -->
+                                        <Label FontSize="10"
+                                            TextColor="White" HorizontalTextAlignment="Start"
+                                            VerticalOptions="End" Padding="4,8">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding CurrentAttachmentFileSizeFormatted}"/>
+                                                    <Span Text=" • "/>
+                                                    <Span Text="{Binding CurrentAttachment.ContentType}"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+                                </Frame>
+
+                                <Grid ColumnDefinitions="auto, *" ColumnSpacing="8">
+                                    <!-- Attachment Type Picker -->
+                                    <controls:FloatingEntry Title="Attachment Type" Grid.Column="0">
+                                        <controls:FloatingEntry.InnerContent>
+                                            <Picker Title="-- Select Attachment Type --"
+                                                    ItemsSource="{Binding AttachmentTypes}"
+                                                    ItemDisplayBinding="{Binding Name}"
+                                                    SelectedItem="{Binding CurrentAttachment.AttachmentType}"
+                                                    Style="{StaticResource FormPickerStyle}"
+                                                    />
+                                        </controls:FloatingEntry.InnerContent>
+                                    </controls:FloatingEntry>
+
+                                    <!-- Delete Button -->
+                                    <Button Grid.Column="1" HorizontalOptions="End"
+                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Delete}"
+                                        Command="{Binding RemoveAttachmentCommand}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="{StaticResource Error}"
+                                        CornerRadius="16"
+                                        Padding="0"
+                                        VerticalOptions="Center"/>
+
+                                </Grid>
+                            </VerticalStackLayout>
+
+                            <!-- ═══ Empty State (no attachments) ═══ -->
+                            <VerticalStackLayout Padding="24"
+                                IsVisible="{Binding HasAttachments, Converter={StaticResource InvertedBoolConverter}}"
+                                HorizontalOptions="Center">
+                                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ExtensionOff}"
+                                   FontSize="32"
+                                   HorizontalOptions="Center"
+                                   Opacity="0.5"/>
+                                <Label Text="No attachments"
+                                   FontSize="14"
+                                   TextColor="{StaticResource Gray400}"
+                                   HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Frame>
+
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <!-- Saving Overlay -->
+            <Grid IsVisible="{Binding IsSaving}"
+                  BackgroundColor="#80000000">
+                <VerticalStackLayout VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="12">
+                    <ActivityIndicator IsRunning="{Binding IsSaving}"
+                                       Color="White"
+                                       WidthRequest="48"
+                                       HeightRequest="48"/>
+                    <Label Text="Saving..."
+                           FontSize="16"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Grid>
+
+        </Grid>
+    </Grid>
+</ContentPage>

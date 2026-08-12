@@ -1,0 +1,423 @@
+﻿@page "/assets/{id}"
+@using HomeHQ.Components.Entities.Common
+@using HomeHQ.Entities
+@using HomeHQ.Server.Components.Dialogs
+@using HomeHQ.Services
+@using HomeHQ.Helpers
+@using HomeHQ.Server.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+@using System.Linq.Expressions
+
+@attribute [Authorize()]
+
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<HomeHQ.Entities.Attribute> AttributeService
+@inject IEntityService<Note> NoteService
+
+@inject ISnackbar Snackbar
+@inject ILogger<AssetDetailPage> Logger
+@inject IDialogService DialogService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject ICurrentUserService CurrentUser
+
+<PageTitle>@(asset?.Name ?? "Asset Details") - @Constants.Application.TITLE</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-4">
+    <!-- Header -->
+    <div class="d-flex align-center mb-6">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                      Size="Size.Medium"
+                      OnClick="GoBack"
+                      Class="mr-3" />
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.h4" Color="Color.Primary">@(asset?.Name ?? "Asset Details")</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                View asset details, warranty information, and attachments
+            </MudText>
+        </div>
+
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudFab Color="Color.Primary"
+                      StartIcon="@Icons.Material.Filled.Edit"
+                      OnClick="OpenEdit"
+                      Size="Size.Small" />
+            <MudFab Color="Color.Error"
+                      StartIcon="@Icons.Material.Filled.Delete"
+                      OnClick="OpenDeleteDialog"
+                    Size="Size.Small" />
+        </MudStack>
+    </div>
+
+    @if (_loading)
+    {
+        <MudStack Spacing="4">
+            <MudSkeleton Animation="Animation.Wave" Height="200px" />
+            <MudSkeleton Animation="Animation.Wave" Height="150px" />
+            <MudSkeleton Animation="Animation.Wave" Height="150px" />
+        </MudStack>
+    }
+    else if (asset == null)
+    {
+        <MudCard Elevation="2" Class="text-center pa-8">
+            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Class="mb-4" />
+            <MudText Typo="Typo.h6" Class="mb-2">Asset Not Found</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+                The asset you're looking for doesn't exist or has been deleted.
+            </MudText>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="GoBack">
+                Back to Assets
+            </MudButton>
+        </MudCard>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            <!-- Basic Information Card -->
+            <MudItem xs="12" lg="8">
+                <MudCard Elevation="2" Class="form-card">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" Color="Color.Primary" />
+                                <MudText Typo="Typo.h6">Basic Information</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Name</MudText>
+                                    <MudText Typo="Typo.body1" Class="entity-value">@asset.Name</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Category</MudText>
+                                    <div class="d-flex">
+                                        <MudText Typo="Typo.body1" Class="entity-value">
+                                            @(asset.Category?.Title ?? "Uncategorized")
+                                        </MudText>
+                                    </div>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Purchased From</MudText>
+                                    <MudText Typo="Typo.body1" Class="entity-value">@asset.PurchasedFrom</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Purchase Date</MudText>
+                                    <MudText Typo="Typo.body1" Class="entity-value">
+                                        @(asset.PurchaseDate.HasValue? Formatter.FormatDate(asset.PurchaseDate, "D") : "Not specified")
+                                    </MudText>
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Warranty Information Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Verified" Class="mr-2" Color="@GetWarrantyStatusColor()" />
+                                <MudText Typo="Typo.h6">Warranty Information</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" md="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Warranty Type</MudText>
+                                    <MudText Typo="Typo.body1" Class="entity-value">
+                                        @(asset.WarrantyType?.Name ?? "No warranty")
+                                    </MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <div class="entity-field">
+                                    <MudText Typo="Typo.caption" Class="entity-label">Warranty Expiration</MudText>
+                                    @if (asset.WarrantyExpiration.HasValue)
+                                    {
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@GetWarrantyIcon()" 
+                                                    Size="Size.Small" 
+                                                    Color="@GetWarrantyStatusColor()" 
+                                                    Class="mr-2" />
+                                            <div>
+                                                <MudText Typo="Typo.body1" Class="entity-value">
+                                                    @Formatter.FormatDate(asset.WarrantyExpiration.Value, "D")
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Color="@GetWarrantyStatusColor()">
+                                                    @GetWarrantyStatusText()
+                                                </MudText>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body1" Class="entity-value mud-text-secondary">
+                                            Not specified
+                                        </MudText>
+                                    }
+                                </div>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Attributes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Extension" Class="mr-2" Color="Color.Info" />
+                                <MudText Typo="Typo.h6">Attributes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        @if (_attributes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var attr in _attributes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="12" sm="5">
+                                                    <MudText Typo="Typo.body1" Class="entity-value">@attr.Key</MudText>
+                                                </MudItem>
+                                                <MudItem xs="10" sm="5">
+                                                    <MudText Typo="Typo.body1" Class="entity-value">@attr.Value</MudText>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">No attributes</MudText>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Notes Card -->
+                <MudCard Elevation="2" Class="form-card mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="@Icons.Material.Filled.Notes" Class="mr-2" Color="Color.Warning" />
+                                <MudText Typo="Typo.h6">Notes</MudText>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudDivider />
+                    <MudCardContent>
+                        @if (_notes.Any())
+                        {
+                            <MudStack Style="gap: 0">
+                                @foreach (var note in _notes)
+                                {
+                                    <MudCard Elevation="0" Class="attribute-card">
+                                        <MudCardContent Class="px-4 pt-1 pb-1">
+                                            <MudGrid Spacing="2">
+                                                <MudItem xs="12" sm="12">
+                                                    <MudText Typo="Typo.body1" Class="entity-value"><b>@note.Title</b></MudText>
+                                                </MudItem>
+                                                <MudItem xs="12" sm="12">
+                                                    <MudText Typo="Typo.body1" Class="entity-value" Style="white-space: pre-wrap;">@note.Content</MudText>
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCardContent>
+                                    </MudCard>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center justify-center py-6">
+                                <MudIcon Icon="@Icons.Material.Filled.ExtensionOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">No notes</MudText>
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <!-- Attachments Sidebar -->
+            <MudItem xs="12" lg="4">
+                <Attachment_Sidebar @ref="attachmentSidebar" ParentId="@asset.Id" IsMobile="@IsMobile" ParentType="@typeof(Asset).Name" Readonly="@true" />
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code{
+    [Parameter] public string Id { get; set; } = string.Empty;
+    [Parameter] [SupplyParameterFromQuery(Name = "returnState")] public string? ReturnState { get; set; }
+
+    private Asset? asset;
+    private List<HomeHQ.Entities.Attribute> _attributes = new();
+    private List<Note> _notes = new();
+    private bool _loading = true;
+    
+    private Attachment_Sidebar attachmentSidebar;
+
+    private bool IsMobile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsMobile = CurrentUser.IsMobile;
+
+        await LoadAssetData();
+    }
+
+    private async Task LoadAssetData()
+    {
+        try
+        {
+            _loading = true;
+            var guid = Guid.Parse(Id);
+
+            // Load asset with related data
+            asset = await AssetService.GetByIdAsync(guid, new List<Expression<Func<Asset, object>>>
+            {
+                x => x.Category,
+                x => x.WarrantyType
+            });
+
+            if (asset != null)
+            {
+                // Load attributes and attachments in parallel
+                var attributesTask = AttributeService.GetAsync(
+                    filter: x => x.ParentId == guid && x.ParentType == nameof(Asset)
+                );
+
+                var notesTask = NoteService.GetAsync(
+                    filter: x => x.ParentId == guid && x.ParentType == nameof(Asset)
+                );
+
+                await Task.WhenAll(attributesTask, notesTask);
+
+                _attributes = attributesTask.Result.ToList();
+                _notes = notesTask.Result.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading asset data for ID: {AssetId}", Id);
+            Snackbar.Add($"Error loading asset: {ex.Message}", Severity.Error);
+            asset = null;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Color GetWarrantyStatusColor()
+    {
+        if (!asset?.WarrantyExpiration.HasValue ?? true)
+            return Color.Default;
+
+        var today = DateTime.Today;
+        var warrantyDate = asset!.WarrantyExpiration!.Value;
+        var daysRemaining = (warrantyDate - today).Days;
+
+        return (daysRemaining switch
+        {
+            < 0 => Color.Default,
+            <= 30 => Color.Warning,
+            _ => Color.Success
+        });
+    }
+
+    private string GetWarrantyIcon()
+    {
+        if (!asset?.WarrantyExpiration.HasValue ?? true)
+            return Icons.Material.Filled.Block;
+
+        var today = DateTime.Today;
+        var warrantyDate = asset.WarrantyExpiration.Value;
+        var daysRemaining = (warrantyDate - today).Days;
+
+        return (daysRemaining switch
+        {
+            < 0 => Icons.Material.Filled.ErrorOutline,
+            <= 30 => Icons.Material.Filled.Warning,
+            _ => Icons.Material.Filled.CheckCircleOutline
+        });
+    }
+
+    private string GetWarrantyStatusText()
+    {
+        if (!asset?.WarrantyExpiration.HasValue ?? true)
+            return "No warranty";
+
+        var today = DateTime.Today;
+        var warrantyDate = asset.WarrantyExpiration.Value;
+        var daysRemaining = (warrantyDate - today).Days;
+
+        return Formatter.FormatWarrantyStatus(daysRemaining);
+    }
+
+    private void GoBack()
+    {
+        Navigation.GoBack(ReturnState, "/assets");
+    }
+
+    private void OpenEdit()
+    {
+        if (asset != null)
+        {
+            // Pass along the return state to the edit page
+            var queryString = !string.IsNullOrWhiteSpace(ReturnState) ? $"?returnState={Uri.EscapeDataString(ReturnState)}" : "";
+            Navigation.NavigateTo($"/assets/{asset.Id}/edit{queryString}");
+        }
+    }
+
+    @* Delete Dialog  *@
+    public async Task OpenDeleteDialog()
+    {
+        if (asset == null) return;
+
+        var parameters = new DialogParameters
+        {
+            ["Id"] = asset.Id,
+            ["Message"] = $"Are you sure you want to delete '{asset.Name}'? This action cannot be undone."
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteConfirmation>("Confirm Deletion", parameters);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            try
+            {
+                await AssetService.DeleteAsync(asset.Id);
+                Snackbar.Add($"Asset '{asset.Name}' deleted successfully", Severity.Success);
+                GoBack(); // Use GoBack to preserve navigation state
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete asset {AssetId}", asset.Id);
+                Snackbar.Add($"Failed to delete asset", Severity.Error);
+            }
+        }
+    }
+}

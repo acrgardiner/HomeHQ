@@ -1,0 +1,157 @@
+﻿@page "/admin/maintenance"
+
+@using HomeHQ.Services
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ISnackbar Snackbar
+@inject IAssetImportService AssetImportService
+@inject IThumbnailService ThumbnailService
+@inject IPurgeService PurgeService
+@inject IDialogService DialogService
+@inject ILogger<MaintenancePage> Logger
+
+<PageTitle>Dashboard - @Constants.Application.TITLE</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                Maintenance
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            </MudText>
+        </div>
+    </div>
+    <!-- Main Content Card -->
+    <MudCard Elevation="2" Class="entity-list-card">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Actions</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudDivider />
+
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12" sm="12" md="12">
+                    <MudPaper Class="pa-4" Elevation="0">
+                        <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                            <div>
+                                <MudText Typo="Typo.subtitle1">Manual Load</MudText>
+                                <MudText Typo="Typo.body2">Manually load an Asset with Attachment per file in the input directory</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AttachFile" OnClick="ManualLoad" Class="mx-1">Manual Load</MudButton>
+                        </MudStack>
+                    </MudPaper>
+                    <MudDivider />
+                    <MudPaper Class="pa-4" Elevation="0">
+                        <MudStack StretchItems="StretchItems.Start" AlignItems="AlignItems.Center" Row>
+                            <div>
+                                <MudText Typo="Typo.subtitle1">Rebuild Thumbnails </MudText>
+                                <MudText Typo="Typo.body2">Rebuild thumbnails from source files with current thumbnail settings</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Image" OnClick="RebuildThumbs" Class="mx-1">Rebuild Thumbnails</MudButton>
+                        </MudStack>
+                    </MudPaper>
+                    <MudDivider />
+                    <MudExpansionPanels Elevation="0">
+                        <MudExpansionPanel @bind-IsExpanded="@_purgeExpanded" ExpandedChanged="OnPurgeExpandChanged">
+                            <TitleContent>
+                                <div class="d-flex align-center" style="width: 100%;">
+                                    <MudText Typo="Typo.subtitle1" Class="flex-grow-1">Purge</MudText>
+                                    @if (_softDeletedCounts.Values.Sum() > 0)
+                                    {
+                                        <MudChip T="int" Size="Size.Small" Color="Color.Warning" Class="mr-2">
+                                            @_softDeletedCounts.Values.Sum() items
+                                        </MudChip>
+                                    }
+                                </div>
+                                <MudText Typo="Typo.body2">Permanently delete soft-deleted records from the database</MudText>
+                            </TitleContent>
+                            <ChildContent>
+                                <MudDivider Class="mb-4" />
+                                @if (_loadingPurgeData)
+                                {
+                                    <div class="d-flex justify-center pa-4">
+                                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Purge Details Table -->
+                                    <MudSimpleTable Dense="true" Hover="true" Class="mb-4">
+                                        <thead>
+                                            <tr>
+                                                <th>Entity Type</th>
+                                                <th class="text-right">Count</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in _softDeletedCounts.OrderByDescending(x => x.Value))
+                                            {
+                                                <tr>
+                                                    <td>@item.Key</td>
+                                                    <td class="text-right">
+                                                        <MudChip T="int" Size="Size.Small" Color="@(item.Value > 0 ? Color.Warning : Color.Default)">
+                                                            @item.Value
+                                                        </MudChip>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            <tr style="border-top: 2px solid var(--mud-palette-divider);">
+                                                <td><strong>Total</strong></td>
+                                                <td class="text-right">
+                                                    <MudChip T="int" Size="Size.Small" Color="@(_softDeletedCounts.Values.Sum() > 0 ? Color.Error : Color.Success)">
+                                                        <strong>@_softDeletedCounts.Values.Sum()</strong>
+                                                    </MudChip>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </MudSimpleTable>
+
+                                    <!-- Warning Alert -->
+                                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+                                        <MudText Typo="Typo.body2">
+                                            <strong>Warning:</strong> Purging records is a permanent action and cannot be undone.
+                                        </MudText>
+                                    </MudAlert>
+
+                                    <!-- Purge Action Buttons -->
+                                    <MudStack Row="true" Spacing="2">
+                                        <MudButton Variant="Variant.Filled"
+                                                   Color="Color.Error"
+                                                   StartIcon="@Icons.Material.Filled.DeleteForever"
+                                                   OnClick="PurgeAllAsync"
+                                                   Disabled="@(_purging || _softDeletedCounts.Values.Sum() == 0)">
+                                            @if (_purging)
+                                            {
+                                                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                                                <span>Purging...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Purge All (@_softDeletedCounts.Values.Sum())</span>
+                                            }
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Color="Color.Primary"
+                                                   StartIcon="@Icons.Material.Filled.Refresh"
+                                                   OnClick="@RefreshCountsAsync"
+                                                   Disabled="@_loadingPurgeData">
+                                            Refresh
+                                        </MudButton>
+                                    </MudStack>
+                                }
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+

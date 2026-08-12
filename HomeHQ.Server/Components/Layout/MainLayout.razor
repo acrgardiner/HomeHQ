@@ -1,0 +1,64 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Identity
+@using HomeHQ.Identity
+@using HomeHQ.Services
+
+@inject ISnackbar Snackbar
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ICurrentUserService CurrentUserService
+
+<MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3 d-flex align-center">
+            <img src="logo-transparent.png" alt="Logo" style="height: 32px; width: auto; margin-right: 8px;" />
+            @Constants.Application.TITLE
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" Edge="Edge.End" />
+        <AuthorizeView>
+            <Authorized>
+                <MudMenu Dense="true" Class="mt-1 ml-4">
+                    <ActivatorContent Context="A">
+                        <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudCard Elevation="0" Square="true" Class="mt-n2">
+                            <MudCardHeader>
+                                <CardHeaderAvatar>
+                                    <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body2">@Name</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudDivider />
+                        </MudCard>
+                        <MudDivider Class="mb-2" />
+                        <MudList T="string">
+                            <MudListItem Text="Account" Href="/account/manage" Icon="@Icons.Material.Outlined.Person" />
+                            <MudListItem Text="Logout" Href="/account/logout" Icon="@Icons.Material.Filled.Logout" />
+                        </MudList>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="mt-16 pa-2">
+                @Body
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+

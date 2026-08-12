@@ -20,7 +20,7 @@ env:
 jobs:
   debug:
     name: Debug Info
-    runs-on: [self-hosted, HomeHQ]
+    runs-on: ubuntu-latest
     if: ${{ vars.DEBUG == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Print environment variables
@@ -28,7 +28,7 @@ jobs:
 
   build:
     name: Build .NET Project
-    runs-on: [self-hosted, HomeHQ]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,15 +38,17 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
+      - name: Restore dependencies (solution-wide)
+        # Restore all projects in the repository so mobile/Blazor/other projects
+        # have their NuGet packages available during later jobs.
         run: dotnet restore
 
       - name: Build project
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build HomeHQ.Server/HomeHQ.Server.csproj --configuration Release --no-restore
 
   docker:
     name: Build and Push Docker Image
-    runs-on: [self-hosted, HomeHQ]
+    runs-on: ubuntu-latest
     needs: build
     if: |
       github.event_name == 'push' && (
@@ -94,4 +96,114 @@ jobs:
             COMMIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  build-android-apk:
+    name: Build Android APK (Release)
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    if: |
+      github.event_name == 'push' && github.ref_type == 'tag'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Debug Android SDK environment
+        shell: pwsh
+        run: |
+          Write-Host "JAVA_HOME: $Env:JAVA_HOME"
+          Write-Host "ANDROID_SDK_ROOT: $Env:ANDROID_SDK_ROOT"
+          Write-Host "PATH contains Android sdkmanager: "
+          Get-Command sdkmanager -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.Source }
+
+      - name: Setup .NET 10.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install .NET MAUI workloads
+        run: |
+          dotnet workload restore
+          dotnet workload install maui-android || true
+
+      - name: Restore Mobile project NuGet packages
+        # Ensure the MAUI Mobile project's NuGet dependencies are available
+        # prior to publish so XamlC can resolve custom XAML types.
+        run: dotnet restore HomeHQ.Mobile/HomeHQ.Mobile.csproj
+
+      - name: Set TAG from ref
+        run: echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Sanitize tag and compute Android versionCode
+        shell: bash
+        run: |
+          set -e
+          # Read TAG (set in previous step) or fall back to github.ref_name
+          TAG=${TAG:-${GITHUB_REF_NAME}}
+          TAG=${TAG:-${{ github.ref_name }}}
+          echo "Original TAG: $TAG"
+          # Remove leading 'v' and replace unsafe filename chars with '_'
+          SANITIZED_TAG=$(echo "$TAG" | sed 's/^v//' | sed 's/[^A-Za-z0-9._-]/_/g')
+
+          # Extract first occurrence of numeric semver-like segment (e.g., 1.2.3 or 1.2)
+          NUMS=$(echo "$SANITIZED_TAG" | grep -oE '[0-9]+(\.[0-9]+){0,2}' | head -n1 || true)
+          if [ -z "$NUMS" ]; then
+            MAJOR=0; MINOR=0; PATCH=0
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$NUMS"
+            MAJOR=${MAJOR:-0}
+            MINOR=${MINOR:-0}
+            PATCH=${PATCH:-0}
+          fi
+
+          # Android versionCode must be integer. Build as M*10000 + m*100 + p
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          if [ "$VERSION_CODE" -le 0 ]; then
+            VERSION_CODE=1
+          fi
+
+          echo "SANITIZED_TAG=$SANITIZED_TAG" >> $GITHUB_ENV
+          echo "ANDROID_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "ANDROID_VERSION_NAME=$SANITIZED_TAG" >> $GITHUB_ENV
+          echo "Computed ANDROID_VERSION_CODE=$VERSION_CODE from TAG=$TAG"
+
+      - name: Publish Android APK (Release)
+        env:
+          ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+        run: |
+          # Adjust the project path if your MAUI Android project file is located elsewhere
+          dotnet publish HomeHQ.Mobile/HomeHQ.Mobile.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk -p:AndroidVersionName=${{ env.ANDROID_VERSION_NAME }} -p:AndroidVersionCode=${{ env.ANDROID_VERSION_CODE }} -o ./artifacts/android
+
+      - name: Rename APK to include sanitized tag in filename
+        if: ${{ env.SANITIZED_TAG != '' }}
+        shell: bash
+        run: |
+          set -e
+          mkdir -p ./artifacts/android
+          apk=$(ls ./artifacts/android/*.apk | head -n1)
+          echo "Found apk: $apk"
+          base=$(basename "$apk" .apk)
+          dest="./artifacts/android/${base}-${SANITIZED_TAG}.apk"
+          echo "Renaming to: $dest"
+          mv "$apk" "$dest"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: homehq-android-apk
+          path: artifacts/android/*.apk
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/android/*.apk
 

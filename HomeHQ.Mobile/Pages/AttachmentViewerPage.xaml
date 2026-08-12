@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+             x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:DataType="vm:AttachmentViewerViewModel"
+             Title="{Binding FileName}"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark=Black}">
+
+    <Grid RowDefinitions="Auto, Auto, *">
+        <!-- Custom Header -->
+        <Grid Grid.Row="0" 
+              Padding="8"
+              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+              ColumnDefinitions="Auto, *, Auto">
+
+            <!-- Back Button -->
+            <Button Grid.Column="0"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=ArrowBack}"
+                    FontSize="28"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+
+            <!-- Title -->
+            <VerticalStackLayout Grid.Column="1" 
+                                 VerticalOptions="Center"
+                                 Padding="8,0">
+                <Label Text="{Binding FileName}"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                       LineBreakMode="TailTruncation"
+                       MaxLines="1"/>
+                <Label Text="{Binding Attachment.ContentType}"
+                       FontSize="12"
+                       TextColor="{StaticResource Gray500}"/>
+            </VerticalStackLayout>
+
+            <!-- Open Externally Button -->
+            <Button Grid.Column="2"
+                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Share}"
+                    FontSize="18"
+                    Command="{Binding OpenExternallyCommand}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="40"
+                    HeightRequest="40"/>
+        </Grid>
+
+        <!-- Image edit toolbar -->
+        <HorizontalStackLayout Grid.Row="1"
+                               IsVisible="{Binding ShowImageToolbar}"
+                               Padding="12,8"
+                               Spacing="10"
+                               HorizontalOptions="Fill"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}">
+            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateLeft}"
+                    Command="{Binding RotateCounterClockwiseCommand}"
+                    IsVisible="{Binding ShowRotateButton}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateRight}"
+                    Command="{Binding RotateClockwiseCommand}"
+                    IsVisible="{Binding ShowRotateButton}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Crop}"
+                    Command="{Binding StartCropCommand}"
+                    IsVisible="{Binding ShowStartCropButton}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="20"
+                    WidthRequest="44"
+                    HeightRequest="44"/>
+            <Button Text="Apply"
+                    Command="{Binding ApplyCropCommand}"
+                    IsVisible="{Binding IsCropMode}"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    Padding="16,8"/>
+            <Button Text="Cancel"
+                    Command="{Binding CancelCropCommand}"
+                    IsVisible="{Binding IsCropMode}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray600}}"
+                    TextColor="White"
+                    CornerRadius="8"
+                    Padding="16,8"/>
+            <ActivityIndicator IsVisible="{Binding IsImageEditBusy}"
+                               IsRunning="{Binding IsImageEditBusy}"
+                               Color="{StaticResource Primary}"
+                               VerticalOptions="Center"/>
+        </HorizontalStackLayout>
+
+        <!-- Content Area -->
+        <!-- Clip the content area so pan/zoom transforms can't draw over the header -->
+        <Grid Grid.Row="2" IsClippedToBounds="True">
+            <!-- Loading Indicator -->
+            <VerticalStackLayout IsVisible="{Binding IsLoading}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HeightRequest="48"
+                                   WidthRequest="48"/>
+                <Label Text="Loading attachment..."
+                       FontSize="14"
+                       TextColor="{StaticResource Gray500}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+
+            <!-- Error State -->
+            <VerticalStackLayout IsVisible="{Binding HasError}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Error}" FontSize="64" HorizontalOptions="Center"/>
+                <Label Text="Failed to load attachment"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="Try Again"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <!-- Image Viewer -->
+
+            <Grid IsVisible="{Binding IsImage}" IsClippedToBounds="True">
+                <controls:PanPinchContainer x:Name="ImageViewerContainer"
+                                            GesturesEnabled="{Binding PanZoomEnabled}"
+                                            IsClippedToBounds="True">
+                    <Image Source="{Binding ImageSource}" Aspect="AspectFit" />
+                </controls:PanPinchContainer>
+                <controls:ImageCropOverlay x:Name="CropOverlay"
+                                           IsVisible="{Binding IsCropMode}"
+                                           InputTransparent="False"
+                                           SourceImageWidth="{Binding ImagePixelWidth}"
+                                           SourceImageHeight="{Binding ImagePixelHeight}"
+                                           CropRelativeX="{Binding CropRelativeX, Mode=TwoWay}"
+                                           CropRelativeY="{Binding CropRelativeY, Mode=TwoWay}"
+                                           CropRelativeWidth="{Binding CropRelativeWidth, Mode=TwoWay}"
+                                           CropRelativeHeight="{Binding CropRelativeHeight, Mode=TwoWay}" />
+            </Grid>
+
+            <!-- Non-Image File Preview -->
+            <VerticalStackLayout IsVisible="{Binding IsOtherFile}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="24"
+                                 Padding="32">
+
+                <!-- File Icon Card -->
+                <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                       CornerRadius="16"
+                       Padding="32"
+                       HasShadow="True"
+                       HorizontalOptions="Center">
+                    <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                        <Label Text="{Binding FileTypeIcon}"
+                               FontSize="72"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding FileName}"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               MaxLines="2"
+                               LineBreakMode="TailTruncation"/>
+                        <Label Text="{Binding Attachment.ContentType}"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray500}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <Label Text="This file type cannot be previewed in the app"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray500}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+
+                <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=OpenInFull}" Text="Open with External App"
+                        Command="{Binding OpenExternallyCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="48"
+                        WidthRequest="220"
+                        FontSize="15"
+                        FontAttributes="Bold"/>
+            </VerticalStackLayout>
+
+            <!-- PDF Viewer (using WebView) -->
+            <Grid IsVisible="{Binding IsPdf}">
+                <VerticalStackLayout VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="24"
+                                     Padding="32">
+
+                    <!-- PDF Icon Card -->
+                    <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                           CornerRadius="16"
+                           Padding="32"
+                           HasShadow="True"
+                           HorizontalOptions="Center">
+                        <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}"
+                                   FontSize="72"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding FileName}"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center"
+                                   MaxLines="2"
+                                   LineBreakMode="TailTruncation"/>
+                            <Label Text="PDF Document"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Gray500}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Frame>
+
+                    <Label Text="Tap below to open this PDF"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray500}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"/>
+
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}" Text="Open PDF"
+                            Command="{Binding OpenExternallyCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="48"
+                            WidthRequest="180"
+                            FontSize="15"
+                            FontAttributes="Bold"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>

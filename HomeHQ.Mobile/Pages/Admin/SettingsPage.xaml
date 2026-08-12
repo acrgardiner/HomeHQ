@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HomeHQ.Mobile.Pages.Admin.SettingsPage"
+             Title="Settings">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="24">
+            
+            <!-- Server Configuration Section -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                   CornerRadius="12"
+                   Padding="16"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Server Configuration"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Server URL"
+                               FontSize="13"
+                               TextColor="{StaticResource Gray500}"/>
+                        <Entry x:Name="ServerUrlEntry"
+                               Placeholder="https://your-server.com"
+                               Keyboard="Url"/>
+                    </VerticalStackLayout>
+                    
+                    <Button x:Name="SaveServerButton"
+                            Text="Save Server URL"
+                            Clicked="OnSaveServerClicked"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Account Section -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                   CornerRadius="12"
+                   Padding="16"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Account"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto" Padding="0,8">
+                        <VerticalStackLayout>
+                            <Label Text="Logged in as"
+                                   FontSize="13"
+                                   TextColor="{StaticResource Gray500}"/>
+                            <Label x:Name="UsernameLabel"
+                                   Text="User"
+                                   FontSize="16"
+                                   FontAttributes="Bold"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                    
+                    <Button x:Name="LogoutButton"
+                            Text="Sign Out"
+                            Clicked="OnLogoutClicked"
+                            BackgroundColor="{StaticResource Gray200}"
+                            TextColor="{StaticResource Gray900}"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- App Info Section -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                   CornerRadius="12"
+                   Padding="16"
+                   HasShadow="True">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="About"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Version"
+                               TextColor="{StaticResource Gray500}"/>
+                        <Label x:Name="VersionLabel"
+                               Grid.Column="1"
+                               Text="1.0.0" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, Auto">
+                        <Label Text="Build"
+                               TextColor="{StaticResource Gray500}"/>
+                        <Label Grid.Column="1"
+                               Text=".NET MAUI" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Tools Section -->
+            <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                CornerRadius="12"
+                Padding="16"
+                HasShadow="True">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Tools"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"/>
+
+                    <Button x:Name="ClearCacheButton"
+                        Text="Clear Cache"
+                        Clicked="OnClearCacheClicked"
+                        BackgroundColor="{StaticResource Gray200}"
+                        TextColor="{StaticResource Gray900}"/>
+                    
+                    <Button x:Name="ClearTempFilesButton"
+                        Text="Clear Temp Files"
+                        Clicked="OnClearTempFilesClicked"
+                        BackgroundColor="{StaticResource Gray200}"
+                        TextColor="{StaticResource Gray900}"/>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

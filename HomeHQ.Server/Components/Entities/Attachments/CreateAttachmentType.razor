@@ -1,0 +1,24 @@
+﻿@using HomeHQ.Identity
+@using HomeHQ.Services;
+@using HomeHQ.Entities;
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize()]
+
+@inject IEntityService<AttachmentType> AttachmentService;
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ILogger<CreateAttachmentType> Logger
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model">
+            <MudTextField T="string" @bind-Value="model.Name" Label="Name" Required="true" RequiredError="Name is required!" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+

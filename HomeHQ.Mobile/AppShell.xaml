@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="HomeHQ.Mobile.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pages="clr-namespace:HomeHQ.Mobile.Pages"
+    xmlns:pagesSetup="clr-namespace:HomeHQ.Mobile.Pages.Setup"
+    xmlns:pagesAdmin="clr-namespace:HomeHQ.Mobile.Pages.Admin"
+    xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+    xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+    Title="HomeHQ"
+    Shell.FlyoutBehavior="Flyout"
+    Shell.FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
+
+    <!-- Flyout Header -->
+    <Shell.FlyoutHeader>
+        <controls:FlyoutHeader />
+    </Shell.FlyoutHeader>
+
+    <!-- Flyout Footer -->
+    <Shell.FlyoutFooter>
+        <controls:FlyoutFooter x:Name="FlyoutFooterControl" />
+    </Shell.FlyoutFooter>
+
+    <!-- Login Page (no flyout/navigation) -->
+    <ShellContent
+        Route="Login"
+        ContentTemplate="{DataTemplate pages:LoginPage}"
+        Shell.FlyoutBehavior="Disabled"
+        Shell.TabBarIsVisible="False"
+        Shell.NavBarIsVisible="False"
+        FlyoutItemIsVisible="False"/>
+
+    <!-- Main Navigation Items -->
+    <FlyoutItem Title="Dashboard"
+                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Dashboard, IconColor={StaticResource Primary}, IconSize=22}"
+    >
+        <ShellContent
+            Route="Dashboard"
+            ContentTemplate="{DataTemplate pages:DashboardPage}"
+            Title="Dashboard"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Assets"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Assets"
+            ContentTemplate="{DataTemplate pages:AssetsPage}"
+            Title="Assets"/>
+    </FlyoutItem>
+
+    <!-- Setup group (collapsed by default; toggled via MenuItem) -->
+    <MenuItem x:Name="SetupMenuItem"
+              Text="Setup  ›"
+              Clicked="OnSetupMenuItemClicked"
+              mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Tune, IconColor={StaticResource Primary}, IconSize=22}" />
+
+    <FlyoutItem x:Name="CategoriesFlyoutItem"
+                Title="Categories"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Category, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Categories"
+            ContentTemplate="{DataTemplate pagesSetup:CategoriesPage}"
+            Title="Categories"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="WarrantyTypesFlyoutItem"
+                Title="Warranty Types"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Verified, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="WarrantyTypes"
+            ContentTemplate="{DataTemplate pagesSetup:WarrantyTypesPage}"
+            Title="Warranty Types"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="AttachmentTypesFlyoutItem"
+                Title="Attachment Types"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="AttachmentTypes"
+            ContentTemplate="{DataTemplate pagesSetup:AttachmentTypesPage}"
+            Title="Attachment Types"/>
+    </FlyoutItem>
+
+    <!-- Admin group (collapsed by default; visible only for Admin role) -->
+    <MenuItem x:Name="AdminMenuItem"
+              Text="Admin  ›"
+              Clicked="OnAdminMenuItemClicked"
+              mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AdminPanelSettings, IconColor={StaticResource Primary}, IconSize=22}" />
+    
+    <FlyoutItem x:Name="AdminDashboardFlyoutItem"
+                Title="Dashboard"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Dashboard, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="AdminDashboard"
+            ContentTemplate="{DataTemplate pagesAdmin:AdminDashboardPage}"
+            Title="Admin Dashboard"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="UsersFlyoutItem"
+                Title="Users"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Person, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Users"
+            ContentTemplate="{DataTemplate pagesAdmin:UsersPage}"
+            Title="Users"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="MaintenanceFlyoutItem"
+                Title="Maintenance"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Build, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Maintenance"
+            ContentTemplate="{DataTemplate pagesAdmin:MaintenancePage}"
+            Title="Maintenance"/>
+    </FlyoutItem>
+
+    <FlyoutItem x:Name="LogsFlyoutItem"
+                Title="Logs"
+                FlyoutItemIsVisible="False"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Description, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Logs"
+            ContentTemplate="{DataTemplate pagesAdmin:LogsPage}"
+            Title="Logs"/>
+    </FlyoutItem>
+
+    <!-- Settings/Configuration Section -->
+    <FlyoutItem Title="Settings"
+                mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Settings, IconColor={StaticResource Primary}, IconSize=22}">
+        <ShellContent
+            Route="Settings"
+            ContentTemplate="{DataTemplate pagesAdmin:SettingsPage}"
+            Title="Settings"/>
+    </FlyoutItem>
+
+    <!-- Shell Styling -->
+    <Shell.ItemTemplate>
+        <DataTemplate>
+            <Grid Padding="16,12" ColumnDefinitions="Auto, *">
+                <Image Source="{Binding FlyoutIcon}"
+                       HeightRequest="24"
+                       WidthRequest="24"
+                       VerticalOptions="Center"/>
+                <Label Grid.Column="1"
+                       Text="{Binding Title}"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                       VerticalOptions="Center"
+                       Margin="16,0,0,0"/>
+            </Grid>
+        </DataTemplate>
+    </Shell.ItemTemplate>
+
+    <Shell.MenuItemTemplate>
+        <DataTemplate>
+            <Grid Padding="16,12" ColumnDefinitions="Auto, *">
+                <Image Source="{Binding Icon}"
+                       HeightRequest="24"
+                       WidthRequest="24"
+                       VerticalOptions="Center"/>
+                <Label Grid.Column="1"
+                       Text="{Binding Text}"
+                       FontSize="16"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                       VerticalOptions="Center"
+                       Margin="16,0,0,0">
+                    <Label.Triggers>
+                        <DataTrigger TargetType="Label"
+                                     Binding="{Binding IsEnabled}"
+                                     Value="False">
+                            <Setter Property="TextColor"
+                                    Value="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}"/>
+                            <Setter Property="FontSize" Value="14"/>
+                            <Setter Property="HorizontalTextAlignment" Value="Center"/>
+                            <Setter Property="Margin" Value="0"/>
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </Grid>
+        </DataTemplate>
+    </Shell.MenuItemTemplate>
+
+</Shell>

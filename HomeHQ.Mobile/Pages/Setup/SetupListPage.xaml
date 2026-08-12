@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels.Setup"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="HomeHQ.Mobile.Pages.Setup.SetupListPage"
+             x:DataType="vm:SetupListViewModel"
+             Title="{Binding PageTitle}">
+
+    <Grid>
+        <Grid RowDefinitions="Auto, *">
+
+            <SearchBar Grid.Row="0"
+                       Placeholder="{Binding SearchPlaceholder}"
+                       Text="{Binding SearchText}"
+                       SearchCommand="{Binding SearchCommand}"
+                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                       Margin="16,8"/>
+
+            <ActivityIndicator Grid.Row="1"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HeightRequest="48"
+                               WidthRequest="48"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"/>
+
+            <VerticalStackLayout Grid.Row="1"
+                                 IsVisible="{Binding ShowEmptyState}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Category, IconColor={StaticResource Primary}, IconSize=22}"
+                       FontSize="64"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding EmptyTitle}"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding EmptyMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add, IconSize=18}"
+                        Text="{Binding AddButtonText}"
+                        Command="{Binding AddCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        MinimumWidthRequest="160"
+                        FontAttributes="Bold"/>
+                <Button Text="Refresh"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Row="1"
+                                 IsVisible="{Binding HasError}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}"
+                       FontSize="64"
+                       HorizontalOptions="Center"/>
+                <Label Text="Something went wrong"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="Try Again"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <RefreshView Grid.Row="1"
+                         IsRefreshing="{Binding IsRefreshing}"
+                         Command="{Binding RefreshCommand}"
+                         IsVisible="{Binding ShowList}">
+                <CollectionView ItemsSource="{Binding Items}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:SetupListItem">
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems>
+                                        <SwipeItem Text="Delete"
+                                                   BackgroundColor="#C62828"
+                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SetupListViewModel}}, Path=DeleteCommand}"
+                                                   CommandParameter="{Binding .}"/>
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+                                <Frame Margin="16,8"
+                                       Padding="16"
+                                       CornerRadius="12"
+                                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                       HasShadow="True">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SetupListViewModel}}, Path=ItemSelectedCommand}"
+                                            CommandParameter="{Binding .}"/>
+                                    </Frame.GestureRecognizers>
+                                    <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
+                                        <Frame Grid.Column="0"
+                                               IsVisible="{Binding ShowLeading}"
+                                               BackgroundColor="{StaticResource Primary}"
+                                               CornerRadius="8"
+                                               Padding="12"
+                                               HasShadow="False"
+                                               HeightRequest="48"
+                                               WidthRequest="48">
+                                            <Label Text="{Binding LeadingText}"
+                                                   FontSize="20"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Frame>
+
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             VerticalOptions="Center"
+                                                             Spacing="4">
+                                            <Label Text="{Binding Name}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                                   LineBreakMode="TailTruncation"/>
+                                            <Label Text="{Binding Subtitle}"
+                                                   IsVisible="{Binding ShowSubtitle}"
+                                                   FontSize="13"
+                                                   TextColor="{StaticResource Gray500}"/>
+                                        </VerticalStackLayout>
+
+                                        <Label Grid.Column="2"
+                                               Text="›"
+                                               FontSize="24"
+                                               TextColor="{StaticResource Gray400}"
+                                               VerticalOptions="Center"/>
+                                    </Grid>
+                                </Frame>
+                            </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
+
+        <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add, IconSize=18}"
+                Command="{Binding AddCommand}"
+                BackgroundColor="{StaticResource Primary}"
+                TextColor="White"
+                FontSize="28"
+                FontAttributes="Bold"
+                CornerRadius="32"
+                HeightRequest="64"
+                WidthRequest="64"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,20,20"
+                Shadow="{Shadow Brush=Black, Offset='2,4', Radius=8, Opacity=0.3}"/>
+    </Grid>
+</ContentPage>

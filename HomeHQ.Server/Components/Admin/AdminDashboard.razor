@@ -1,0 +1,168 @@
+﻿@page "/admin/dashboard"
+@using MudBlazor
+@using HomeHQ.Entities
+@using HomeHQ.Services
+@using HomeHQ.Identity
+@using HomeHQ.Helpers
+@using Microsoft.EntityFrameworkCore
+@using System.Linq.Expressions
+@using HomeHQ.Server.Components.Entities.Common
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IUserService UserService
+@inject IEntityService<Asset> AssetService
+@inject IEntityService<Attachment> AttachmentService
+@inject IPurgeService PurgeService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject ILogger<AdminDashboard> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>Admin Dashboard - @Constants.Application.TITLE</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <div class="d-flex align-center justify-space-between mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Color="Color.Primary">
+                Admin Dashboard
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Admin based dashboard reporting
+            </MudText>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Users</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary">@_usercount</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Primary" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Attachments</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Info">@_attachmentcount</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Info" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.AttachFile" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Class="dashboard-card">
+                <MudCardContent Class="pb-0">
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">Files Stored</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Secondary">@(Formatter.FormatFileSize(_totalAttachmentSize))</MudText>
+                        </div>
+                        <MudAvatar Color="Color.Secondary" Class="dashboard-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.Folder" />
+                        </MudAvatar>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+    <MudGrid>
+
+        @if (_largeAttach.Any())
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="text-white">Largest Attachments</MudText>
+                <MudDataGrid T="Attachment" Items="@_largeAttach" Loading="@_loading"
+                Hideable="true" Hover="true" Dense="true"
+                Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
+                >
+                    <ToolBarContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                        Size="Size.Medium"  Class="mx-1">
+                            Export CSV
+                        </MudButton>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Id" Title="Id" />
+                        <TemplateColumn T="Attachment" Title="Parent" Context="attach">
+                            <CellTemplate>
+                                <MudLink OnClick="@(() => NavigateToAsset(attach.Item.ParentId ?? Guid.Empty))" Style="cursor: pointer;">@attach.Item.ParentId</MudLink>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.Parent.Name" Title="Parent Name" />
+                        <PropertyColumn Property="x => Formatter.FormatFileSize(x.FileSize)" Title="File Size" />
+                        <TemplateColumn T="Attachment" Title="Actions">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="0" Class="pa-2">
+                                    <div>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Image" Color="Color.Primary" Size="Size.Small" Class="mx-1"
+                                                        OnClick="@(() => ShowGalleryAsync(context.Item))" />
+                                    </div>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            </MudItem>
+        }
+
+        @if (_warrantyExpirigSoon.Any())
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Class="text-white">Warranties Expiring Soon</MudText>
+                <MudDataGrid T="Asset" Items="@_warrantyExpirigSoon" Loading="@_loading"
+                Hideable="true" Hover="true" Dense="true"
+                Striped="false" Bordered="false" ReadOnly="true" Class="elevation-1"
+                >
+                    <ToolBarContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                        Size="Size.Medium"  Class="mx-1">
+                            Export CSV
+                        </MudButton>
+                    </ToolBarContent>
+                    <Columns>
+                        <TemplateColumn T="Asset" Title="Id" Context="asset">
+                            <CellTemplate>
+                                <MudLink OnClick="@(() => NavigateToAsset(asset.Item.Id))" Style="cursor: pointer;">@asset.Item.Id</MudLink>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn  Property="x => x.Name" Title="Name" />
+                        <PropertyColumn Property="x => x.Category.Title" Title="Category" />
+                        <PropertyColumn Property="x => Formatter.FormatDate(x.WarrantyExpiration)" Title="WarrantyExpiration" />
+
+                    </Columns>
+                </MudDataGrid>
+            </MudItem>
+        }
+
+        <MudItem xs="12">
+            <MudText Typo="Typo.h6" Class="mb-2">Pending Purge</MudText>
+            <MudChart T="double" ChartType="ChartType.Donut" Width="300px" Height="300px" InputData="@_pendingPurgeData" InputLabels="@_pendingPurgeLabels">
+                <CustomGraphics>
+                    <text class="mud-typography" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="20" style="fill:var(--mud-palette-primary-text)">Total</text>
+                    <text class="mud-typography" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Helvetica" font-size="50" style="fill:var(--mud-palette-primary-text)">@_pendingPurgeData.Sum().ToString()</text>
+                </CustomGraphics>
+            </MudChart>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+

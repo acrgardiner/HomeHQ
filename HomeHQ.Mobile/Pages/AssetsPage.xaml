@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
+             xmlns:models="clr-namespace:HomeHQ.Mobile.Models"
+             xmlns:entities="clr-namespace:HomeHQ.Entities;assembly=HomeHQ.Domain"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="HomeHQ.Mobile.Pages.AssetsPage"
+             x:DataType="vm:AssetsViewModel"
+             Title="My Assets">
+
+    <Grid>
+        <Grid RowDefinitions="Auto, Auto, *">
+
+            <!-- Search Bar -->
+            <SearchBar Grid.Row="0"
+                       Placeholder="Search assets..."
+                       Text="{Binding SearchText}"
+                       SearchCommand="{Binding SearchCommand}"
+                       BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
+                       Margin="16,8"/>
+
+            <!-- Stats (aligned with Blazor AssetListPage) -->
+            <Grid Grid.Row="1"
+                  IsVisible="{Binding ShowStats}"
+                  ColumnDefinitions="*, *"
+                  ColumnSpacing="12"
+                  Margin="16,0,16,8">
+                <Frame Grid.Column="0"
+                       BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                       CornerRadius="12"
+                       Padding="14"
+                       HasShadow="True">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Total Assets"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Gray500}"/>
+                            <Label Text="{Binding TotalAssets}"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Primary}"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1"
+                                BackgroundColor="{StaticResource Primary}"
+                                StrokeThickness="0"
+                                StrokeShape="Ellipse"
+                                WidthRequest="40"
+                                HeightRequest="40"
+                                VerticalOptions="Center">
+                            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2, IconColor=White, IconSize=22}"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                </Frame>
+
+                <Frame Grid.Column="1"
+                       BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#4A3728}"
+                       CornerRadius="12"
+                       Padding="14"
+                       HasShadow="True">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Warranties Expiring"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFCC80}"/>
+                            <Label Text="{Binding WarrantiesExpiring}"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1"
+                                BackgroundColor="{StaticResource Warning}"
+                                StrokeThickness="0"
+                                StrokeShape="Ellipse"
+                                WidthRequest="40"
+                                HeightRequest="40"
+                                VerticalOptions="Center">
+                            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning, IconColor=White, IconSize=22}"
+                                   VerticalOptions="Center"
+                                   HorizontalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                </Frame>
+            </Grid>
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator Grid.Row="2"
+                               IsRunning="{Binding IsLoading}"
+                               IsVisible="{Binding IsLoading}"
+                               Color="{StaticResource Primary}"
+                               HeightRequest="48"
+                               WidthRequest="48"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"/>
+
+            <!-- Empty State -->
+            <VerticalStackLayout Grid.Row="2"
+                                 IsVisible="{Binding ShowEmptyState}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2, IconColor={StaticResource Primary}, IconSize=22}"
+                       FontSize="64"
+                       HorizontalOptions="Center"/>
+                <Label Text="No assets found"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="Add your first asset to get started"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add, IconSize=18}"
+                        Text="Add Asset"
+                        Command="{Binding AddAssetCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="140"
+                        FontAttributes="Bold"/>
+                <Button Text="Refresh"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <!-- Error State -->
+            <VerticalStackLayout Grid.Row="2"
+                                 IsVisible="{Binding HasError}"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="16"
+                                 Padding="32">
+                <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Warning}"
+                       FontSize="64"
+                       HorizontalOptions="Center"/>
+                <Label Text="Something went wrong"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Gray600}"
+                       HorizontalOptions="Center"/>
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="14"
+                       TextColor="{StaticResource Gray400}"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"/>
+                <Button Text="Try Again"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        HeightRequest="44"
+                        WidthRequest="120"/>
+            </VerticalStackLayout>
+
+            <!-- Assets List -->
+            <RefreshView Grid.Row="2"
+                         IsRefreshing="{Binding IsRefreshing}"
+                         Command="{Binding RefreshCommand}"
+                         IsVisible="{Binding ShowList}">
+                <CollectionView ItemsSource="{Binding Assets}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:AssetListItem">
+                            <Frame Margin="16,8"
+                                   Padding="16"
+                                   CornerRadius="12"
+                                   BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
+                                   HasShadow="True">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AssetsViewModel}}, Path=AssetSelectedCommand}"
+                                        CommandParameter="{Binding .}"/>
+                                </Frame.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="16">
+
+                                    <!-- Category Icon -->
+                                    <Frame Grid.Column="0"
+                                           BackgroundColor="{StaticResource Primary}"
+                                           CornerRadius="8"
+                                           Padding="12"
+                                           HasShadow="False"
+                                           HeightRequest="48"
+                                           WidthRequest="48"
+                                           VerticalOptions="Start">
+                                        <Label Text="{Binding CategoryIcon, TargetNullValue='📦'}"
+                                               FontSize="20"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </Frame>
+
+                                    <!-- Asset Info: Name, Category, From, Purchase Date, Warranty -->
+                                    <VerticalStackLayout Grid.Column="1"
+                                                         VerticalOptions="Center"
+                                                         Spacing="3">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding CategoryName}"
+                                               FontSize="13"
+                                               TextColor="{StaticResource Gray500}"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding PurchasedFrom}"
+                                               IsVisible="{Binding HasPurchasedFrom}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource Gray400}"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding PurchaseDateDisplay}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource Gray400}"
+                                               IsVisible="{Binding HasPurchaseDate}"/>
+                                        <VerticalStackLayout Spacing="1"
+                                                             IsVisible="{Binding HasWarranty}">
+                                            <Label Text="{Binding WarrantyDateFormatted}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray300}}"
+                                                   LineBreakMode="TailTruncation"/>
+                                            <Label Text="{Binding WarrantyStatusText}"
+                                                   FontSize="12"
+                                                   TextColor="{Binding WarrantyStatusColor}"
+                                                   LineBreakMode="TailTruncation"/>
+                                        </VerticalStackLayout>
+                                        <Label Text="No warranty"
+                                               IsVisible="{Binding HasWarranty, Converter={StaticResource InvertedBoolConverter}}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource Gray400}"/>
+                                    </VerticalStackLayout>
+
+                                    <Label Grid.Column="2"
+                                           Text="›"
+                                           FontSize="24"
+                                           TextColor="{StaticResource Gray400}"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </Frame>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+
+        </Grid>
+
+        <!-- Floating Action Button -->
+        <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add, IconSize=18}"
+                Command="{Binding AddAssetCommand}"
+                BackgroundColor="{StaticResource Primary}"
+                TextColor="White"
+                FontSize="28"
+                FontAttributes="Bold"
+                CornerRadius="32"
+                HeightRequest="64"
+                WidthRequest="64"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,20,20"
+                Shadow="{Shadow Brush=Black, Offset='2,4', Radius=8, Opacity=0.3}"/>
+    </Grid>
+</ContentPage>
