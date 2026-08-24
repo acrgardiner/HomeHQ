@@ -217,7 +217,7 @@
                         FontAttributes="Bold"/>
             </VerticalStackLayout>
 
-            <!-- PDF Viewer (using WebView) -->
+            <!-- PDF Viewer -->
             <Grid IsVisible="{Binding IsPdf}">
                 <VerticalStackLayout VerticalOptions="Center"
                                      HorizontalOptions="Center"

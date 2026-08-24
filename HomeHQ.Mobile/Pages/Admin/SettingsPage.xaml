@@ -82,7 +82,7 @@
                                TextColor="{StaticResource Gray500}"/>
                         <Label x:Name="VersionLabel"
                                Grid.Column="1"
-                               Text="1.0.0" />
+                               Text="0.0.2" />
                     </Grid>
 
                     <Grid ColumnDefinitions="*, Auto">

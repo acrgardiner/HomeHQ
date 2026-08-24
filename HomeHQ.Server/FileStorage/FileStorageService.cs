@@ -53,7 +53,21 @@ public class FileStorageService : IFileStorageService
                 savedFileSize = await SaveCompressedImageAsync(fileBytes, fullFilePath, attachment.ContentType);
 
                 // Generate Thumbnail if it's an image file
-                var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
+                var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath, attachment.ContentType);
+                if (thumbMetadata != null)
+                {
+                    attachment.Thumb_LocalFileName = thumbMetadata.LocalFileName;
+                    attachment.Thumb_ContentType = thumbMetadata.ContentType;
+                    attachment.Thumb_Extension = thumbMetadata.Extension;
+                    attachment.Thumb_FileSize = thumbMetadata.FileSize;
+                }
+            }
+            else if (IsPDFFile(attachment.ContentType))
+            {
+                // Save PDF file directly
+                await File.WriteAllBytesAsync(fullFilePath, fileBytes);
+                // Generate Thumbnail for PDF
+                var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath, attachment.ContentType);
                 if (thumbMetadata != null)
                 {
                     attachment.Thumb_LocalFileName = thumbMetadata.LocalFileName;
@@ -64,7 +78,8 @@ public class FileStorageService : IFileStorageService
             }
             else
             {
-                File.WriteAllBytes(fullFilePath, fileBytes);
+                // Save other file types directly
+                await File.WriteAllBytesAsync(fullFilePath, fileBytes);
             }
 
             attachment.LocalFileName = attachmentFileName;
@@ -96,9 +111,9 @@ public class FileStorageService : IFileStorageService
             File.Move(localFile, fullFilePath);
 
             // Generate Thumbnail if it's an image file
-            if (IsImageFile(attachment.ContentType))
+            if (IsImageFile(attachment.ContentType) || IsPDFFile(attachment.ContentType))
             {
-                var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath);
+                var thumbMetadata = await _thumbnailService.GenerateThumbnailAsync<T>(fullFilePath, attachment.ContentType);
                 if (thumbMetadata != null)
                 {
                     attachment.Thumb_LocalFileName = thumbMetadata.LocalFileName;
@@ -118,7 +133,7 @@ public class FileStorageService : IFileStorageService
         }
     }
 
-    private bool IsImageFile(string contentType)
+    private static bool IsImageFile(string contentType)
     {
         if (string.IsNullOrEmpty(contentType))
         {
@@ -127,6 +142,16 @@ public class FileStorageService : IFileStorageService
 
         var imageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp", "image/webp" };
         return imageTypes.Contains(contentType.ToLower());
+    }
+
+    private static bool IsPDFFile(string contentType)
+    {
+        if (string.IsNullOrEmpty(contentType))
+        {
+            return false;
+        }
+
+        return contentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<float> SaveCompressedImageAsync(byte[] imageBytes, string filePath, string contentType)

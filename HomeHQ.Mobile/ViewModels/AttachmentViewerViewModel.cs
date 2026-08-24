@@ -317,6 +317,35 @@ public class AttachmentViewerViewModel : BaseViewModel
             {
                 await LoadImageAsync();
             }
+
+            if (IsPdf)
+            {
+                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+
+                byte[] bytes;
+                if (File.Exists(localFilePath))
+                {
+                    bytes = await File.ReadAllBytesAsync(localFilePath);
+                }
+                else
+                {
+                    var pdfResponse = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+                    if (!pdfResponse.IsSuccessStatusCode)
+                    {
+                        HasError = true;
+                        ErrorMessage = "Failed to download PDF";
+                        return;
+                    }
+
+                    bytes = await pdfResponse.Content.ReadAsByteArrayAsync();
+
+                    //Also save to cache for future use
+                    await File.WriteAllBytesAsync(localFilePath, bytes);
+                }
+
+                //Update the PdfUrl to point to the local cached file
+                PdfUrl = $"file://{localFilePath}";
+            }
         }
         catch (HttpRequestException ex)
         {
@@ -591,6 +620,9 @@ public class AttachmentViewerViewModel : BaseViewModel
                 }
 
                 bytes = await response.Content.ReadAsByteArrayAsync();
+
+                //Also save to cache for future use
+                await File.WriteAllBytesAsync(localFilePath, bytes);
             }
 
             await ApplyLoadedImageBytesAsync(bytes);

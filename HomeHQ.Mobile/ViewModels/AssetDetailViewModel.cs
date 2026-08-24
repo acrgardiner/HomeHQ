@@ -158,8 +158,8 @@ public class AssetDetailViewModel : BaseViewModel
 
     public bool HasMultipleAttachments => Attachments.Count > 1;
 
-    public bool CurrentAttachmentIsImage
-        => CurrentAttachment?.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true;
+    public bool CurrentAttachmentHasPreview
+        => CurrentAttachment?.Thumb_LocalFileName != null;
 
     public string CurrentAttachmentFileIcon => GetFileTypeIcon(CurrentAttachment?.ContentType);
 
@@ -438,7 +438,7 @@ public class AssetDetailViewModel : BaseViewModel
         OnPropertyChanged(nameof(CanGoNextAttachment));
         OnPropertyChanged(nameof(AttachmentCountText));
         OnPropertyChanged(nameof(HasMultipleAttachments));
-        OnPropertyChanged(nameof(CurrentAttachmentIsImage));
+        OnPropertyChanged(nameof(CurrentAttachmentHasPreview));
         OnPropertyChanged(nameof(CurrentAttachmentFileIcon));
         OnPropertyChanged(nameof(CurrentAttachmentFileSizeFormatted));
         OnPropertyChanged(nameof(CurrentAttachmentHasType));
@@ -453,7 +453,7 @@ public class AssetDetailViewModel : BaseViewModel
     {
         CurrentAttachmentPreviewSource = null;
 
-        if (CurrentAttachment == null || !CurrentAttachmentIsImage)
+        if (CurrentAttachment == null || !CurrentAttachmentHasPreview)
         {
             return;
         }
@@ -462,14 +462,14 @@ public class AssetDetailViewModel : BaseViewModel
         {
             IsLoadingPreview = true;
             //Check local cache first
-            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
+            var localFilePath = Path.Combine(FileSystem.CacheDirectory, "thumbs", nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
             if (File.Exists(localFilePath))
             {
                 CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
             }
             else
             {
-                var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/data");
+                var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/previewdata");
                 if (response.IsSuccessStatusCode)
                 {
                     var bytes = await response.Content.ReadAsByteArrayAsync();
