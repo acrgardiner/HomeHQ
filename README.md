@@ -40,7 +40,9 @@ This project was started as a way for me to hone my software development skills 
 
 I wanted a way to track my household assets, their warranties, and associated documents in one secure location that I controlled. 
 
-Yes there are other solutions out there, but I wanted something lightweight, self-hosted, and extendable for my purpose.
+Yes there are other solutions out there, but I wanted something self-hosted, and extendable for my purpose.
+
+Some design decisions were made to further my own understanding of software architecture and implementation of certain features.
 
 ### Key Features
 
@@ -133,7 +135,9 @@ Assets will be created for each file found in the imports directory and the sour
 
 ## 🏢 Architecture
 
-The architecture of HomeHQ is designed to be modular and scalable. The main components include:
+The structure of HomeHQ was designed to give a practical example of a layered architecture with a clear separation of concerns. Whilst overkill for a small project, it is giving a practical example to further my own understanding of the principles and patterns involved.
+
+The main components include:
 
 - **Hosts**: The entry point of the application, responsible for hosting the web server and handling incoming requests.
 - **Infrastructure**: Contains the implementation of data access, file storage, and other external services.
