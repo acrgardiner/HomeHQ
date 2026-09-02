@@ -1,5 +1,4 @@
 ﻿
-using System.Net.Mime;
 using HomeHQ.Entities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -30,8 +29,8 @@ public class ThumbnailService : IThumbnailService
     private readonly IEntityService<Asset> _assetService;
     private readonly IEntityService<Attachment> _attachmentService;
 
-    private readonly int[] thumbnailDimentions = [1200, 1200]; //[width, height]
-    private readonly int thumbnailJpegQuality = 80;
+    private readonly int[] _thumbnailDimentions = [1200, 1200]; //[width, height]
+    private readonly int _thumbnailJpegQuality = 80;
 
     public ThumbnailService(
         ILogger<ThumbnailService> logger,
@@ -101,12 +100,12 @@ public class ThumbnailService : IThumbnailService
             {
                 using var image = await Image.LoadAsync(sourceFile);
                 // Calculate thumbnail dimensions while maintaining aspect ratio
-                var (thumbWidth, thumbHeight) = CalculateThumbnailDimensions(image.Width, image.Height, thumbnailDimentions[0], thumbnailDimentions[1]);
+                var (thumbWidth, thumbHeight) = CalculateThumbnailDimensions(image.Width, image.Height, _thumbnailDimentions[0], _thumbnailDimentions[1]);
 
                 // Create thumbnail
                 image.Mutate(x => x.Resize(thumbWidth, thumbHeight));
 
-                await image.SaveAsJpegAsync(thumbnailFile, new JpegEncoder { Quality = thumbnailJpegQuality });
+                await image.SaveAsJpegAsync(thumbnailFile, new JpegEncoder { Quality = _thumbnailJpegQuality });
             }
             else if (IsPDFFile(contentType.ToString()))
             {
@@ -122,7 +121,7 @@ public class ThumbnailService : IThumbnailService
                     options: new RenderOptions
                     {
                         Dpi = 96,
-                        Width = thumbnailDimentions[0],
+                        Width = _thumbnailDimentions[0],
                         Height = null,
                         WithAspectRatio = true,
                     });

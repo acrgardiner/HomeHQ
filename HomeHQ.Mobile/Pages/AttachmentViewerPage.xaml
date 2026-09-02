@@ -6,6 +6,7 @@
              x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
              xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:DataType="vm:AttachmentViewerViewModel"
+             xmlns:pdf="http://eightbot.com/maui/pdfview"
              Title="{Binding FileName}"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark=Black}">
@@ -140,13 +141,13 @@
                        TextColor="{StaticResource Gray400}"
                        HorizontalOptions="Center"
                        HorizontalTextAlignment="Center"/>
-                <Button Text="Try Again"
+                <!-- <Button Text="Try Again"
                         Command="{Binding RefreshCommand}"
                         BackgroundColor="{StaticResource Primary}"
                         TextColor="White"
                         CornerRadius="8"
                         HeightRequest="44"
-                        WidthRequest="120"/>
+                        WidthRequest="120"/> -->
             </VerticalStackLayout>
 
             <!-- Image Viewer -->
@@ -218,13 +219,14 @@
             </VerticalStackLayout>
 
             <!-- PDF Viewer -->
-            <Grid IsVisible="{Binding IsPdf}">
-                <VerticalStackLayout VerticalOptions="Center"
+            <Grid IsVisible="{Binding IsPdf}" BackgroundColor="#0F172A">
+                <Grid RowDefinitions="*,Auto">
+                    <!--<VerticalStackLayout VerticalOptions="Center"
                                      HorizontalOptions="Center"
                                      Spacing="24"
-                                     Padding="32">
-
-                    <!-- PDF Icon Card -->
+                                     Padding="32"> -->
+                    <pdf:PdfView Source="{Binding PdfSource}" />
+                    <!-- PDF Icon Card 
                     <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
                            CornerRadius="16"
                            Padding="32"
@@ -264,7 +266,9 @@
                             WidthRequest="180"
                             FontSize="15"
                             FontAttributes="Bold"/>
-                </VerticalStackLayout>
+                    
+                </VerticalStackLayout> -->
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

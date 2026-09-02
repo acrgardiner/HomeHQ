@@ -462,7 +462,7 @@ public class AssetDetailViewModel : BaseViewModel
         {
             IsLoadingPreview = true;
             //Check local cache first
-            var localFilePath = Path.Combine(FileSystem.CacheDirectory, "thumbs", nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
+            var localFilePath = Path.Combine(FileSystem.CacheDirectory, "thumbs", nameof(Asset), AssetId, CurrentAttachment.Id.ToString() + CurrentAttachment.Extension);
             if (File.Exists(localFilePath))
             {
                 CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
@@ -481,8 +481,9 @@ public class AssetDetailViewModel : BaseViewModel
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.ToString());
             // Preview load failed silently; ShowFileIcon will fall back to the icon.
         }
         finally
@@ -585,7 +586,7 @@ public class AssetDetailViewModel : BaseViewModel
         }
 
         await SafeExecuteAsync(
-            () => _attachmentViewerNavigation.PresentAsync(attachment.Id.ToString()),
+            () => _attachmentViewerNavigation.PresentAsync(attachment),
             onError: ex => ErrorMessage = $"Could not open attachment: {ex.Message}");
     }
 }

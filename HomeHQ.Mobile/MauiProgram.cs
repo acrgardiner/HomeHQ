@@ -7,6 +7,7 @@ using HomeHQ.Mobile.ViewModels;
 using HomeHQ.Mobile.ViewModels.Admin;
 using HomeHQ.Mobile.ViewModels.Setup;
 using MauiIcons.Material.Outlined;
+using MauiNativePdfView;
 using Microsoft.Extensions.Logging;
 
 namespace HomeHQ.Mobile;
@@ -19,6 +20,7 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMaterialOutlinedMauiIcons()
+            .UseMauiNativePdfView()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

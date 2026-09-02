@@ -1248,7 +1248,7 @@ public class AssetEditViewModel : BaseViewModel
             else // Existing attachment — load from API
             {
                 //Check local cache first
-                var localFilePath = Path.Combine(FileSystem.CacheDirectory, "thumbs", nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
+                var localFilePath = Path.Combine(FileSystem.CacheDirectory, "thumbs", nameof(Asset), AssetId, CurrentAttachment.Id.ToString() + CurrentAttachment.Extension);
                 if (File.Exists(localFilePath))
                 {
                     CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);

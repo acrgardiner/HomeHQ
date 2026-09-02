@@ -16,13 +16,6 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-
-		<!-- Display name -->
-		<ApplicationTitle>HomeHQ.Mobile</ApplicationTitle>
-
-		<!-- App Identifier -->
-		<ApplicationId>com.companyname.homehq.mobile</ApplicationId>
-
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
@@ -35,11 +28,40 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 	</PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Display name -->
+    <ApplicationTitle>HomeHQ</ApplicationTitle>
+
+    <!-- App Identifier -->
+    <ApplicationId>homehq.mobile</ApplicationId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Display name -->
+    <ApplicationTitle>HomeHQ (Debug)</ApplicationTitle>
+
+    <!-- App Identifier -->
+    <ApplicationId>homehq.mobile.debug</ApplicationId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|AnyCPU'">
+    <AndroidUseAapt2>True</AndroidUseAapt2>
+    <Debugger>Xamarin</Debugger>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|AnyCPU'">
+    <AndroidUseAapt2>True</AndroidUseAapt2>
+    <Debugger>Xamarin</Debugger>
+  </PropertyGroup>
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\homehq.svg" ForegroundScale="0.75" Color="#417D90" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\homehq.svg" ForegroundScale="0.75" Color="#417D90" Condition="'$(Configuration)' != 'Debug'" />
+    <MauiIcon Include="Resources\AppIcon\Debug\appicon.svg" ForegroundFile="Resources\AppIcon\Debug\homehq.svg" ForegroundScale="0.75" Color="#417D90" Condition="'$(Configuration)' == 'Debug'" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\homehqwtextwhite.svg" Color="#417D90" BaseSize="1024,1024" />
@@ -58,6 +80,7 @@
 	<ItemGroup>
 		<PackageReference Include="AathifMahir.Maui.MauiIcons.Core" Version="6.0.0" />
 		<PackageReference Include="AathifMahir.Maui.MauiIcons.Material.Outlined" Version="6.0.0" />
+		<PackageReference Include="Eightbot.MauiNativePdfView" Version="1.1.1" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.90" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
 	</ItemGroup>

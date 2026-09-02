@@ -5,10 +5,11 @@ using HomeHQ.Application.Mapping;
 using HomeHQ.DTOs;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
+using MauiNativePdfView.Abstractions;
 
 namespace HomeHQ.Mobile.ViewModels;
 
-[QueryProperty(nameof(AttachmentId), "attachmentId")]
+[QueryProperty(nameof(Attachment), "attachment")]
 [QueryProperty(nameof(Editable), "editable")]
 public class AttachmentViewerViewModel : BaseViewModel
 {
@@ -16,22 +17,6 @@ public class AttachmentViewerViewModel : BaseViewModel
     private readonly SettingsService _settingsService;
 
     /// <summary>When set, rotate/crop updates <see cref="Attachment.PendingUploadBytes"/> on this instance (Asset Edit session).</summary>
-    private Attachment? _assetEditLinkedAttachment;
-
-    public string AttachmentId
-    {
-        get;
-        set
-        {
-            if (SetProperty(ref field, value))
-            {
-                if (_assetEditLinkedAttachment == null)
-                {
-                    _ = LoadAttachmentAsync();
-                }
-            }
-        }
-    } = string.Empty;
 
     public bool Editable
     {
@@ -138,7 +123,8 @@ public class AttachmentViewerViewModel : BaseViewModel
     public bool ShowRotateButton => ShowImageToolbar && !IsCropMode;
 
     private byte[]? _rawImageBytes;
-    public string? PdfUrl
+
+    public PdfSource PdfSource
     {
         get;
         set => SetProperty(ref field, value);
@@ -193,7 +179,6 @@ public class AttachmentViewerViewModel : BaseViewModel
 
     public ICommand GoBackCommand { get; }
     public ICommand OpenExternallyCommand { get; }
-    public ICommand RefreshCommand { get; }
     public ICommand RotateClockwiseCommand { get; }
     public ICommand RotateCounterClockwiseCommand { get; }
     public ICommand StartCropCommand { get; }
@@ -209,7 +194,6 @@ public class AttachmentViewerViewModel : BaseViewModel
 
         GoBackCommand = new Command(async () => await GoBackAsync());
         OpenExternallyCommand = new Command(async () => await OpenExternallyAsync());
-        RefreshCommand = new Command(async () => await LoadAttachmentAsync());
         RotateClockwiseCommand = new Command(async () => await RotateAsync(90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
         RotateCounterClockwiseCommand = new Command(async () => await RotateAsync(-90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
         StartCropCommand = new Command(() => StartCrop(), () => ShowStartCropButton && !IsImageEditBusy);
@@ -223,10 +207,8 @@ public class AttachmentViewerViewModel : BaseViewModel
     /// </summary>
     public async Task InitializeForAssetEditAsync(Attachment linked, bool editable)
     {
-        _assetEditLinkedAttachment = linked;
         Editable = editable;
         Attachment = linked;
-        AttachmentId = linked.Id.ToString();
 
         await LoadLinkedAttachmentContentAsync();
     }
@@ -251,9 +233,9 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
-    private async Task LoadLinkedAttachmentContentAsync()
+    public async Task LoadLinkedAttachmentContentAsync()
     {
-        if (_assetEditLinkedAttachment == null)
+        if (Attachment == null)
         {
             return;
         }
@@ -264,9 +246,9 @@ public class AttachmentViewerViewModel : BaseViewModel
             HasError = false;
             ErrorMessage = null;
 
-            if (_assetEditLinkedAttachment.Id == Guid.Empty)
+            if (Attachment.Id == Guid.Empty)
             {
-                var pending = _assetEditLinkedAttachment.PendingUploadBytes;
+                var pending = Attachment.PendingUploadBytes;
                 if (pending == null || pending.Length == 0)
                 {
                     HasError = true;
@@ -275,7 +257,6 @@ public class AttachmentViewerViewModel : BaseViewModel
                 }
 
                 // Shares / staged files may be PDF or other types — only decode bitmaps as images.
-                Attachment = _assetEditLinkedAttachment;
                 OnPropertyChanged(nameof(IsImage));
                 OnPropertyChanged(nameof(IsPdf));
                 OnPropertyChanged(nameof(IsOtherFile));
@@ -292,26 +273,6 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            var response = await _apiClient.GetAsync($"api/attachments/{_assetEditLinkedAttachment.Id}");
-            if (!response.IsSuccessStatusCode)
-            {
-                HasError = true;
-                ErrorMessage = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
-                    ? "Please log in again"
-                    : $"Failed to load attachment: {response.StatusCode}";
-                return;
-            }
-
-            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AttachmentDto>>();
-            if (apiResponse?.Data == null)
-            {
-                HasError = true;
-                ErrorMessage = "Attachment not found";
-                return;
-            }
-
-            MergeAttachmentMetadata(EntityMappings.ToEntity(apiResponse.Data), _assetEditLinkedAttachment);
-            Attachment = _assetEditLinkedAttachment;
 
             if (IsImage)
             {
@@ -320,16 +281,17 @@ public class AttachmentViewerViewModel : BaseViewModel
 
             if (IsPdf)
             {
-                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+                var cacheDir = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString());
+                var localFilePath = Path.Combine(cacheDir, Attachment.Id.ToString() + Attachment.Extension);
 
-                byte[] bytes;
                 if (File.Exists(localFilePath))
                 {
-                    bytes = await File.ReadAllBytesAsync(localFilePath);
                 }
                 else
                 {
-                    var pdfResponse = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+                    Directory.CreateDirectory(cacheDir);
+
+                    var pdfResponse = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
                     if (!pdfResponse.IsSuccessStatusCode)
                     {
                         HasError = true;
@@ -337,14 +299,17 @@ public class AttachmentViewerViewModel : BaseViewModel
                         return;
                     }
 
-                    bytes = await pdfResponse.Content.ReadAsByteArrayAsync();
+                    var bytes = await pdfResponse.Content.ReadAsByteArrayAsync();
 
                     //Also save to cache for future use
                     await File.WriteAllBytesAsync(localFilePath, bytes);
                 }
 
-                //Update the PdfUrl to point to the local cached file
-                PdfUrl = $"file://{localFilePath}";
+                // Update the PdfSource to point to the local cached file
+                if (localFilePath is not null)
+                {
+                    PdfSource = PdfSource.FromFile(localFilePath);
+                }
             }
         }
         catch (HttpRequestException ex)
@@ -469,12 +434,6 @@ public class AttachmentViewerViewModel : BaseViewModel
     {
         await ApplyLoadedImageBytesAsync(newBytes);
 
-        if (_assetEditLinkedAttachment != null)
-        {
-            _assetEditLinkedAttachment.PendingUploadBytes = newBytes;
-            _assetEditLinkedAttachment.FileSize = newBytes.Length;
-            return;
-        }
 
         if (Attachment != null)
         {
@@ -520,66 +479,10 @@ public class AttachmentViewerViewModel : BaseViewModel
             return string.Empty;
         }
 
-        return Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+        return Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.Id.ToString() + Attachment.Extension);
     }
 
-    public async Task LoadAttachmentAsync()
-    {
-        if (string.IsNullOrEmpty(AttachmentId))
-        {
-            return;
-        }
-
-        try
-        {
-            IsLoading = true;
-            HasError = false;
-            ErrorMessage = null;
-
-            // First, get the attachment metadata
-            var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}");
-            if (!response.IsSuccessStatusCode)
-            {
-                HasError = true;
-                ErrorMessage = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
-                    ? "Please log in again"
-                    : $"Failed to load attachment: {response.StatusCode}";
-                return;
-            }
-
-            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AttachmentDto>>();
-            if (apiResponse?.Data == null)
-            {
-                HasError = true;
-                ErrorMessage = "Attachment not found";
-                return;
-            }
-
-            Attachment = EntityMappings.ToEntity(apiResponse.Data);
-
-            // Load the actual file data based on type
-            if (IsImage)
-            {
-                await LoadImageAsync();
-            }
-            // For PDF and other files, we'll handle them when user wants to view
-        }
-        catch (HttpRequestException ex)
-        {
-            HasError = true;
-            ErrorMessage = $"Connection error: {ex.Message}";
-        }
-        catch (Exception ex)
-        {
-            HasError = true;
-            ErrorMessage = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-            RefreshEditCommandStates();
-        }
-    }
+    
 
     private async Task LoadImageAsync()
     {
@@ -595,7 +498,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             ImagePixelWidth = 0;
             ImagePixelHeight = 0;
 
-            if (_assetEditLinkedAttachment?.PendingUploadBytes is { Length: > 0 } memoryBytes
+            if (Attachment?.PendingUploadBytes is { Length: > 0 } memoryBytes
                 && Attachment.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true)
             {
                 await ApplyLoadedImageBytesAsync(memoryBytes);
@@ -611,7 +514,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             }
             else
             {
-                var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+                var response = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
                 if (!response.IsSuccessStatusCode)
                 {
                     HasError = true;
@@ -669,7 +572,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             IsLoading = true;
 
             // Download the file
-            var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+            var response = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
             if (!response.IsSuccessStatusCode)
             {
                 await Shell.Current.DisplayAlertAsync("Error", "Failed to download file", "OK");
