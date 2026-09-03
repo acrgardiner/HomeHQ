@@ -56,55 +56,115 @@
         </Grid>
 
         <!-- Image edit toolbar -->
-        <HorizontalStackLayout Grid.Row="1"
-                               IsVisible="{Binding ShowImageToolbar}"
-                               Padding="12,8"
-                               Spacing="10"
-                               HorizontalOptions="Fill"
-                               BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}">
-            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateLeft}"
-                    Command="{Binding RotateCounterClockwiseCommand}"
-                    IsVisible="{Binding ShowRotateButton}"
-                    BackgroundColor="{StaticResource Primary}"
-                    TextColor="White"
-                    CornerRadius="20"
-                    WidthRequest="44"
-                    HeightRequest="44"/>
-            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateRight}"
-                    Command="{Binding RotateClockwiseCommand}"
-                    IsVisible="{Binding ShowRotateButton}"
-                    BackgroundColor="{StaticResource Primary}"
-                    TextColor="White"
-                    CornerRadius="20"
-                    WidthRequest="44"
-                    HeightRequest="44"/>
-            <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Crop}"
-                    Command="{Binding StartCropCommand}"
-                    IsVisible="{Binding ShowStartCropButton}"
-                    BackgroundColor="{StaticResource Primary}"
-                    TextColor="White"
-                    CornerRadius="20"
-                    WidthRequest="44"
-                    HeightRequest="44"/>
-            <Button Text="Apply"
-                    Command="{Binding ApplyCropCommand}"
-                    IsVisible="{Binding IsCropMode}"
-                    BackgroundColor="{StaticResource Primary}"
-                    TextColor="White"
-                    CornerRadius="8"
-                    Padding="16,8"/>
-            <Button Text="Cancel"
-                    Command="{Binding CancelCropCommand}"
-                    IsVisible="{Binding IsCropMode}"
-                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray600}}"
-                    TextColor="White"
-                    CornerRadius="8"
-                    Padding="16,8"/>
+        <VerticalStackLayout Grid.Row="1"
+                             IsVisible="{Binding ShowImageToolbar}"
+                             Padding="12,8"
+                             Spacing="8"
+                             BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray900}}">
+            <ScrollView Orientation="Horizontal"
+                        IsVisible="{Binding ShowEditToolButtons}"
+                        HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="10">
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateLeft}"
+                            Command="{Binding RotateCounterClockwiseCommand}"
+                            IsVisible="{Binding ShowRotateButton}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="44"
+                            HeightRequest="44"/>
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=RotateRight}"
+                            Command="{Binding RotateClockwiseCommand}"
+                            IsVisible="{Binding ShowRotateButton}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="44"
+                            HeightRequest="44"/>
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Crop}"
+                            Command="{Binding StartCropCommand}"
+                            IsVisible="{Binding ShowStartCropButton}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="44"
+                            HeightRequest="44"/>
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FilterBAndW}"
+                            Command="{Binding ApplyGrayscaleCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="44"
+                            HeightRequest="44"/>
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Contrast}"
+                            Command="{Binding StartContrastCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="44"
+                            HeightRequest="44"/>
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AutoFixHigh}"
+                            Command="{Binding StartSharpnessCommand}"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="20"
+                            WidthRequest="44"
+                            HeightRequest="44"/>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <HorizontalStackLayout Spacing="10"
+                                   IsVisible="{Binding IsCropMode}">
+                <Button Text="Apply"
+                        Command="{Binding ApplyCropCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Padding="16,8"/>
+                <Button Text="Cancel"
+                        Command="{Binding CancelCropCommand}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray600}}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Padding="16,8"/>
+            </HorizontalStackLayout>
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto"
+                  ColumnSpacing="8"
+                  IsVisible="{Binding IsAdjustMode}">
+                <Label Grid.Column="0"
+                       Text="{Binding AdjustModeTitle}"
+                       VerticalOptions="Center"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"/>
+                <Slider Grid.Column="1"
+                        Minimum="{Binding AdjustMinimum}"
+                        Maximum="{Binding AdjustMaximum}"
+                        Value="{Binding AdjustAmount, Mode=TwoWay}"
+                        VerticalOptions="Center"/>
+                <Label Grid.Column="2"
+                       Text="{Binding AdjustAmountLabel}"
+                       VerticalOptions="Center"
+                       WidthRequest="44"
+                       TextColor="{StaticResource Gray500}"/>
+                <Button Grid.Column="3"
+                        Text="Apply"
+                        Command="{Binding ApplyAdjustCommand}"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Padding="12,8"/>
+                <Button Grid.Column="4"
+                        Text="Cancel"
+                        Command="{Binding CancelAdjustCommand}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray600}}"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Padding="12,8"/>
+            </Grid>
             <ActivityIndicator IsVisible="{Binding IsImageEditBusy}"
                                IsRunning="{Binding IsImageEditBusy}"
                                Color="{StaticResource Primary}"
-                               VerticalOptions="Center"/>
-        </HorizontalStackLayout>
+                               HorizontalOptions="Start"/>
+        </VerticalStackLayout>
 
         <!-- Content Area -->
         <!-- Clip the content area so pan/zoom transforms can't draw over the header -->

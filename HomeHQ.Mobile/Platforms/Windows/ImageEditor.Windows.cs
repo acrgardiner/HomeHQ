@@ -52,6 +52,75 @@ public static partial class ImageEditor
         return EncodeWithTransform(decoder, transform, contentType);
     }
 
+    private static partial int[] PlatformGetArgbPixels(byte[] bytes, out int width, out int height)
+    {
+        using var input = new InMemoryRandomAccessStream();
+        input.WriteAsync(bytes.AsBuffer()).AsTask().GetAwaiter().GetResult();
+        input.Seek(0);
+        var decoder = BitmapDecoder.CreateAsync(input).AsTask().GetAwaiter().GetResult();
+        var pixelData = decoder.GetPixelDataAsync(
+                BitmapPixelFormat.Bgra8,
+                BitmapAlphaMode.Premultiplied,
+                new BitmapTransform(),
+                ExifOrientationMode.RespectExifOrientation,
+                ColorManagementMode.DoNotColorManage)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+
+        width = (int)decoder.OrientedPixelWidth;
+        height = (int)decoder.OrientedPixelHeight;
+        var bgra = pixelData.DetachPixelData();
+        var pixels = new int[width * height];
+        for (var i = 0; i < pixels.Length; i++)
+        {
+            var o = i * 4;
+            var b = bgra[o];
+            var g = bgra[o + 1];
+            var r = bgra[o + 2];
+            var a = bgra[o + 3];
+            pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+
+        return pixels;
+    }
+
+    private static partial byte[] PlatformEncodeArgbPixels(int[] pixels, int width, int height, string? contentType)
+    {
+        var bgra = new byte[width * height * 4];
+        for (var i = 0; i < pixels.Length; i++)
+        {
+            var p = pixels[i];
+            var o = i * 4;
+            bgra[o] = (byte)(p & 0xFF);
+            bgra[o + 1] = (byte)((p >> 8) & 0xFF);
+            bgra[o + 2] = (byte)((p >> 16) & 0xFF);
+            bgra[o + 3] = (byte)((p >> 24) & 0xFF);
+        }
+
+        using var output = new InMemoryRandomAccessStream();
+        var png = contentType?.Contains("png", StringComparison.OrdinalIgnoreCase) == true;
+        var encoderId = png ? BitmapEncoder.PngEncoderId : BitmapEncoder.JpegEncoderId;
+        var encoder = BitmapEncoder.CreateAsync(encoderId, output).AsTask().GetAwaiter().GetResult();
+        encoder.SetPixelData(
+            BitmapPixelFormat.Bgra8,
+            BitmapAlphaMode.Premultiplied,
+            (uint)width,
+            (uint)height,
+            96,
+            96,
+            bgra);
+        encoder.FlushAsync().AsTask().GetAwaiter().GetResult();
+
+        output.Seek(0);
+        using var reader = new DataReader(output);
+        var size = (uint)output.Size;
+        reader.LoadAsync(size).AsTask().GetAwaiter().GetResult();
+        var result = new byte[size];
+        reader.ReadBytes(result);
+        return result;
+    }
+
     private static byte[] EncodeWithTransform(BitmapDecoder decoder, BitmapTransform transform, string? contentType)
     {
         throw new NotImplementedException("This method is not implemented yet. It needs to be tested and verified before use.");

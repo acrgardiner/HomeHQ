@@ -74,6 +74,52 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
+    public bool IsAdjustMode
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                NotifyImageToolbarProps();
+                RefreshEditCommandStates();
+            }
+        }
+    }
+
+    public string AdjustModeTitle
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    public double AdjustMinimum
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
+    public double AdjustMaximum
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = 2;
+
+    public double AdjustAmount
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(AdjustAmountLabel));
+                _ = PreviewAdjustAsync();
+            }
+        }
+    }
+
+    public string AdjustAmountLabel => $"{AdjustAmount:0.00}";
+
     public bool IsImageEditBusy
     {
         get;
@@ -116,13 +162,20 @@ public class AttachmentViewerViewModel : BaseViewModel
     /// <summary>Pan/zoom on the viewer is disabled while adjusting the crop rectangle.</summary>
     public bool PanZoomEnabled => !IsCropMode;
 
+    /// <summary>Primary edit icons (rotate, crop, filters) — hidden while crop/adjust is active.</summary>
+    public bool ShowEditToolButtons => ShowImageToolbar && !IsCropMode && !IsAdjustMode;
+
     /// <summary>Hides "Crop" while already in crop mode.</summary>
-    public bool ShowStartCropButton => ShowImageToolbar && !IsCropMode;
+    public bool ShowStartCropButton => ShowEditToolButtons;
 
     /// <summary>Rotate is hidden during crop mode to avoid stacked transforms.</summary>
-    public bool ShowRotateButton => ShowImageToolbar && !IsCropMode;
+    public bool ShowRotateButton => ShowEditToolButtons;
 
     private byte[]? _rawImageBytes;
+    private byte[]? _adjustSourceBytes;
+    private ImageAdjustKind _adjustKind;
+    private CancellationTokenSource? _adjustPreviewCts;
+    private bool _suppressAdjustPreview;
 
     public PdfSource PdfSource
     {
@@ -184,6 +237,11 @@ public class AttachmentViewerViewModel : BaseViewModel
     public ICommand StartCropCommand { get; }
     public ICommand ApplyCropCommand { get; }
     public ICommand CancelCropCommand { get; }
+    public ICommand ApplyGrayscaleCommand { get; }
+    public ICommand StartContrastCommand { get; }
+    public ICommand StartSharpnessCommand { get; }
+    public ICommand ApplyAdjustCommand { get; }
+    public ICommand CancelAdjustCommand { get; }
 
     public AttachmentViewerViewModel(ApiClient apiClient, SettingsService settingsService)
     {
@@ -194,11 +252,16 @@ public class AttachmentViewerViewModel : BaseViewModel
 
         GoBackCommand = new Command(async () => await GoBackAsync());
         OpenExternallyCommand = new Command(async () => await OpenExternallyAsync());
-        RotateClockwiseCommand = new Command(async () => await RotateAsync(90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
-        RotateCounterClockwiseCommand = new Command(async () => await RotateAsync(-90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
+        RotateClockwiseCommand = new Command(async () => await RotateAsync(90), () => ShowEditToolButtons && !IsImageEditBusy);
+        RotateCounterClockwiseCommand = new Command(async () => await RotateAsync(-90), () => ShowEditToolButtons && !IsImageEditBusy);
         StartCropCommand = new Command(() => StartCrop(), () => ShowStartCropButton && !IsImageEditBusy);
         ApplyCropCommand = new Command(async () => await ApplyCropAsync(), () => IsCropMode && !IsImageEditBusy);
         CancelCropCommand = new Command(() => CancelCrop(), () => IsCropMode && !IsImageEditBusy);
+        ApplyGrayscaleCommand = new Command(async () => await ApplyGrayscaleAsync(), () => ShowEditToolButtons && !IsImageEditBusy);
+        StartContrastCommand = new Command(() => StartAdjust(ImageAdjustKind.Contrast), () => ShowEditToolButtons && !IsImageEditBusy);
+        StartSharpnessCommand = new Command(() => StartAdjust(ImageAdjustKind.Sharpness), () => ShowEditToolButtons && !IsImageEditBusy);
+        ApplyAdjustCommand = new Command(async () => await ApplyAdjustAsync(), () => IsAdjustMode && !IsImageEditBusy);
+        CancelAdjustCommand = new Command(() => CancelAdjust(), () => IsAdjustMode && !IsImageEditBusy);
     }
 
     /// <summary>
@@ -336,12 +399,18 @@ public class AttachmentViewerViewModel : BaseViewModel
         ((Command)StartCropCommand).ChangeCanExecute();
         ((Command)ApplyCropCommand).ChangeCanExecute();
         ((Command)CancelCropCommand).ChangeCanExecute();
+        ((Command)ApplyGrayscaleCommand).ChangeCanExecute();
+        ((Command)StartContrastCommand).ChangeCanExecute();
+        ((Command)StartSharpnessCommand).ChangeCanExecute();
+        ((Command)ApplyAdjustCommand).ChangeCanExecute();
+        ((Command)CancelAdjustCommand).ChangeCanExecute();
     }
 
     private void NotifyImageToolbarProps()
     {
         OnPropertyChanged(nameof(ShowImageToolbar));
         OnPropertyChanged(nameof(PanZoomEnabled));
+        OnPropertyChanged(nameof(ShowEditToolButtons));
         OnPropertyChanged(nameof(ShowStartCropButton));
         OnPropertyChanged(nameof(ShowRotateButton));
     }
@@ -382,7 +451,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         try
         {
             IsImageEditBusy = true;
-            var rotated = ImageEditor.Rotate(_rawImageBytes, degrees, Attachment.ContentType);
+            var rotated = await Task.Run(() => ImageEditor.Rotate(_rawImageBytes, degrees, Attachment.ContentType));
             await ReplaceImageBytesAsync(rotated);
         }
         catch (Exception ex)
@@ -416,7 +485,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             var ch = bottom - y;
 
             var rect = new ImageCropRectangle(x, y, cw, ch);
-            var cropped = ImageEditor.Crop(_rawImageBytes, rect, Attachment.ContentType);
+            var cropped = await Task.Run(() => ImageEditor.Crop(_rawImageBytes, rect, Attachment.ContentType));
             await ReplaceImageBytesAsync(cropped);
             IsCropMode = false;
         }
@@ -430,13 +499,175 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
+    private async Task ApplyGrayscaleAsync()
+    {
+        if (_rawImageBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsImageEditBusy = true;
+            var source = _rawImageBytes;
+            var contentType = Attachment.ContentType;
+            var result = await Task.Run(() => ImageEditor.Grayscale(source, contentType));
+            await ReplaceImageBytesAsync(result);
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+        finally
+        {
+            IsImageEditBusy = false;
+        }
+    }
+
+    private void StartAdjust(ImageAdjustKind kind)
+    {
+        if (_rawImageBytes == null || !IsImage)
+        {
+            return;
+        }
+
+        _adjustKind = kind;
+        _adjustSourceBytes = _rawImageBytes;
+        _suppressAdjustPreview = true;
+        if (kind == ImageAdjustKind.Contrast)
+        {
+            AdjustModeTitle = "Contrast";
+            AdjustMinimum = 0.25;
+            AdjustMaximum = 2.5;
+            AdjustAmount = 1;
+        }
+        else
+        {
+            AdjustModeTitle = "Sharpness";
+            AdjustMinimum = 0;
+            AdjustMaximum = 2;
+            AdjustAmount = 1;
+        }
+
+        _suppressAdjustPreview = false;
+        IsAdjustMode = true;
+        RefreshEditCommandStates();
+        _ = PreviewAdjustAsync();
+    }
+
+    private void CancelAdjust()
+    {
+        _adjustPreviewCts?.Cancel();
+        var original = _adjustSourceBytes;
+        _adjustSourceBytes = null;
+        IsAdjustMode = false;
+        if (original != null)
+        {
+            _ = RestorePreviewAsync(original);
+        }
+
+        RefreshEditCommandStates();
+    }
+
+    private async Task ApplyAdjustAsync()
+    {
+        if (_adjustSourceBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsImageEditBusy = true;
+            _adjustPreviewCts?.Cancel();
+            var source = _adjustSourceBytes;
+            var contentType = Attachment.ContentType;
+            var amount = (float)AdjustAmount;
+            var kind = _adjustKind;
+            var result = await Task.Run(() => ApplyAdjust(source, kind, amount, contentType));
+            await ReplaceImageBytesAsync(result);
+            _adjustSourceBytes = null;
+            IsAdjustMode = false;
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+        finally
+        {
+            IsImageEditBusy = false;
+        }
+    }
+
+    private async Task PreviewAdjustAsync()
+    {
+        if (_suppressAdjustPreview || !IsAdjustMode || _adjustSourceBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        _adjustPreviewCts?.Cancel();
+        _adjustPreviewCts = new CancellationTokenSource();
+        var token = _adjustPreviewCts.Token;
+        var source = _adjustSourceBytes;
+        var contentType = Attachment.ContentType;
+        var amount = (float)AdjustAmount;
+        var kind = _adjustKind;
+
+        try
+        {
+            await Task.Delay(180, token);
+            byte[] preview;
+            if ((kind == ImageAdjustKind.Contrast && Math.Abs(amount - 1f) < 0.001f) ||
+                (kind == ImageAdjustKind.Sharpness && amount <= 0.001f))
+            {
+                preview = source;
+            }
+            else
+            {
+                preview = await Task.Run(() => ApplyAdjust(source, kind, amount, contentType), token);
+            }
+            token.ThrowIfCancellationRequested();
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (token.IsCancellationRequested || !IsAdjustMode || !ReferenceEquals(source, _adjustSourceBytes))
+                {
+                    return;
+                }
+
+                ImageSource = ImageSource.FromStream(() => new MemoryStream(preview));
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+    }
+
+    private async Task RestorePreviewAsync(byte[] bytes)
+    {
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            ImageSource = ImageSource.FromStream(() => new MemoryStream(bytes));
+        });
+    }
+
+    private static byte[] ApplyAdjust(byte[] source, ImageAdjustKind kind, float amount, string? contentType) =>
+        kind == ImageAdjustKind.Contrast
+            ? ImageEditor.Contrast(source, amount, contentType)
+            : ImageEditor.Sharpen(source, amount, contentType);
+
     private async Task ReplaceImageBytesAsync(byte[] newBytes)
     {
         await ApplyLoadedImageBytesAsync(newBytes);
 
-
         if (Attachment != null)
         {
+            Attachment.PendingUploadBytes = newBytes;
+            Attachment.FileSize = newBytes.Length;
             var path = GetLocalCachePath();
             try
             {
@@ -494,6 +725,9 @@ public class AttachmentViewerViewModel : BaseViewModel
         try
         {
             IsCropMode = false;
+            IsAdjustMode = false;
+            _adjustPreviewCts?.Cancel();
+            _adjustSourceBytes = null;
             _rawImageBytes = null;
             ImagePixelWidth = 0;
             ImagePixelHeight = 0;
@@ -602,5 +836,11 @@ public class AttachmentViewerViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private enum ImageAdjustKind
+    {
+        Contrast,
+        Sharpness
     }
 }
