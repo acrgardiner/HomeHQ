@@ -37,6 +37,41 @@ public static partial class ImageEditor
         return EncodeBitmap(cropped, contentType);
     }
 
+    private static partial int[] PlatformGetArgbPixels(byte[] bytes, out int width, out int height)
+    {
+        using var src = BitmapFactory.DecodeByteArray(bytes, 0, bytes.Length)
+            ?? throw new InvalidOperationException("Could not decode image.");
+
+        Bitmap? copy = null;
+        try
+        {
+            var working = src;
+            if (src.GetConfig() != Bitmap.Config.Argb8888)
+            {
+                copy = src.Copy(Bitmap.Config.Argb8888!, false)
+                    ?? throw new InvalidOperationException("Could not convert image.");
+                working = copy;
+            }
+
+            width = working.Width;
+            height = working.Height;
+            var pixels = new int[width * height];
+            working.GetPixels(pixels, 0, width, 0, 0, width, height);
+            return pixels;
+        }
+        finally
+        {
+            copy?.Dispose();
+        }
+    }
+
+    private static partial byte[] PlatformEncodeArgbPixels(int[] pixels, int width, int height, string? contentType)
+    {
+        using var bmp = Bitmap.CreateBitmap(pixels, width, height, Bitmap.Config.Argb8888!)
+            ?? throw new InvalidOperationException("Could not encode image.");
+        return EncodeBitmap(bmp, contentType);
+    }
+
     private static byte[] EncodeBitmap(Bitmap bmp, string? contentType)
     {
         using var ms = new MemoryStream();
