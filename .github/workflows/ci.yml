@@ -179,7 +179,7 @@ jobs:
           ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
         run: |
           # Adjust the project path if your MAUI Android project file is located elsewhere
-          dotnet publish HomeHQ.Mobile/HomeHQ.Mobile.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=apk -p:AndroidVersionName=${{ env.ANDROID_VERSION_NAME }} -p:AndroidVersionCode=${{ env.ANDROID_VERSION_CODE }} -o ./artifacts/android
+          dotnet publish HomeHQ.Mobile/HomeHQ.Mobile.csproj -f net10.0-android -c Release -p:TargetFramework=net10.0-android -p:AndroidPackageFormat=apk -p:AndroidVersionName=${{ env.ANDROID_VERSION_NAME }} -p:AndroidVersionCode=${{ env.ANDROID_VERSION_CODE }} -o ./artifacts/android
 
       - name: Rename APK to include sanitized tag in filename
         if: ${{ env.SANITIZED_TAG != '' }}
