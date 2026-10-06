@@ -115,7 +115,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Install .Net MAUI Workloads
-                run: |
+        run: |
           dotnet workload restore
           dotnet workload install maui-android || true
 
