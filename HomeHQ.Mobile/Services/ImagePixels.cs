@@ -1,4 +1,4 @@
-namespace HomeHQ.Mobile.Services;
+﻿namespace HomeHQ.Mobile.Services;
 
 /// <summary>
 /// Packed ARGB pixel ops shared by all <see cref="ImageEditor"/> platforms.
@@ -41,37 +41,29 @@ internal static class ImagePixels
     }
 
     /// <param name="amount">0 = unchanged; 1 ≈ a standard unsharp pass.</param>
-    public static void ApplySharpen(int[] pixels, int width, int height, float amount)
+    public static void ApplyBrightness(int[] pixels, float amount)
     {
-        if (amount <= 0.001f || width < 3 || height < 3)
+        // amount: 0 = unchanged; >0 increases brightness; <0 decreases brightness
+        if (Math.Abs(amount) <= 0.001f)
         {
             return;
         }
 
-        amount = Math.Clamp(amount, 0f, 3f);
-        var src = (int[])pixels.Clone();
-        var centerWeight = 1f + (4f * amount);
+        // Allow reasonable range but don't blow out values
+        amount = Math.Clamp(amount, -3f, 3f);
 
-        for (var y = 0; y < height; y++)
+        // Translate amount to a per-channel offset. A value of 1 results in a modest
+        // brightening (~30 units). This keeps changes perceptually reasonable.
+        var offset = amount * 30f;
+
+        for (var i = 0; i < pixels.Length; i++)
         {
-            var row = y * width;
-            for (var x = 0; x < width; x++)
-            {
-                var i = row + x;
-                var center = src[i];
-                var a = (center >> 24) & 0xFF;
-
-                Sample(src, width, height, x, y, out var cr, out var cg, out var cb);
-                Sample(src, width, height, x, y - 1, out var nr, out var ng, out var nb);
-                Sample(src, width, height, x, y + 1, out var sr, out var sg, out var sb);
-                Sample(src, width, height, x - 1, y, out var wr, out var wg, out var wb);
-                Sample(src, width, height, x + 1, y, out var er, out var eg, out var eb);
-
-                var r = ClampByte((centerWeight * cr) - (amount * (nr + sr + wr + er)));
-                var g = ClampByte((centerWeight * cg) - (amount * (ng + sg + wg + eg)));
-                var b = ClampByte((centerWeight * cb) - (amount * (nb + sb + wb + eb)));
-                pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
-            }
+            var p = pixels[i];
+            var a = (p >> 24) & 0xFF;
+            var r = ClampByte(((p >> 16) & 0xFF) + offset);
+            var g = ClampByte(((p >> 8) & 0xFF) + offset);
+            var b = ClampByte((p & 0xFF) + offset);
+            pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
         }
     }
 

@@ -253,6 +253,10 @@ public class AssetEditViewModel : BaseViewModel
         => CurrentAttachment?.AttachmentTypeId != null
            && _attachmentTypeCache.GetById(CurrentAttachment.AttachmentTypeId) != null;
 
+    public AttachmentType CurrentAttachmentAttachmentType => CurrentAttachmentHasType
+        ? AttachmentTypes.Where(x => string.Compare(x.Id.ToString(), CurrentAttachment!.AttachmentTypeId!.Value.ToString()) == 0).FirstOrDefault()
+        : null;
+
     // ── Commands ───────────────────────────────────────────────────────────────
 
     public ICommand GoBackCommand { get; }
@@ -651,6 +655,7 @@ public class AssetEditViewModel : BaseViewModel
         catch
         {
             // Silently fail for secondary data
+            _ = "Silent Error";
         }
         finally
         {
@@ -1206,6 +1211,7 @@ public class AssetEditViewModel : BaseViewModel
         OnPropertyChanged(nameof(CurrentAttachmentFileSizeFormatted));
         OnPropertyChanged(nameof(CurrentAttachmentHasType));
         OnPropertyChanged(nameof(HasAttachments));
+        OnPropertyChanged(nameof(CurrentAttachmentAttachmentType));
     }
 
     /// <summary>

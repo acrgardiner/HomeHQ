@@ -6,7 +6,7 @@
              x:Class="HomeHQ.Mobile.Pages.AttachmentViewerPage"
              xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
              x:DataType="vm:AttachmentViewerViewModel"
-             xmlns:pdf="http://eightbot.com/maui/pdfview"
+             xmlns:pdf="clr-namespace:Maui.PDFView;assembly=Maui.PDFView"
              Title="{Binding FileName}"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark=Black}">
@@ -103,8 +103,8 @@
                             CornerRadius="20"
                             WidthRequest="44"
                             HeightRequest="44"/>
-                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AutoFixHigh}"
-                            Command="{Binding StartSharpnessCommand}"
+                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Brightness1}"
+                            Command="{Binding StartBrightnessCommand}"
                             BackgroundColor="{StaticResource Primary}"
                             TextColor="White"
                             CornerRadius="20"
@@ -285,49 +285,7 @@
                                      HorizontalOptions="Center"
                                      Spacing="24"
                                      Padding="32"> -->
-                    <pdf:PdfView Source="{Binding PdfSource}" />
-                    <!-- PDF Icon Card 
-                    <Frame BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
-                           CornerRadius="16"
-                           Padding="32"
-                           HasShadow="True"
-                           HorizontalOptions="Center">
-                        <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
-                            <Label mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}"
-                                   FontSize="72"
-                                   HorizontalOptions="Center"/>
-                            <Label Text="{Binding FileName}"
-                                   FontSize="16"
-                                   FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
-                                   HorizontalOptions="Center"
-                                   HorizontalTextAlignment="Center"
-                                   MaxLines="2"
-                                   LineBreakMode="TailTruncation"/>
-                            <Label Text="PDF Document"
-                                   FontSize="13"
-                                   TextColor="{StaticResource Gray500}"
-                                   HorizontalOptions="Center"/>
-                        </VerticalStackLayout>
-                    </Frame>
-
-                    <Label Text="Tap below to open this PDF"
-                           FontSize="14"
-                           TextColor="{StaticResource Gray500}"
-                           HorizontalOptions="Center"
-                           HorizontalTextAlignment="Center"/>
-
-                    <Button mi:MauiIcon.Value="{mi:MaterialOutlined Icon=FileOpen}" Text="Open PDF"
-                            Command="{Binding OpenExternallyCommand}"
-                            BackgroundColor="{StaticResource Primary}"
-                            TextColor="White"
-                            CornerRadius="8"
-                            HeightRequest="48"
-                            WidthRequest="180"
-                            FontSize="15"
-                            FontAttributes="Bold"/>
-                    
-                </VerticalStackLayout> -->
+                    <pdf:PdfView Uri="{Binding PdfSource}" />
                 </Grid>
             </Grid>
         </Grid>

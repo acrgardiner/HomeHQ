@@ -6,9 +6,11 @@ using HomeHQ.Mobile.Services;
 using HomeHQ.Mobile.ViewModels;
 using HomeHQ.Mobile.ViewModels.Admin;
 using HomeHQ.Mobile.ViewModels.Setup;
+using Maui.PDFView;
+using MauiIcons.Core;
 using MauiIcons.Material.Outlined;
-using MauiNativePdfView;
-using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Handlers;
+using Microsoft.Maui.Platform;
 
 namespace HomeHQ.Mobile;
 
@@ -19,13 +21,34 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiIconsCore(x =>
+            {
+                x.SetDefaultIconSize(20.0);
+                x.SetDefaultFontOverride(true);
+                x.SetDefaultIconAutoScaling(true);
+            })
             .UseMaterialOutlinedMauiIcons()
-            .UseMauiNativePdfView()
+            .UseMauiPdfView()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-            });
+            })
+            .ConfigureMauiHandlers(handlers =>
+                    {
+#if WINDOWS
+                        PickerHandler.Mapper.AppendToMapping("FixPickerTitle", (handler, view) =>
+                        {
+                            if (handler.PlatformView is Microsoft.UI.Xaml.Controls.ComboBox nativePicker)
+                            {
+                                nativePicker.Header = null; // Removes the header above the picker
+                                nativePicker.HeaderTemplate = null; // Removes the header above the picker
+                                nativePicker.PlaceholderText = view.Title; // Uses Title as placeholder
+                                //view.Title = string.Empty; // Clears the native top title
+                            }
+                        });
+#endif
+                    }); ;
 
         // Register Services (order matters - SettingsService first)
         builder.Services.AddSingleton<SettingsService>();

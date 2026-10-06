@@ -34,11 +34,11 @@ public static partial class ImageEditor
         return PlatformEncodeArgbPixels(pixels, width, height, contentType);
     }
 
-    /// <param name="amount">0 = unchanged; 1 is a typical sharpen pass.</param>
-    public static byte[] Sharpen(byte[] bytes, float amount, string? contentType)
+    /// <param name="amount">0 = unchanged; 1 is a typical brightness pass.</param>
+    public static byte[] Brightness(byte[] bytes, float amount, string? contentType)
     {
         var pixels = PlatformGetArgbPixels(bytes, out var width, out var height);
-        ImagePixels.ApplySharpen(pixels, width, height, amount);
+        ImagePixels.ApplyBrightness(pixels, amount);
         return PlatformEncodeArgbPixels(pixels, width, height, contentType);
     }
 

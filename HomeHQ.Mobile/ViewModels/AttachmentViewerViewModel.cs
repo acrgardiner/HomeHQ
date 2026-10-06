@@ -1,11 +1,7 @@
-﻿using System.Net.Http;
-using System.Net.Http.Json;
-using System.Windows.Input;
-using HomeHQ.Application.Mapping;
-using HomeHQ.DTOs;
+﻿using System.Windows.Input;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
-using MauiNativePdfView.Abstractions;
+using Maui.PDFView.DataSources;
 
 namespace HomeHQ.Mobile.ViewModels;
 
@@ -177,7 +173,7 @@ public class AttachmentViewerViewModel : BaseViewModel
     private CancellationTokenSource? _adjustPreviewCts;
     private bool _suppressAdjustPreview;
 
-    public PdfSource PdfSource
+    public string? PdfSource
     {
         get;
         set => SetProperty(ref field, value);
@@ -239,7 +235,7 @@ public class AttachmentViewerViewModel : BaseViewModel
     public ICommand CancelCropCommand { get; }
     public ICommand ApplyGrayscaleCommand { get; }
     public ICommand StartContrastCommand { get; }
-    public ICommand StartSharpnessCommand { get; }
+    public ICommand StartBrightnessCommand { get; }
     public ICommand ApplyAdjustCommand { get; }
     public ICommand CancelAdjustCommand { get; }
 
@@ -259,7 +255,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         CancelCropCommand = new Command(() => CancelCrop(), () => IsCropMode && !IsImageEditBusy);
         ApplyGrayscaleCommand = new Command(async () => await ApplyGrayscaleAsync(), () => ShowEditToolButtons && !IsImageEditBusy);
         StartContrastCommand = new Command(() => StartAdjust(ImageAdjustKind.Contrast), () => ShowEditToolButtons && !IsImageEditBusy);
-        StartSharpnessCommand = new Command(() => StartAdjust(ImageAdjustKind.Sharpness), () => ShowEditToolButtons && !IsImageEditBusy);
+        StartBrightnessCommand = new Command(() => StartAdjust(ImageAdjustKind.Brightness), () => ShowEditToolButtons && !IsImageEditBusy);
         ApplyAdjustCommand = new Command(async () => await ApplyAdjustAsync(), () => IsAdjustMode && !IsImageEditBusy);
         CancelAdjustCommand = new Command(() => CancelAdjust(), () => IsAdjustMode && !IsImageEditBusy);
     }
@@ -336,7 +332,6 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-
             if (IsImage)
             {
                 await LoadImageAsync();
@@ -371,7 +366,8 @@ public class AttachmentViewerViewModel : BaseViewModel
                 // Update the PdfSource to point to the local cached file
                 if (localFilePath is not null)
                 {
-                    PdfSource = PdfSource.FromFile(localFilePath);
+                    //PdfSource = PdfSource.FromFile(localFilePath);
+                    PdfSource = await (new FilePdfSource(localFilePath)).GetFilePathAsync();
                 }
             }
         }
@@ -401,7 +397,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         ((Command)CancelCropCommand).ChangeCanExecute();
         ((Command)ApplyGrayscaleCommand).ChangeCanExecute();
         ((Command)StartContrastCommand).ChangeCanExecute();
-        ((Command)StartSharpnessCommand).ChangeCanExecute();
+        ((Command)StartBrightnessCommand).ChangeCanExecute();
         ((Command)ApplyAdjustCommand).ChangeCanExecute();
         ((Command)CancelAdjustCommand).ChangeCanExecute();
     }
@@ -543,7 +539,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
         else
         {
-            AdjustModeTitle = "Sharpness";
+            AdjustModeTitle = "Brightness";
             AdjustMinimum = 0;
             AdjustMaximum = 2;
             AdjustAmount = 1;
@@ -619,7 +615,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             await Task.Delay(180, token);
             byte[] preview;
             if ((kind == ImageAdjustKind.Contrast && Math.Abs(amount - 1f) < 0.001f) ||
-                (kind == ImageAdjustKind.Sharpness && amount <= 0.001f))
+                (kind == ImageAdjustKind.Brightness && amount <= 0.001f))
             {
                 preview = source;
             }
@@ -658,7 +654,7 @@ public class AttachmentViewerViewModel : BaseViewModel
     private static byte[] ApplyAdjust(byte[] source, ImageAdjustKind kind, float amount, string? contentType) =>
         kind == ImageAdjustKind.Contrast
             ? ImageEditor.Contrast(source, amount, contentType)
-            : ImageEditor.Sharpen(source, amount, contentType);
+            : ImageEditor.Brightness(source, amount, contentType);
 
     private async Task ReplaceImageBytesAsync(byte[] newBytes)
     {
@@ -739,7 +735,8 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+            var cacheDir = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString());
+            var localFilePath = Path.Combine(cacheDir, Attachment.Id.ToString() + Attachment.Extension);
 
             byte[] bytes;
             if (File.Exists(localFilePath))
@@ -748,6 +745,8 @@ public class AttachmentViewerViewModel : BaseViewModel
             }
             else
             {
+                Directory.CreateDirectory(cacheDir);
+
                 var response = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
                 if (!response.IsSuccessStatusCode)
                 {
@@ -764,10 +763,10 @@ public class AttachmentViewerViewModel : BaseViewModel
 
             await ApplyLoadedImageBytesAsync(bytes);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             HasError = true;
-            ErrorMessage = "Failed to load image";
+            ErrorMessage = $"Failed to load image{Environment.NewLine}{ex.Message}";
         }
     }
 
@@ -841,6 +840,6 @@ public class AttachmentViewerViewModel : BaseViewModel
     private enum ImageAdjustKind
     {
         Contrast,
-        Sharpness
+        Brightness
     }
 }

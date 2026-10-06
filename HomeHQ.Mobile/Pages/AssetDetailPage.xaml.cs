@@ -29,4 +29,17 @@ public partial class AssetDetailPage : ContentPage
             await DisplayAlertAsync("Error", $"Failed to load asset: {ex.Message}", "OK");
         }
     }
+
+    private void OnSwiped(object sender, SwipedEventArgs e)
+    {
+        switch (e.Direction)
+        {
+            case SwipeDirection.Left:
+                _viewModel.CurrentAttachmentIndex++;
+                break;
+            case SwipeDirection.Right:
+                _viewModel.CurrentAttachmentIndex--;
+                break;
+        }
+    }
 }

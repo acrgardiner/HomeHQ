@@ -20,7 +20,12 @@ public partial class LoginPage : ContentPage
             // AppShell.OnNavigated will handle pending image check
             if (BindingContext is LoginViewModel vm && await vm.CheckAuthenticationAsync())
             {
-                await Shell.Current.GoToAsync("//Dashboard");
+                Dispatcher.Dispatch(async () =>
+                {
+
+                    // Perform your redirection
+                    await Shell.Current.GoToAsync("//Dashboard");
+                });
             }
         }
         catch (Exception ex)
