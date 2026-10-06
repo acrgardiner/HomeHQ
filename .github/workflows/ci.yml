@@ -136,7 +136,7 @@ jobs:
       - name: Restore Mobile project NuGet packages
         # Ensure the MAUI Mobile project's NuGet dependencies are available
         # prior to publish so XamlC can resolve custom XAML types.
-        run: dotnet restore HomeHQ.Mobile/HomeHQ.Mobile.csproj
+        run: dotnet restore HomeHQ.Mobile/HomeHQ.Mobile.csproj -p:TargetFramework=net10.0-android
 
       - name: Set TAG from ref
         run: echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV
