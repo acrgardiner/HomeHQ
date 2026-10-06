@@ -186,6 +186,7 @@ jobs:
             -r android-arm64 \
             -p:RuntimeIdentifier=android-arm64 \
             -p:TargetFramework=net10.0-android \
+            -p:EnableWindowsTargeting=false \
             -p:AndroidPackageFormat=apk \
             -p:AndroidVersionName=${{ env.ANDROID_VERSION_NAME }} \
             -p:AndroidVersionCode=${{ env.ANDROID_VERSION_CODE }} \
