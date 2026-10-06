@@ -38,10 +38,10 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies (solution-wide)
-        # Restore all projects in the repository so mobile/Blazor/other projects
-        # have their NuGet packages available during later jobs.
-        run: dotnet restore
+      - name: Restore dependencies (server project only)
+        # Restore only the Server project's NuGet packages to speed up the CI
+        # and avoid restoring mobile/Blazor workloads that are not needed for this job.
+        run: dotnet restore HomeHQ.Server/HomeHQ.Server.csproj
 
       - name: Build project
         run: dotnet build HomeHQ.Server/HomeHQ.Server.csproj --configuration Release --no-restore
