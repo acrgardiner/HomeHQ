@@ -58,6 +58,12 @@ public class LoginViewModel : BaseViewModel
         ServerUrl = _settings.ApiBaseUrl;
         ShowServerUrl = !_settings.HasCustomApiUrl; // Show by default if not configured
 
+#if DEBUG
+        ServerUrl = "https://192.168.0.151:7176";
+        Username = "sysadmin";
+        Password = "Password123!";
+#endif
+
         LoginCommand = new Command(async () => await LoginAsync(), () => !IsBusy);
         ToggleServerUrlCommand = new Command(() => ShowServerUrl = !ShowServerUrl);
     }

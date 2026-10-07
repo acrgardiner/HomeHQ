@@ -13,6 +13,24 @@ public partial class AttachmentViewerPage : ContentPage
         BindingContext = viewModel;
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        try
+        {
+            // Only reload if asset is not already loaded, or if signaled to refresh
+            if (_viewModel?.Attachment is not null)
+            {
+                await _viewModel.LoadLinkedAttachmentContentAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to load asset: {ex.Message}", "OK");
+        }
+    }
+
     protected override void OnBindingContextChanged()
     {
         base.OnBindingContextChanged();

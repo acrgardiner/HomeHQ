@@ -1,4 +1,6 @@
-﻿namespace HomeHQ.Mobile.Controls;
+﻿using Microsoft.Maui.Controls.Shapes;
+
+namespace HomeHQ.Mobile.Controls;
 
 /// <summary>
 /// Darkened overlay with a draggable, resizable crop rectangle. Crop values are 0–1 relative to the bitmap.
@@ -6,8 +8,8 @@
 /// </summary>
 public class ImageCropOverlay : ContentView
 {
-    private const double MinFraction = 0.08;
-    private const double HandleSize = 28;
+    private const double MINFRACTION = 0.08;
+    private const double HANDLESIZE = 28;
 
     private readonly AbsoluteLayout _root = new();
     private readonly BoxView _dimTop = new() { BackgroundColor = Color.FromRgba(0, 0, 0, 0.55) };
@@ -23,18 +25,18 @@ public class ImageCropOverlay : ContentView
         Padding = new Thickness(0)
     };
 
-    private readonly BoxView _handleTL = CreateHandle();
-    private readonly BoxView _handleTR = CreateHandle();
-    private readonly BoxView _handleBL = CreateHandle();
-    private readonly BoxView _handleBR = CreateHandle();
+    private readonly Border _handleTL = CreateHandle();
+    private readonly Border _handleTR = CreateHandle();
+    private readonly Border _handleBL = CreateHandle();
+    private readonly Border _handleBR = CreateHandle();
 
-    private PanGestureRecognizer _movePan = null!;
-    private PanGestureRecognizer _panTL = null!;
-    private PanGestureRecognizer _panTR = null!;
-    private PanGestureRecognizer _panBL = null!;
-    private PanGestureRecognizer _panBR = null!;
-    private PanGestureRecognizer _selectionPan = null!;
-    private TapGestureRecognizer _tap = null!;
+    private readonly PanGestureRecognizer _movePan = null!;
+    private readonly PanGestureRecognizer _panTL = null!;
+    private readonly PanGestureRecognizer _panTR = null!;
+    private readonly PanGestureRecognizer _panBL = null!;
+    private readonly PanGestureRecognizer _panBR = null!;
+    private readonly PanGestureRecognizer _selectionPan = null!;
+    private readonly TapGestureRecognizer _tap = null!;
 #if !ANDROID
     private PointerGestureRecognizer _rubberBandPointer = null!;
 #endif
@@ -268,8 +270,8 @@ public class ImageCropOverlay : ContentView
                 double nw = (right - left) / disp.Width;
                 double nh = (bottom - top) / disp.Height;
 
-                nw = Math.Max(nw, MinFraction);
-                nh = Math.Max(nh, MinFraction);
+                nw = Math.Max(nw, MINFRACTION);
+                nh = Math.Max(nh, MINFRACTION);
 
                 nx = Math.Clamp(nx, 0, 1 - nw);
                 ny = Math.Clamp(ny, 0, 1 - nh);
@@ -373,14 +375,19 @@ public class ImageCropOverlay : ContentView
         _root.HandlerChanged += (_, _) => AttachNativeTouchIfNeeded();
     }
 
-    private static BoxView CreateHandle()
+    private static Border CreateHandle()
     {
-        return new BoxView
+        // Use a circular border so handles appear as circles rather than squares.
+        return new Border
         {
-            WidthRequest = HandleSize,
-            HeightRequest = HandleSize,
+            WidthRequest = HANDLESIZE,
+            HeightRequest = HANDLESIZE,
             BackgroundColor = Colors.White,
-            Opacity = 0.95
+            Opacity = 0.95,
+            Padding = 0,
+            Stroke = Colors.Transparent,
+            StrokeThickness = 0,
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(HANDLESIZE / 2) }
         };
     }
 
@@ -399,8 +406,8 @@ public class ImageCropOverlay : ContentView
             // Full-image values (1×1) from the page VM mean "no crop chosen yet" — same as no selection.
             bool isFull = Math.Abs(overlay.CropRelativeWidth - 1.0) < 1e-6 && Math.Abs(overlay.CropRelativeHeight - 1.0) < 1e-6;
             bool hasSizedSelection = !isFull &&
-                                      overlay.CropRelativeWidth >= MinFraction &&
-                                      overlay.CropRelativeHeight >= MinFraction;
+                                      overlay.CropRelativeWidth >= MINFRACTION &&
+                                      overlay.CropRelativeHeight >= MINFRACTION;
             overlay._hasSelection = overlay._isSelecting || hasSizedSelection;
             overlay.Arrange();
         }
@@ -481,10 +488,10 @@ public class ImageCropOverlay : ContentView
 
         AbsoluteLayout.SetLayoutBounds(_cropFrame, new Rect(vx, vy, vw, vh));
 
-        AbsoluteLayout.SetLayoutBounds(_handleTL, new Rect(vx - HandleSize / 2, vy - HandleSize / 2, HandleSize, HandleSize));
-        AbsoluteLayout.SetLayoutBounds(_handleTR, new Rect(vx + vw - HandleSize / 2, vy - HandleSize / 2, HandleSize, HandleSize));
-        AbsoluteLayout.SetLayoutBounds(_handleBL, new Rect(vx - HandleSize / 2, vy + vh - HandleSize / 2, HandleSize, HandleSize));
-        AbsoluteLayout.SetLayoutBounds(_handleBR, new Rect(vx + vw - HandleSize / 2, vy + vh - HandleSize / 2, HandleSize, HandleSize));
+        AbsoluteLayout.SetLayoutBounds(_handleTL, new Rect(vx - HANDLESIZE / 2, vy - HANDLESIZE / 2, HANDLESIZE, HANDLESIZE));
+        AbsoluteLayout.SetLayoutBounds(_handleTR, new Rect(vx + vw - HANDLESIZE / 2, vy - HANDLESIZE / 2, HANDLESIZE, HANDLESIZE));
+        AbsoluteLayout.SetLayoutBounds(_handleBL, new Rect(vx - HANDLESIZE / 2, vy + vh - HANDLESIZE / 2, HANDLESIZE, HANDLESIZE));
+        AbsoluteLayout.SetLayoutBounds(_handleBR, new Rect(vx + vw - HANDLESIZE / 2, vy + vh - HANDLESIZE / 2, HANDLESIZE, HANDLESIZE));
     }
 
     private void OnSelectionPan(PanUpdatedEventArgs e)
@@ -590,8 +597,8 @@ public class ImageCropOverlay : ContentView
                 double nw = (right - left) / disp.Width;
                 double nh = (bottom - top) / disp.Height;
 
-                nw = Math.Max(nw, MinFraction);
-                nh = Math.Max(nh, MinFraction);
+                nw = Math.Max(nw, MINFRACTION);
+                nh = Math.Max(nh, MINFRACTION);
 
                 nx = Math.Clamp(nx, 0, 1 - nw);
                 ny = Math.Clamp(ny, 0, 1 - nh);
@@ -688,7 +695,7 @@ public class ImageCropOverlay : ContentView
                         double ny = y + dy;
                         double nw = w - dx;
                         double nh = h - dy;
-                        if (nw >= MinFraction && nh >= MinFraction &&
+                        if (nw >= MINFRACTION && nh >= MINFRACTION &&
                             nx >= 0 && ny >= 0 && nx + nw <= 1 && ny + nh <= 1)
                         {
                             CropRelativeX = nx;
@@ -702,7 +709,7 @@ public class ImageCropOverlay : ContentView
                         double ny = y + dy;
                         double nw = w + dx;
                         double nh = h - dy;
-                        if (nw >= MinFraction && nh >= MinFraction &&
+                        if (nw >= MINFRACTION && nh >= MINFRACTION &&
                             ny >= 0 && x + nw <= 1 && ny + nh <= 1)
                         {
                             CropRelativeY = ny;
@@ -715,7 +722,7 @@ public class ImageCropOverlay : ContentView
                         double nx = x + dx;
                         double nw = w - dx;
                         double nh = h + dy;
-                        if (nw >= MinFraction && nh >= MinFraction &&
+                        if (nw >= MINFRACTION && nh >= MINFRACTION &&
                             nx >= 0 && nx + nw <= 1 && y + nh <= 1)
                         {
                             CropRelativeX = nx;
@@ -727,7 +734,7 @@ public class ImageCropOverlay : ContentView
                     {
                         double nw = w + dx;
                         double nh = h + dy;
-                        if (nw >= MinFraction && nh >= MinFraction &&
+                        if (nw >= MINFRACTION && nh >= MINFRACTION &&
                             x + nw <= 1 && y + nh <= 1)
                         {
                             CropRelativeWidth = nw;

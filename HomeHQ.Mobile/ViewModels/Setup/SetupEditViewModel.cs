@@ -26,6 +26,8 @@ public sealed class SetupEditViewModel : BaseViewModel
     private bool _idSet;
     private bool _loadQueued;
 
+    public static string ApplicationDisplayVersion => AppInfo.Current.VersionString;
+
     public SetupEditViewModel(
         ApiClient apiClient,
         CacheService<CategoryDto> categoryCache,

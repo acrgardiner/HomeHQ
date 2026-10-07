@@ -362,11 +362,14 @@
                     <!-- Attachments Card -->
                     <Frame Style="{StaticResource CardStyle}">
                         <VerticalStackLayout>
-
                             <!-- Card Header — title + carousel navigation controls -->
                             <Grid Padding="16,12"
                                   BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray900}}"
                                   ColumnDefinitions="Auto, *, Auto, Auto, Auto">
+                                <Grid.GestureRecognizers>
+                                    <SwipeGestureRecognizer Direction="Left" Swiped="OnSwiped"/>
+                                    <SwipeGestureRecognizer Direction="Right" Swiped="OnSwiped"/>
+                                </Grid.GestureRecognizers>
 
                                 <Label Grid.Column="0"
                                        mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AttachFile}"

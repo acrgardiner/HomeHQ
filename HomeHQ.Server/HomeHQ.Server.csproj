@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Extensions.MudBlazor.StaticInput" Version="4.1.0" />
     <PackageReference Include="MudBlazor" Version="9.8.0" />
+    <PackageReference Include="PDFtoImage" Version="5.4.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />

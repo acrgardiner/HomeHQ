@@ -2,10 +2,6 @@
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Maui.ApplicationModel;
-using Microsoft.Maui.Controls;
 
 namespace HomeHQ.Mobile
 {

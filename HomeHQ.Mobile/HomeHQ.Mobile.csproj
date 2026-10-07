@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>;net10.0-android</TargetFrameworks>
-
+    <TargetFrameworks>net10.0-windows10.0.19041.0;net10.0-android</TargetFrameworks>
+    
 		<!-- Note for MacCatalyst:
 		The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
 		When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
@@ -17,33 +17,65 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-		<!-- Display name -->
-		<ApplicationTitle>HomeHQ.Mobile</ApplicationTitle>
+    <!-- Enable XAML source generation for faster build times and improved performance.
+		     This generates C# code from XAML at compile time instead of runtime inflation.
+		     To disable, remove this line.
+		     For individual files, you can override by setting Inflator metadata:
+		       <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
+		       <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
+    <!-- <MauiXamlInflator>SourceGen</MauiXamlInflator> -->
 
-		<!-- App Identifier -->
-		<ApplicationId>com.companyname.homehq.mobile</ApplicationId>
+    <!-- Display name -->
+    <ApplicationTitle>HomeHQ</ApplicationTitle>
 
+    <!-- App Identifier -->
+    <ApplicationId>homehq.mobile</ApplicationId>
+    
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.0.2</ApplicationDisplayVersion>
-		<ApplicationVersion>0</ApplicationVersion>
+		<ApplicationDisplayVersion>0.0.3</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
-		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</TargetPlatformMinVersion>
+
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 	</PropertyGroup>
 
-	<PropertyGroup>
-	  <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
-	</PropertyGroup>
+  <!-- Debug override for Name/Identifier -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Display name -->
+    <ApplicationTitle>HomeHQ (Debug)</ApplicationTitle>
+
+    <!-- App Identifier -->
+    <ApplicationId>homehq.mobile.debug</ApplicationId>
+  </PropertyGroup>
+
+  <!--
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-android|AnyCPU'">
+    <AndroidUseAapt2>True</AndroidUseAapt2>
+    <Debugger>Xamarin</Debugger>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0-android|AnyCPU'">
+    <AndroidUseAapt2>True</AndroidUseAapt2>
+    <Debugger>Xamarin</Debugger>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.20348.1</TargetFrameworks>
+  </PropertyGroup>
+-->
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\homehq.svg" ForegroundScale="0.75" Color="#417D90" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\homehq.svg" ForegroundScale="0.75" Color="#417D90" Condition="'$(Configuration)' != 'Debug'" />
+    <MauiIcon Include="Resources\AppIcon\Debug\appicon.svg" ForegroundFile="Resources\AppIcon\Debug\homehq.svg" ForegroundScale="0.75" Color="#417D90" Condition="'$(Configuration)' == 'Debug'" />
 
 		<!-- Splash Screen -->
 		<MauiSplashScreen Include="Resources\Splash\homehqwtextwhite.svg" Color="#417D90" BaseSize="1024,1024" />
@@ -64,6 +96,7 @@
 		<PackageReference Include="AathifMahir.Maui.MauiIcons.Material.Outlined" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.90" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
+		<PackageReference Include="Vitvov.Maui.PDFView" Version="1.8.4" />
 	</ItemGroup>
 
 	<ItemGroup>

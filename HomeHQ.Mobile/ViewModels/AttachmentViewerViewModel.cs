@@ -1,14 +1,11 @@
-﻿using System.Net.Http;
-using System.Net.Http.Json;
-using System.Windows.Input;
-using HomeHQ.Application.Mapping;
-using HomeHQ.DTOs;
+﻿using System.Windows.Input;
 using HomeHQ.Entities;
 using HomeHQ.Mobile.Services;
+using Maui.PDFView.DataSources;
 
 namespace HomeHQ.Mobile.ViewModels;
 
-[QueryProperty(nameof(AttachmentId), "attachmentId")]
+[QueryProperty(nameof(Attachment), "attachment")]
 [QueryProperty(nameof(Editable), "editable")]
 public class AttachmentViewerViewModel : BaseViewModel
 {
@@ -16,22 +13,6 @@ public class AttachmentViewerViewModel : BaseViewModel
     private readonly SettingsService _settingsService;
 
     /// <summary>When set, rotate/crop updates <see cref="Attachment.PendingUploadBytes"/> on this instance (Asset Edit session).</summary>
-    private Attachment? _assetEditLinkedAttachment;
-
-    public string AttachmentId
-    {
-        get;
-        set
-        {
-            if (SetProperty(ref field, value))
-            {
-                if (_assetEditLinkedAttachment == null)
-                {
-                    _ = LoadAttachmentAsync();
-                }
-            }
-        }
-    } = string.Empty;
 
     public bool Editable
     {
@@ -89,6 +70,52 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
+    public bool IsAdjustMode
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                NotifyImageToolbarProps();
+                RefreshEditCommandStates();
+            }
+        }
+    }
+
+    public string AdjustModeTitle
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    public double AdjustMinimum
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
+    public double AdjustMaximum
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = 2;
+
+    public double AdjustAmount
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(AdjustAmountLabel));
+                _ = PreviewAdjustAsync();
+            }
+        }
+    }
+
+    public string AdjustAmountLabel => $"{AdjustAmount:0.00}";
+
     public bool IsImageEditBusy
     {
         get;
@@ -131,14 +158,22 @@ public class AttachmentViewerViewModel : BaseViewModel
     /// <summary>Pan/zoom on the viewer is disabled while adjusting the crop rectangle.</summary>
     public bool PanZoomEnabled => !IsCropMode;
 
+    /// <summary>Primary edit icons (rotate, crop, filters) — hidden while crop/adjust is active.</summary>
+    public bool ShowEditToolButtons => ShowImageToolbar && !IsCropMode && !IsAdjustMode;
+
     /// <summary>Hides "Crop" while already in crop mode.</summary>
-    public bool ShowStartCropButton => ShowImageToolbar && !IsCropMode;
+    public bool ShowStartCropButton => ShowEditToolButtons;
 
     /// <summary>Rotate is hidden during crop mode to avoid stacked transforms.</summary>
-    public bool ShowRotateButton => ShowImageToolbar && !IsCropMode;
+    public bool ShowRotateButton => ShowEditToolButtons;
 
     private byte[]? _rawImageBytes;
-    public string? PdfUrl
+    private byte[]? _adjustSourceBytes;
+    private ImageAdjustKind _adjustKind;
+    private CancellationTokenSource? _adjustPreviewCts;
+    private bool _suppressAdjustPreview;
+
+    public string? PdfSource
     {
         get;
         set => SetProperty(ref field, value);
@@ -193,12 +228,16 @@ public class AttachmentViewerViewModel : BaseViewModel
 
     public ICommand GoBackCommand { get; }
     public ICommand OpenExternallyCommand { get; }
-    public ICommand RefreshCommand { get; }
     public ICommand RotateClockwiseCommand { get; }
     public ICommand RotateCounterClockwiseCommand { get; }
     public ICommand StartCropCommand { get; }
     public ICommand ApplyCropCommand { get; }
     public ICommand CancelCropCommand { get; }
+    public ICommand ApplyGrayscaleCommand { get; }
+    public ICommand StartContrastCommand { get; }
+    public ICommand StartBrightnessCommand { get; }
+    public ICommand ApplyAdjustCommand { get; }
+    public ICommand CancelAdjustCommand { get; }
 
     public AttachmentViewerViewModel(ApiClient apiClient, SettingsService settingsService)
     {
@@ -209,12 +248,16 @@ public class AttachmentViewerViewModel : BaseViewModel
 
         GoBackCommand = new Command(async () => await GoBackAsync());
         OpenExternallyCommand = new Command(async () => await OpenExternallyAsync());
-        RefreshCommand = new Command(async () => await LoadAttachmentAsync());
-        RotateClockwiseCommand = new Command(async () => await RotateAsync(90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
-        RotateCounterClockwiseCommand = new Command(async () => await RotateAsync(-90), () => ShowImageToolbar && !IsCropMode && !IsImageEditBusy);
+        RotateClockwiseCommand = new Command(async () => await RotateAsync(90), () => ShowEditToolButtons && !IsImageEditBusy);
+        RotateCounterClockwiseCommand = new Command(async () => await RotateAsync(-90), () => ShowEditToolButtons && !IsImageEditBusy);
         StartCropCommand = new Command(() => StartCrop(), () => ShowStartCropButton && !IsImageEditBusy);
         ApplyCropCommand = new Command(async () => await ApplyCropAsync(), () => IsCropMode && !IsImageEditBusy);
         CancelCropCommand = new Command(() => CancelCrop(), () => IsCropMode && !IsImageEditBusy);
+        ApplyGrayscaleCommand = new Command(async () => await ApplyGrayscaleAsync(), () => ShowEditToolButtons && !IsImageEditBusy);
+        StartContrastCommand = new Command(() => StartAdjust(ImageAdjustKind.Contrast), () => ShowEditToolButtons && !IsImageEditBusy);
+        StartBrightnessCommand = new Command(() => StartAdjust(ImageAdjustKind.Brightness), () => ShowEditToolButtons && !IsImageEditBusy);
+        ApplyAdjustCommand = new Command(async () => await ApplyAdjustAsync(), () => IsAdjustMode && !IsImageEditBusy);
+        CancelAdjustCommand = new Command(() => CancelAdjust(), () => IsAdjustMode && !IsImageEditBusy);
     }
 
     /// <summary>
@@ -223,10 +266,8 @@ public class AttachmentViewerViewModel : BaseViewModel
     /// </summary>
     public async Task InitializeForAssetEditAsync(Attachment linked, bool editable)
     {
-        _assetEditLinkedAttachment = linked;
         Editable = editable;
         Attachment = linked;
-        AttachmentId = linked.Id.ToString();
 
         await LoadLinkedAttachmentContentAsync();
     }
@@ -251,9 +292,9 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
-    private async Task LoadLinkedAttachmentContentAsync()
+    public async Task LoadLinkedAttachmentContentAsync()
     {
-        if (_assetEditLinkedAttachment == null)
+        if (Attachment == null)
         {
             return;
         }
@@ -264,9 +305,9 @@ public class AttachmentViewerViewModel : BaseViewModel
             HasError = false;
             ErrorMessage = null;
 
-            if (_assetEditLinkedAttachment.Id == Guid.Empty)
+            if (Attachment.Id == Guid.Empty)
             {
-                var pending = _assetEditLinkedAttachment.PendingUploadBytes;
+                var pending = Attachment.PendingUploadBytes;
                 if (pending == null || pending.Length == 0)
                 {
                     HasError = true;
@@ -275,7 +316,6 @@ public class AttachmentViewerViewModel : BaseViewModel
                 }
 
                 // Shares / staged files may be PDF or other types — only decode bitmaps as images.
-                Attachment = _assetEditLinkedAttachment;
                 OnPropertyChanged(nameof(IsImage));
                 OnPropertyChanged(nameof(IsPdf));
                 OnPropertyChanged(nameof(IsOtherFile));
@@ -292,30 +332,43 @@ public class AttachmentViewerViewModel : BaseViewModel
                 return;
             }
 
-            var response = await _apiClient.GetAsync($"api/attachments/{_assetEditLinkedAttachment.Id}");
-            if (!response.IsSuccessStatusCode)
-            {
-                HasError = true;
-                ErrorMessage = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
-                    ? "Please log in again"
-                    : $"Failed to load attachment: {response.StatusCode}";
-                return;
-            }
-
-            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AttachmentDto>>();
-            if (apiResponse?.Data == null)
-            {
-                HasError = true;
-                ErrorMessage = "Attachment not found";
-                return;
-            }
-
-            MergeAttachmentMetadata(EntityMappings.ToEntity(apiResponse.Data), _assetEditLinkedAttachment);
-            Attachment = _assetEditLinkedAttachment;
-
             if (IsImage)
             {
                 await LoadImageAsync();
+            }
+
+            if (IsPdf)
+            {
+                var cacheDir = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString());
+                var localFilePath = Path.Combine(cacheDir, Attachment.Id.ToString() + Attachment.Extension);
+
+                if (File.Exists(localFilePath))
+                {
+                }
+                else
+                {
+                    Directory.CreateDirectory(cacheDir);
+
+                    var pdfResponse = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
+                    if (!pdfResponse.IsSuccessStatusCode)
+                    {
+                        HasError = true;
+                        ErrorMessage = "Failed to download PDF";
+                        return;
+                    }
+
+                    var bytes = await pdfResponse.Content.ReadAsByteArrayAsync();
+
+                    //Also save to cache for future use
+                    await File.WriteAllBytesAsync(localFilePath, bytes);
+                }
+
+                // Update the PdfSource to point to the local cached file
+                if (localFilePath is not null)
+                {
+                    //PdfSource = PdfSource.FromFile(localFilePath);
+                    PdfSource = await (new FilePdfSource(localFilePath)).GetFilePathAsync();
+                }
             }
         }
         catch (HttpRequestException ex)
@@ -342,12 +395,18 @@ public class AttachmentViewerViewModel : BaseViewModel
         ((Command)StartCropCommand).ChangeCanExecute();
         ((Command)ApplyCropCommand).ChangeCanExecute();
         ((Command)CancelCropCommand).ChangeCanExecute();
+        ((Command)ApplyGrayscaleCommand).ChangeCanExecute();
+        ((Command)StartContrastCommand).ChangeCanExecute();
+        ((Command)StartBrightnessCommand).ChangeCanExecute();
+        ((Command)ApplyAdjustCommand).ChangeCanExecute();
+        ((Command)CancelAdjustCommand).ChangeCanExecute();
     }
 
     private void NotifyImageToolbarProps()
     {
         OnPropertyChanged(nameof(ShowImageToolbar));
         OnPropertyChanged(nameof(PanZoomEnabled));
+        OnPropertyChanged(nameof(ShowEditToolButtons));
         OnPropertyChanged(nameof(ShowStartCropButton));
         OnPropertyChanged(nameof(ShowRotateButton));
     }
@@ -388,7 +447,7 @@ public class AttachmentViewerViewModel : BaseViewModel
         try
         {
             IsImageEditBusy = true;
-            var rotated = ImageEditor.Rotate(_rawImageBytes, degrees, Attachment.ContentType);
+            var rotated = await Task.Run(() => ImageEditor.Rotate(_rawImageBytes, degrees, Attachment.ContentType));
             await ReplaceImageBytesAsync(rotated);
         }
         catch (Exception ex)
@@ -422,7 +481,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             var ch = bottom - y;
 
             var rect = new ImageCropRectangle(x, y, cw, ch);
-            var cropped = ImageEditor.Crop(_rawImageBytes, rect, Attachment.ContentType);
+            var cropped = await Task.Run(() => ImageEditor.Crop(_rawImageBytes, rect, Attachment.ContentType));
             await ReplaceImageBytesAsync(cropped);
             IsCropMode = false;
         }
@@ -436,19 +495,175 @@ public class AttachmentViewerViewModel : BaseViewModel
         }
     }
 
+    private async Task ApplyGrayscaleAsync()
+    {
+        if (_rawImageBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsImageEditBusy = true;
+            var source = _rawImageBytes;
+            var contentType = Attachment.ContentType;
+            var result = await Task.Run(() => ImageEditor.Grayscale(source, contentType));
+            await ReplaceImageBytesAsync(result);
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+        finally
+        {
+            IsImageEditBusy = false;
+        }
+    }
+
+    private void StartAdjust(ImageAdjustKind kind)
+    {
+        if (_rawImageBytes == null || !IsImage)
+        {
+            return;
+        }
+
+        _adjustKind = kind;
+        _adjustSourceBytes = _rawImageBytes;
+        _suppressAdjustPreview = true;
+        if (kind == ImageAdjustKind.Contrast)
+        {
+            AdjustModeTitle = "Contrast";
+            AdjustMinimum = 0.25;
+            AdjustMaximum = 2.5;
+            AdjustAmount = 1;
+        }
+        else
+        {
+            AdjustModeTitle = "Brightness";
+            AdjustMinimum = 0;
+            AdjustMaximum = 2;
+            AdjustAmount = 1;
+        }
+
+        _suppressAdjustPreview = false;
+        IsAdjustMode = true;
+        RefreshEditCommandStates();
+        _ = PreviewAdjustAsync();
+    }
+
+    private void CancelAdjust()
+    {
+        _adjustPreviewCts?.Cancel();
+        var original = _adjustSourceBytes;
+        _adjustSourceBytes = null;
+        IsAdjustMode = false;
+        if (original != null)
+        {
+            _ = RestorePreviewAsync(original);
+        }
+
+        RefreshEditCommandStates();
+    }
+
+    private async Task ApplyAdjustAsync()
+    {
+        if (_adjustSourceBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsImageEditBusy = true;
+            _adjustPreviewCts?.Cancel();
+            var source = _adjustSourceBytes;
+            var contentType = Attachment.ContentType;
+            var amount = (float)AdjustAmount;
+            var kind = _adjustKind;
+            var result = await Task.Run(() => ApplyAdjust(source, kind, amount, contentType));
+            await ReplaceImageBytesAsync(result);
+            _adjustSourceBytes = null;
+            IsAdjustMode = false;
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+        finally
+        {
+            IsImageEditBusy = false;
+        }
+    }
+
+    private async Task PreviewAdjustAsync()
+    {
+        if (_suppressAdjustPreview || !IsAdjustMode || _adjustSourceBytes == null || Attachment == null)
+        {
+            return;
+        }
+
+        _adjustPreviewCts?.Cancel();
+        _adjustPreviewCts = new CancellationTokenSource();
+        var token = _adjustPreviewCts.Token;
+        var source = _adjustSourceBytes;
+        var contentType = Attachment.ContentType;
+        var amount = (float)AdjustAmount;
+        var kind = _adjustKind;
+
+        try
+        {
+            await Task.Delay(180, token);
+            byte[] preview;
+            if ((kind == ImageAdjustKind.Contrast && Math.Abs(amount - 1f) < 0.001f) ||
+                (kind == ImageAdjustKind.Brightness && amount <= 0.001f))
+            {
+                preview = source;
+            }
+            else
+            {
+                preview = await Task.Run(() => ApplyAdjust(source, kind, amount, contentType), token);
+            }
+            token.ThrowIfCancellationRequested();
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (token.IsCancellationRequested || !IsAdjustMode || !ReferenceEquals(source, _adjustSourceBytes))
+                {
+                    return;
+                }
+
+                ImageSource = ImageSource.FromStream(() => new MemoryStream(preview));
+            });
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Edit failed", ex.Message, "OK");
+        }
+    }
+
+    private async Task RestorePreviewAsync(byte[] bytes)
+    {
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            ImageSource = ImageSource.FromStream(() => new MemoryStream(bytes));
+        });
+    }
+
+    private static byte[] ApplyAdjust(byte[] source, ImageAdjustKind kind, float amount, string? contentType) =>
+        kind == ImageAdjustKind.Contrast
+            ? ImageEditor.Contrast(source, amount, contentType)
+            : ImageEditor.Brightness(source, amount, contentType);
+
     private async Task ReplaceImageBytesAsync(byte[] newBytes)
     {
         await ApplyLoadedImageBytesAsync(newBytes);
 
-        if (_assetEditLinkedAttachment != null)
-        {
-            _assetEditLinkedAttachment.PendingUploadBytes = newBytes;
-            _assetEditLinkedAttachment.FileSize = newBytes.Length;
-            return;
-        }
-
         if (Attachment != null)
         {
+            Attachment.PendingUploadBytes = newBytes;
+            Attachment.FileSize = newBytes.Length;
             var path = GetLocalCachePath();
             try
             {
@@ -491,66 +706,10 @@ public class AttachmentViewerViewModel : BaseViewModel
             return string.Empty;
         }
 
-        return Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+        return Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.Id.ToString() + Attachment.Extension);
     }
 
-    public async Task LoadAttachmentAsync()
-    {
-        if (string.IsNullOrEmpty(AttachmentId))
-        {
-            return;
-        }
-
-        try
-        {
-            IsLoading = true;
-            HasError = false;
-            ErrorMessage = null;
-
-            // First, get the attachment metadata
-            var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}");
-            if (!response.IsSuccessStatusCode)
-            {
-                HasError = true;
-                ErrorMessage = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
-                    ? "Please log in again"
-                    : $"Failed to load attachment: {response.StatusCode}";
-                return;
-            }
-
-            var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AttachmentDto>>();
-            if (apiResponse?.Data == null)
-            {
-                HasError = true;
-                ErrorMessage = "Attachment not found";
-                return;
-            }
-
-            Attachment = EntityMappings.ToEntity(apiResponse.Data);
-
-            // Load the actual file data based on type
-            if (IsImage)
-            {
-                await LoadImageAsync();
-            }
-            // For PDF and other files, we'll handle them when user wants to view
-        }
-        catch (HttpRequestException ex)
-        {
-            HasError = true;
-            ErrorMessage = $"Connection error: {ex.Message}";
-        }
-        catch (Exception ex)
-        {
-            HasError = true;
-            ErrorMessage = $"Error: {ex.Message}";
-        }
-        finally
-        {
-            IsLoading = false;
-            RefreshEditCommandStates();
-        }
-    }
+    
 
     private async Task LoadImageAsync()
     {
@@ -562,18 +721,22 @@ public class AttachmentViewerViewModel : BaseViewModel
         try
         {
             IsCropMode = false;
+            IsAdjustMode = false;
+            _adjustPreviewCts?.Cancel();
+            _adjustSourceBytes = null;
             _rawImageBytes = null;
             ImagePixelWidth = 0;
             ImagePixelHeight = 0;
 
-            if (_assetEditLinkedAttachment?.PendingUploadBytes is { Length: > 0 } memoryBytes
+            if (Attachment?.PendingUploadBytes is { Length: > 0 } memoryBytes
                 && Attachment.ContentType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true)
             {
                 await ApplyLoadedImageBytesAsync(memoryBytes);
                 return;
             }
 
-            var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString(), Attachment.LocalFileName);
+            var cacheDir = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), Attachment.ParentType, Attachment.ParentId.ToString());
+            var localFilePath = Path.Combine(cacheDir, Attachment.Id.ToString() + Attachment.Extension);
 
             byte[] bytes;
             if (File.Exists(localFilePath))
@@ -582,7 +745,9 @@ public class AttachmentViewerViewModel : BaseViewModel
             }
             else
             {
-                var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+                Directory.CreateDirectory(cacheDir);
+
+                var response = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
                 if (!response.IsSuccessStatusCode)
                 {
                     HasError = true;
@@ -591,14 +756,17 @@ public class AttachmentViewerViewModel : BaseViewModel
                 }
 
                 bytes = await response.Content.ReadAsByteArrayAsync();
+
+                //Also save to cache for future use
+                await File.WriteAllBytesAsync(localFilePath, bytes);
             }
 
             await ApplyLoadedImageBytesAsync(bytes);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             HasError = true;
-            ErrorMessage = "Failed to load image";
+            ErrorMessage = $"Failed to load image{Environment.NewLine}{ex.Message}";
         }
     }
 
@@ -637,7 +805,7 @@ public class AttachmentViewerViewModel : BaseViewModel
             IsLoading = true;
 
             // Download the file
-            var response = await _apiClient.GetAsync($"api/attachments/{AttachmentId}/data");
+            var response = await _apiClient.GetAsync($"api/attachments/{Attachment.Id}/data");
             if (!response.IsSuccessStatusCode)
             {
                 await Shell.Current.DisplayAlertAsync("Error", "Failed to download file", "OK");
@@ -667,5 +835,11 @@ public class AttachmentViewerViewModel : BaseViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private enum ImageAdjustKind
+    {
+        Contrast,
+        Brightness
     }
 }

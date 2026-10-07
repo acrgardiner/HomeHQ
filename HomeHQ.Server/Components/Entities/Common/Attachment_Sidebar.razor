@@ -148,7 +148,7 @@
                 }
                  <!-- Main Attachment Display -->
                  <div class="attachment-display mb-4" @onclick="@(async () => await ImageDialogOpen())" >
-                    @if (IsImageAttachment(currentAttachment.Attachment))
+                    @if (currentAttachment.Attachment.Thumb_LocalFileName is not null)
                     {
                         <div class="attachment-preview image-preview">
                             <MudImage Src="@currentAttachment.GetImagePreviewUrl()"

@@ -679,7 +679,7 @@
                                             <Picker Title="-- Select Attachment Type --"
                                                     ItemsSource="{Binding AttachmentTypes}"
                                                     ItemDisplayBinding="{Binding Name}"
-                                                    SelectedItem="{Binding CurrentAttachment.AttachmentType}"
+                                                    SelectedItem="{Binding CurrentAttachmentAttachmentType}"
                                                     Style="{StaticResource FormPickerStyle}"
                                                     />
                                         </controls:FloatingEntry.InnerContent>

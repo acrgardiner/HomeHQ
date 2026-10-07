@@ -1,4 +1,4 @@
-using HomeHQ.Entities;
+﻿using HomeHQ.Entities;
 using HomeHQ.Mobile.Pages;
 using HomeHQ.Mobile.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +15,7 @@ public sealed class AttachmentViewerNavigation
         _services = services;
     }
 
-    public async Task PresentAsync(string attachmentId, bool editable = false)
+    public async Task PresentAsync(Attachment attachment, bool editable = false)
     {
         var page = _services.GetRequiredService<AttachmentViewerPage>();
         if (page.BindingContext is not AttachmentViewerViewModel vm)
@@ -24,7 +24,7 @@ public sealed class AttachmentViewerNavigation
         }
 
         vm.Editable = editable;
-        vm.AttachmentId = attachmentId;
+        vm.Attachment = attachment;
         await Shell.Current.Navigation.PushModalAsync(page);
     }
 

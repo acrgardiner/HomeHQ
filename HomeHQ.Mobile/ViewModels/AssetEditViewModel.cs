@@ -253,6 +253,10 @@ public class AssetEditViewModel : BaseViewModel
         => CurrentAttachment?.AttachmentTypeId != null
            && _attachmentTypeCache.GetById(CurrentAttachment.AttachmentTypeId) != null;
 
+    public AttachmentType CurrentAttachmentAttachmentType => CurrentAttachmentHasType
+        ? AttachmentTypes.Where(x => string.Compare(x.Id.ToString(), CurrentAttachment!.AttachmentTypeId!.Value.ToString()) == 0).FirstOrDefault()
+        : null;
+
     // ── Commands ───────────────────────────────────────────────────────────────
 
     public ICommand GoBackCommand { get; }
@@ -651,6 +655,7 @@ public class AssetEditViewModel : BaseViewModel
         catch
         {
             // Silently fail for secondary data
+            _ = "Silent Error";
         }
         finally
         {
@@ -1206,6 +1211,7 @@ public class AssetEditViewModel : BaseViewModel
         OnPropertyChanged(nameof(CurrentAttachmentFileSizeFormatted));
         OnPropertyChanged(nameof(CurrentAttachmentHasType));
         OnPropertyChanged(nameof(HasAttachments));
+        OnPropertyChanged(nameof(CurrentAttachmentAttachmentType));
     }
 
     /// <summary>
@@ -1248,7 +1254,7 @@ public class AssetEditViewModel : BaseViewModel
             else // Existing attachment — load from API
             {
                 //Check local cache first
-                var localFilePath = Path.Combine(FileSystem.CacheDirectory, nameof(Attachment), nameof(Asset), AssetId, CurrentAttachment.LocalFileName);
+                var localFilePath = Path.Combine(FileSystem.CacheDirectory, "thumbs", nameof(Asset), AssetId, CurrentAttachment.Id.ToString() + CurrentAttachment.Extension);
                 if (File.Exists(localFilePath))
                 {
                     CurrentAttachmentPreviewSource = ImageSource.FromFile(localFilePath);
@@ -1256,7 +1262,7 @@ public class AssetEditViewModel : BaseViewModel
                 else
                 {
 
-                    var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/data");
+                    var response = await _apiClient.GetAsync($"api/attachments/{CurrentAttachment.Id}/previewdata");
                     if (response.IsSuccessStatusCode)
                     {
                         var bytes = await response.Content.ReadAsByteArrayAsync();
