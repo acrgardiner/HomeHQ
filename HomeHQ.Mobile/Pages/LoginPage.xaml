@@ -4,6 +4,7 @@
              xmlns:vm="clr-namespace:HomeHQ.Mobile.ViewModels"
              xmlns:local="clr-namespace:HomeHQ.Mobile.Converters"
              x:Class="HomeHQ.Mobile.Pages.LoginPage"
+             x:Name="LoginPageRoot"
              x:DataType="vm:LoginViewModel"
              Title="Login"
              Shell.NavBarIsVisible="False">
@@ -47,7 +48,7 @@
                CornerRadius="16"
                Padding="24"
                HasShadow="True">
-            <VerticalStackLayout Spacing="16">
+            <VerticalStackLayout Spacing="8">
                 
                 <Label Text="Sign In" 
                        FontSize="24" 
@@ -67,33 +68,93 @@
                            FontSize="13"/>
                 </Frame>
 
-                <!-- Server URL (collapsible) -->
-                <VerticalStackLayout Spacing="4">
-                    <Grid ColumnDefinitions="*, Auto">
-                        <Label Text="Server URL" 
-                               FontSize="13" 
-                               TextColor="#666"
-                               VerticalOptions="Center"/>
-                        <Button Grid.Column="1"
-                                Text="{Binding ShowServerUrl, Converter={StaticResource BoolToExpandText}}"
-                                Command="{Binding ToggleServerUrlCommand}"
+                <!-- Connections -->
+                <VerticalStackLayout Spacing="2">
+                    <Frame BackgroundColor="#E8F0FE"
+                           CornerRadius="8"
+                           Padding="0"
+                           HasShadow="False" Margin="6,6">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="{Binding SelectedConnection.Name}"
+                                   FontAttributes="Bold"
+                                   Margin="6,6"
+                                   TextColor="{StaticResource Primary}" VerticalTextAlignment="Center"/>
+                            <Button
+                                Grid.Column="1"
+                                Text="{Binding ShowConnections, Converter={StaticResource BoolToExpandText}}"
+                                Command="{Binding ToggleShowConnectionsCommand}"
                                 BackgroundColor="Transparent"
                                 TextColor="{StaticResource Primary}"
                                 FontSize="12"
-                                Padding="0"
-                                HeightRequest="24"/>
-                    </Grid>
-                    <Entry Placeholder="https://your-server.com"
-                           Text="{Binding ServerUrl}"
-                           Keyboard="Url"
-                           ReturnType="Next"
-                           TextColor="#666"
-                           IsVisible="{Binding ShowServerUrl}"/>
-                    <Label Text="{Binding ServerUrl}"
-                           FontSize="12"
-                           TextColor="{StaticResource Gray400}"
-                           LineBreakMode="TailTruncation"
-                           IsVisible="{Binding ShowServerUrl, Converter={StaticResource InvertedBoolConverter}}"/>
+                                
+                                VerticalOptions="Center"
+                                />
+                        </Grid>
+                    </Frame>
+
+                    <CollectionView ItemsSource="{Binding Connections}"
+                                    SelectionMode="None"
+                                    IsVisible="{Binding ShowConnections}"
+                                    >
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="*, Auto"
+                                      Padding="20,0">
+                                    <Button Text="{Binding DisplayString}"
+                                            Command="{Binding Source={x:Reference LoginPageRoot}, Path=BindingContext.SelectConnectionCommand}"
+                                            CommandParameter="{Binding .}"
+                                            BackgroundColor="Transparent"
+                                            TextColor="#666"
+                                            Padding="0"
+                                            HorizontalOptions="Start"
+                                            />
+                                    <Button Grid.Column="1"
+                                            Text="Remove"
+                                            Command="{Binding Source={x:Reference LoginPageRoot}, Path=BindingContext.RemoveConnectionCommand}"
+                                            CommandParameter="{Binding .}"
+                                            IsVisible="{Binding Fixed, Converter={StaticResource InvertedBoolConverter}}"
+                                            BackgroundColor="Transparent"
+                                            TextColor="#C62828"
+                                            FontSize="12"
+                                            Padding="0"
+                                            />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Button Text="Add connection"
+                            Command="{Binding ToggleAddConnectionCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource Primary}"
+                            HorizontalOptions="Start"
+                            FontSize="13"
+                            Padding="20,0"
+                            IsVisible="{Binding ShowConnections}"/>
+
+                    <Frame BackgroundColor="#F5F5F5"
+                           CornerRadius="8"
+                           Padding="12"
+                           HasShadow="False"
+                           IsVisible="{Binding ShowAddConnection}">
+                        <VerticalStackLayout Spacing="8">
+                            <Entry Placeholder="Connection name"
+                                   Text="{Binding NewConnectionName}"
+                                   ReturnType="Next"
+                                   TextColor="#666"/>
+                            <Entry Placeholder="https://your-server.com"
+                                   Text="{Binding NewConnectionUrl}"
+                                   Keyboard="Url"
+                                   ReturnType="Done"
+                                   TextColor="#666"/>
+                            <Button Text="Save Connection"
+                                    Command="{Binding AddConnectionCommand}"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"
+                                    HeightRequest="40"
+                                    CornerRadius="8"/>
+                        </VerticalStackLayout>
+                    </Frame>
                 </VerticalStackLayout>
 
                 <!-- Username -->

@@ -23,8 +23,14 @@
         <AuthorizeView>
             <Authorized>
                 <MudMenu Dense="true" Class="mt-1 ml-4">
-                    <ActivatorContent Context="A">
-                        <MudAvatar Color="Color.Secondary">@FirstLetterOfName</MudAvatar>
+                    <ActivatorContent Context="menuContext">
+                        <MudButton OnClick="menuContext.ToggleAsync"
+                                   Variant="Variant.Text"
+                                   Class="pa-0">
+                            <MudAvatar Color="Color.Secondary">
+                                @FirstLetterOfName
+                            </MudAvatar>
+                        </MudButton>
                     </ActivatorContent>
                     <ChildContent>
                         <MudCard Elevation="0" Square="true" Class="mt-n2">

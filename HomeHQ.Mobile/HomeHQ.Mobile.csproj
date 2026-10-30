@@ -32,7 +32,7 @@
     <ApplicationId>homehq.mobile</ApplicationId>
     
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.0.3</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->

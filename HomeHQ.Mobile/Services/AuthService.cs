@@ -73,7 +73,9 @@ public class AuthService
         {
             var refreshToken = await SecureStorage.Default.GetAsync(RefreshTokenKey);
             if (string.IsNullOrEmpty(refreshToken))
+            {
                 return false;
+            }
 
             var uri = BuildUri("api/identity/refresh");
             var response = await _httpClient.PostAsJsonAsync(uri, new RefreshRequest(refreshToken));
@@ -107,7 +109,9 @@ public class AuthService
     {
         var token = await SecureStorage.Default.GetAsync(AccessTokenKey);
         if (string.IsNullOrEmpty(token))
+        {
             return null;
+        }
 
         // Check if token is expired or about to expire (within 1 minute)
         var expiryString = await SecureStorage.Default.GetAsync(TokenExpiryKey);

@@ -1,4 +1,6 @@
 ﻿using System.Windows.Input;
+using System.Collections.ObjectModel;
+using HomeHQ.Mobile.Models;
 using HomeHQ.Mobile.Services;
 
 namespace HomeHQ.Mobile.ViewModels;
@@ -8,7 +10,27 @@ public class LoginViewModel : BaseViewModel
     private readonly AuthService _authService;
     private readonly SettingsService _settings;
 
-    public string ServerUrl
+    public ObservableCollection<Connection> Connections { get; } = [];
+
+    public Connection? SelectedConnection
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value) && value is not null)
+            {
+                _settings.SelectConnection(value);
+            }
+        }
+    }
+
+    public string NewConnectionName
+    {
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    public string NewConnectionUrl
     {
         get;
         set => SetProperty(ref field, value);
@@ -36,7 +58,13 @@ public class LoginViewModel : BaseViewModel
         }
     }
 
-    public bool ShowServerUrl
+    public bool ShowConnections
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
+    public bool ShowAddConnection
     {
         get;
         set => SetProperty(ref field, value);
@@ -47,25 +75,34 @@ public class LoginViewModel : BaseViewModel
     public string LoginButtonText => IsBusy ? "Signing in..." : "Sign In";
 
     public ICommand LoginCommand { get; }
-    public ICommand ToggleServerUrlCommand { get; }
+
+    public ICommand ToggleShowConnectionsCommand { get; }
+    public ICommand ToggleAddConnectionCommand { get; }
+    public ICommand AddConnectionCommand { get; }
+    public ICommand SelectConnectionCommand { get; }
+    public ICommand RemoveConnectionCommand { get; }
 
     public LoginViewModel(AuthService authService, SettingsService settings)
     {
         _authService = authService;
         _settings = settings;
 
-        // Load current server URL
-        ServerUrl = _settings.ApiBaseUrl;
-        ShowServerUrl = !_settings.HasCustomApiUrl; // Show by default if not configured
+        Connections = new ObservableCollection<Connection>(_settings.Connections);
+        SelectedConnection = _settings.SelectedConnection;
 
 #if DEBUG
-        ServerUrl = "https://192.168.0.151:7176";
+        //Set to LocalDev connection
+        SelectedConnection = Connections.FirstOrDefault(c => c.Name == "LocalDev");
         Username = "sysadmin";
         Password = "Password123!";
 #endif
 
         LoginCommand = new Command(async () => await LoginAsync(), () => !IsBusy);
-        ToggleServerUrlCommand = new Command(() => ShowServerUrl = !ShowServerUrl);
+        ToggleShowConnectionsCommand = new Command(() => ShowConnections = !ShowConnections);
+        ToggleAddConnectionCommand = new Command(() => ShowAddConnection = !ShowAddConnection);
+        AddConnectionCommand = new Command(AddConnection);
+        SelectConnectionCommand = new Command<Connection>(SelectConnection);
+        RemoveConnectionCommand = new Command<Connection>(RemoveConnection);
     }
 
     public async Task<bool> CheckAuthenticationAsync()
@@ -83,19 +120,9 @@ public class LoginViewModel : BaseViewModel
             return;
         }
 
-        // Validate server URL
-        if (string.IsNullOrWhiteSpace(ServerUrl))
+        if (SelectedConnection is null)
         {
-            ErrorMessage = "Please enter the server URL";
-            ShowServerUrl = true;
-            return;
-        }
-
-        if (!Uri.TryCreate(ServerUrl, UriKind.Absolute, out var uri) ||
-            (uri.Scheme != "http" && uri.Scheme != "https"))
-        {
-            ErrorMessage = "Please enter a valid server URL (e.g., https://example.com)";
-            ShowServerUrl = true;
+            ErrorMessage = "Please select a connection";
             return;
         }
 
@@ -118,8 +145,7 @@ public class LoginViewModel : BaseViewModel
             ErrorMessage = null;
             OnPropertyChanged(nameof(LoginButtonText));
 
-            // Save server URL before attempting login
-            _settings.SetApiBaseUrl(ServerUrl.Trim());
+            _settings.SelectConnection(SelectedConnection);
 
             var result = await _authService.LoginAsync(Username.Trim(), Password);
 
@@ -144,6 +170,67 @@ public class LoginViewModel : BaseViewModel
         {
             IsBusy = false;
             OnPropertyChanged(nameof(LoginButtonText));
+        }
+    }
+
+    private void AddConnection()
+    {
+        ErrorMessage = null;
+        var name = NewConnectionName.Trim();
+        var url = NewConnectionUrl.Trim();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            ErrorMessage = "Please enter a connection name";
+            return;
+        }
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != "http" && uri.Scheme != "https"))
+        {
+            ErrorMessage = "Please enter a valid server URL (e.g., https://example.com)";
+            return;
+        }
+
+        if (Connections.Any(connection => connection.Url.Equals(url.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)))
+        {
+            ErrorMessage = "A connection with this URL already exists";
+            return;
+        }
+
+        var connection = _settings.AddConnection(name, url);
+        Connections.Add(connection);
+        SelectedConnection = connection;
+        NewConnectionName = string.Empty;
+        NewConnectionUrl = string.Empty;
+        ShowAddConnection = false;
+    }
+
+    private void RemoveConnection(Connection? connection)
+    {
+        if (connection is null || connection.Fixed)
+        {
+            return;
+        }
+
+        var wasSelected = SelectedConnection == connection;
+        if (_settings.RemoveConnection(connection))
+        {
+            Connections.Remove(connection);
+            if (wasSelected)
+            {
+                SelectedConnection = _settings.SelectedConnection;
+            }
+        }
+    }
+
+    private void SelectConnection(Connection? connection)
+    {
+        if (connection is not null)
+        {
+            SelectedConnection = connection;
+
+            ShowConnections = false;
         }
     }
 }
