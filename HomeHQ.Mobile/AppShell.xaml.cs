@@ -2,15 +2,14 @@
 using HomeHQ.Mobile.Pages.Admin;
 using HomeHQ.Mobile.Pages.Setup;
 using HomeHQ.Mobile.Services;
+using HomeHQ.Mobile.ViewModels;
 
 namespace HomeHQ.Mobile;
 
 public partial class AppShell : Shell
 {
     private readonly AuthService? _authService;
-    private bool _setupExpanded;
-    private bool _adminExpanded;
-    private bool _isAdmin;
+    private readonly FlyoutViewModel? _flyoutViewModel;
 
     public AppShell()
     {
@@ -29,51 +28,12 @@ public partial class AppShell : Shell
 
         // Try to get services
         _authService = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<AuthService>();
+        _flyoutViewModel = Microsoft.Maui.Controls.Application.Current?.Handler?.MauiContext?.Services.GetService<FlyoutViewModel>();
+        CustomFlyoutControl.BindingContext = _flyoutViewModel;
 
         // Handle navigation events
         Navigated += OnNavigated;
 
-        ApplySetupExpandedState();
-        ApplyAdminExpandedState();
-    }
-
-    private void OnSetupMenuItemClicked(object? sender, EventArgs e)
-    {
-        _setupExpanded = !_setupExpanded;
-        ApplySetupExpandedState();
-
-        // Keep the flyout open so the user can pick a Setup page after expanding.
-        FlyoutIsPresented = true;
-    }
-
-    private void OnAdminMenuItemClicked(object? sender, EventArgs e)
-    {
-        _adminExpanded = !_adminExpanded;
-        ApplyAdminExpandedState();
-        FlyoutIsPresented = true;
-    }
-
-    private void ApplySetupExpandedState()
-    {
-        CategoriesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
-        WarrantyTypesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
-        AttachmentTypesFlyoutItem.FlyoutItemIsVisible = _setupExpanded;
-        SetupMenuItem.Text = _setupExpanded ? "Setup  ˅" : "Setup  ›";
-    }
-
-    private void ApplyAdminExpandedState()
-    {
-        if (!_isAdmin)
-        {
-            _adminExpanded = false;
-        }
-
-        Shell.SetFlyoutItemIsVisible(AdminMenuItem, _isAdmin);
-        AdminDashboardFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
-        UsersFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
-        MaintenanceFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
-        LogsFlyoutItem.FlyoutItemIsVisible = _isAdmin && _adminExpanded;
-        AdminMenuItem.Text = _adminExpanded ? "Admin  ˅" : "Admin  ›";
     }
 
     private async void OnNavigated(object? sender, ShellNavigatedEventArgs e)
@@ -86,49 +46,16 @@ public partial class AppShell : Shell
 
         if (!isLoginPage)
         {
-            await RefreshAdminVisibilityAsync();
+            if (_flyoutViewModel is not null)
+            {
+                await _flyoutViewModel.RefreshAdminVisibilityAsync();
+            }
             await RefreshFlyoutFooterAsync();
         }
         else
         {
-            _isAdmin = false;
-            _adminExpanded = false;
-            ApplyAdminExpandedState();
+            _flyoutViewModel?.Reset();
         }
-    }
-
-    private async Task RefreshAdminVisibilityAsync()
-    {
-        if (_authService is null)
-        {
-            return;
-        }
-
-        try
-        {
-            if (await _authService.IsAuthenticatedAsync())
-            {
-                // Refresh roles if not cached yet (e.g. app restart with stored token)
-                var roles = await _authService.GetRolesAsync();
-                if (roles.Count == 0)
-                {
-                    await _authService.RefreshUserInfoAsync();
-                }
-
-                _isAdmin = await _authService.IsAdminAsync();
-            }
-            else
-            {
-                _isAdmin = false;
-                _adminExpanded = false;
-            }
-        }
-        catch
-        {
-            _isAdmin = false;
-        }
-
-        ApplyAdminExpandedState();
     }
 
     private async Task RefreshFlyoutFooterAsync()
@@ -141,7 +68,7 @@ public partial class AppShell : Shell
         try
         {
             var username = await _authService.GetUsernameAsync();
-            FlyoutFooterControl.SetUsername(username);
+            CustomFlyoutControl.SetUsername(username);
         }
         catch
         {

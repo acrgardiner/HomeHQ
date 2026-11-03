@@ -12,15 +12,9 @@
     Shell.FlyoutBehavior="Flyout"
     Shell.FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
 
-    <!-- Flyout Header -->
-    <Shell.FlyoutHeader>
-        <controls:FlyoutHeader />
-    </Shell.FlyoutHeader>
-
-    <!-- Flyout Footer -->
-    <Shell.FlyoutFooter>
-        <controls:FlyoutFooter x:Name="FlyoutFooterControl" />
-    </Shell.FlyoutFooter>
+    <Shell.FlyoutContent>
+        <controls:CustomFlyout x:Name="CustomFlyoutControl" />
+    </Shell.FlyoutContent>
 
     <!-- Login Page (no flyout/navigation) -->
     <ShellContent
@@ -33,6 +27,7 @@
 
     <!-- Main Navigation Items -->
     <FlyoutItem Title="Dashboard"
+                FlyoutItemIsVisible="False"
                  mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Dashboard, IconColor={StaticResource Primary}, IconSize=22}"
     >
         <ShellContent
@@ -42,18 +37,13 @@
     </FlyoutItem>
 
     <FlyoutItem Title="Assets"
+                FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Assets"
             ContentTemplate="{DataTemplate pages:AssetsPage}"
             Title="Assets"/>
     </FlyoutItem>
-
-    <!-- Setup group (collapsed by default; toggled via MenuItem) -->
-    <MenuItem x:Name="SetupMenuItem"
-              Text="Setup  ›"
-              Clicked="OnSetupMenuItemClicked"
-              mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Tune, IconColor={StaticResource Primary}, IconSize=22}" />
 
     <FlyoutItem x:Name="CategoriesFlyoutItem"
                 Title="Categories"
@@ -85,12 +75,6 @@
             Title="Attachment Types"/>
     </FlyoutItem>
 
-    <!-- Admin group (collapsed by default; visible only for Admin role) -->
-    <MenuItem x:Name="AdminMenuItem"
-              Text="Admin  ›"
-              Clicked="OnAdminMenuItemClicked"
-              mi:MauiIcon.Value="{mi:MaterialOutlined Icon=AdminPanelSettings, IconColor={StaticResource Primary}, IconSize=22}" />
-    
     <FlyoutItem x:Name="AdminDashboardFlyoutItem"
                 Title="Dashboard"
                 FlyoutItemIsVisible="False"
@@ -133,6 +117,7 @@
 
     <!-- Settings/Configuration Section -->
     <FlyoutItem Title="Settings"
+                FlyoutItemIsVisible="False"
                 mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Settings, IconColor={StaticResource Primary}, IconSize=22}">
         <ShellContent
             Route="Settings"
@@ -140,7 +125,7 @@
             Title="Settings"/>
     </FlyoutItem>
 
-    <!-- Shell Styling -->
+    <!-- Shell item templates remain available for Shell internals; navigation is rendered by CustomFlyout. -->
     <Shell.ItemTemplate>
         <DataTemplate>
             <Grid Padding="16,12" ColumnDefinitions="Auto, *">

@@ -6,6 +6,7 @@ using HomeHQ.Mobile.Services;
 using HomeHQ.Mobile.ViewModels;
 using HomeHQ.Mobile.ViewModels.Admin;
 using HomeHQ.Mobile.ViewModels.Setup;
+using CommunityToolkit.Maui;
 using Maui.PDFView;
 using MauiIcons.Core;
 using MauiIcons.Material.Outlined;
@@ -27,6 +28,7 @@ public static class MauiProgram
                 x.SetDefaultFontOverride(true);
                 x.SetDefaultIconAutoScaling(true);
             })
+            .UseMauiCommunityToolkit()
             .UseMaterialOutlinedMauiIcons()
             .UseMauiPdfView()
             .ConfigureFonts(fonts =>
@@ -75,6 +77,7 @@ public static class MauiProgram
         builder.Services.AddTransient<AssetDetailViewModel>();
         builder.Services.AddTransient<AssetEditViewModel>();
         builder.Services.AddTransient<AttachmentViewerViewModel>();
+        builder.Services.AddSingleton<FlyoutViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
         builder.Services.AddTransient<CategoriesViewModel>();
         builder.Services.AddTransient<WarrantyTypesViewModel>();

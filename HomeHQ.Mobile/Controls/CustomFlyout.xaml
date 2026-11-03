@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:controls="clr-namespace:HomeHQ.Mobile.Controls"
+             xmlns:viewModels="clr-namespace:HomeHQ.Mobile.ViewModels"
+             x:Class="HomeHQ.Mobile.Controls.CustomFlyout"
+             x:DataType="viewModels:FlyoutViewModel">
+    <ContentView.Resources>
+        <Style x:Key="FlyoutNavigationButtonStyle" TargetType="Button">
+            <Setter Property="BackgroundColor" Value="Transparent" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}" />
+            <Setter Property="HorizontalOptions" Value="Start" />
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style x:Key="FlyoutSubNavigationButtonStyle" TargetType="Button" BasedOn="{StaticResource FlyoutNavigationButtonStyle}">
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+    </ContentView.Resources>
+    <Grid RowDefinitions="Auto, *, Auto"
+          BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
+        <controls:FlyoutHeader Grid.Row="0" />
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="8,12" Spacing="4">
+                <Button Text="Dashboard"
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="Dashboard"
+                        Style="{StaticResource FlyoutNavigationButtonStyle}" />
+                <Button Text="Assets"
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="Assets"
+                        Style="{StaticResource FlyoutNavigationButtonStyle}" />
+
+                <toolkit:Expander IsExpanded="{Binding IsSetupExpanded, Mode=TwoWay}">
+                    <toolkit:Expander.Header>
+                        <Grid Padding="16,12" ColumnDefinitions="*, Auto">
+                            <Label Text="Setup"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding IsSetupExpanded, Converter={StaticResource BoolToChevronConverter}}"
+                                   FontSize="18"
+                                   TextColor="{StaticResource Primary}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </toolkit:Expander.Header>
+                    <VerticalStackLayout Padding="24,0,8,4" Spacing="2">
+                        <Button Text="Categories"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="Categories"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                        <Button Text="Warranty Types"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="WarrantyTypes"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                        <Button Text="Attachment Types"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="AttachmentTypes"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                    </VerticalStackLayout>
+                </toolkit:Expander>
+
+                <toolkit:Expander IsVisible="{Binding IsAdmin}"
+                                  IsExpanded="{Binding IsAdminExpanded, Mode=TwoWay}">
+                    <toolkit:Expander.Header>
+                        <Grid Padding="16,12" ColumnDefinitions="*, Auto">
+                            <Label Text="Admin"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
+                                   VerticalOptions="Center" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding IsAdminExpanded, Converter={StaticResource BoolToChevronConverter}}"
+                                   FontSize="18"
+                                   TextColor="{StaticResource Primary}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </toolkit:Expander.Header>
+                    <VerticalStackLayout Padding="24,0,8,4" Spacing="2">
+                        <Button Text="Admin Dashboard"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="AdminDashboard"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                        <Button Text="Users"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="Users"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                        <Button Text="Maintenance"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="Maintenance"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                        <Button Text="Logs"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="Logs"
+                                Style="{StaticResource FlyoutSubNavigationButtonStyle}" />
+                    </VerticalStackLayout>
+                </toolkit:Expander>
+
+                <Button Text="Settings"
+                        Command="{Binding NavigateCommand}"
+                        CommandParameter="Settings"
+                        Style="{StaticResource FlyoutNavigationButtonStyle}" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <controls:FlyoutFooter x:Name="FlyoutFooterControl" Grid.Row="2" />
+    </Grid>
+</ContentView>
