@@ -149,9 +149,9 @@
                         
                         <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
                             <Button Grid.Column="0"
-                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Inventory2}"
-                                    Text="View Assets"
-                                    Command="{Binding NavigateToAssetsCommand}"
+                                    mi:MauiIcon.Value="{mi:MaterialOutlined Icon=Add}"
+                                    Text="New Asset"
+                                    Command="{Binding AddAssetCommand}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
                                     TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource White}}"
                                     CornerRadius="12"

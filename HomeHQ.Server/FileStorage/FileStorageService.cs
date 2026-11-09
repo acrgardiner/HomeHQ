@@ -24,8 +24,6 @@ public class FileStorageService : IFileStorageService
         _thumbnailService = thumbnailService;
     }
 
-
-
     public async Task<bool> UploadAsync<T>(byte[]? fileBytes, Attachment attachment) where T : class
     {
         try

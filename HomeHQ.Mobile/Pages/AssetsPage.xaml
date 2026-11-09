@@ -25,7 +25,7 @@
                   IsVisible="{Binding ShowStats}"
                   ColumnDefinitions="*, *"
                   ColumnSpacing="12"
-                  Margin="16,0,16,8">
+                  Margin="16,8,16,8">
                 <Frame Grid.Column="0"
                        BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
                        CornerRadius="12"
@@ -168,10 +168,15 @@
                          Command="{Binding RefreshCommand}"
                          IsVisible="{Binding ShowList}">
                 <CollectionView ItemsSource="{Binding Assets}"
-                                SelectionMode="None">
+                                SelectionMode="None"
+                                Margin="8,0">
+                    <CollectionView.ItemsLayout>
+                        <!-- ItemSpacing adds space (in device-independent units) between each item -->
+                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                    </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:AssetListItem">
-                            <Frame Margin="16,8"
+                            <Frame Margin="8,8,8,0"
                                    Padding="16"
                                    CornerRadius="12"
                                    BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource Gray900}}"
@@ -200,6 +205,7 @@
 
                                     <!-- Asset Info: Name, Category, From, Purchase Date, Warranty -->
                                     <VerticalStackLayout Grid.Column="1"
+                                                         Margin="0,0"
                                                          VerticalOptions="Center"
                                                          Spacing="3">
                                         <Label Text="{Binding Name}"
